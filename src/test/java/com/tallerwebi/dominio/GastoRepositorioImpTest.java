@@ -4,6 +4,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDate;
+import java.util.List;
+
 import com.tallerwebi.config.HibernateConfig;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -60,4 +62,21 @@ public class GastoRepositorioImpTest {
                 assertEquals(LocalDate.of(2026, 9, 13), gastoGuardado.getFecha());
     }
  
+    @Test
+    void deberiaBuscarGastosPorUsuario(){
+        Usuario usuario = new Usuario();
+        usuario.setEmail("becerra@gmai.com");
+        usuario.setPassword("1234");
+        
+        this.sessionFactory.getCurrentSession().save(usuario);
+
+        Gasto gasto = new Gasto(1000.00, LocalDate.of(2026, 9, 13), "Supermercado");
+        gasto.setUsuario(usuario);
+        repositorioGasto.guardar(gasto);
+
+        List<Gasto> gastos = repositorioGasto.BuscarGastosPorUsuario(usuario);
+
+        assertEquals(1, gastos.size());
+        assertEquals("Supermercado", gastos.get(0).getDescripcion());
+    }
 }

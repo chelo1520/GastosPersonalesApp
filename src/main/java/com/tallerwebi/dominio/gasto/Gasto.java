@@ -4,10 +4,17 @@ import java.time.LocalDate;
 
 import javax.annotation.processing.Generated;
 
+import org.hibernate.annotations.ManyToAny;
+
+import com.tallerwebi.dominio.Usuario;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 
 /**
  * Gasto
@@ -21,6 +28,12 @@ public class Gasto {
     private Double importe;
     private LocalDate fecha;
     private String descripcion;
+
+    @ManyToOne
+    @JoinColumn(name = "usuario_id")
+    private Usuario usuario;
+
+
     public Gasto(Double importe, LocalDate fecha, String descripcion) {
         this.importe = importe;
         this.fecha = fecha;
@@ -47,6 +60,9 @@ public class Gasto {
 	public Long getId() {
 		return this.id;
 	}
+    public void setUsuario(Usuario usuario) {
+       this.usuario = usuario;
+    }
 
     
 
