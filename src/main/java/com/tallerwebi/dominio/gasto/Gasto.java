@@ -19,7 +19,7 @@ import jakarta.persistence.OneToMany;
 /**
  * Gasto
  */
-@Entity 
+@Entity
 public class Gasto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,37 +33,46 @@ public class Gasto {
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
-
     public Gasto(Double importe, LocalDate fecha, String descripcion) {
         this.importe = importe;
         this.fecha = fecha;
         this.descripcion = descripcion;
     }
+
     public Double getImporte() {
         return importe;
     }
+
     public LocalDate getFecha() {
         return fecha;
     }
+
     public String getDescripcion() {
         return descripcion;
     }
+
     public void setImporte(Double importe) {
         this.importe = importe;
     }
+
     public void setFecha(LocalDate fecha) {
         this.fecha = fecha;
     }
+
     public void setDescripcion(String descripcion) {
         this.descripcion = descripcion;
     }
-	public Long getId() {
-		return this.id;
-	}
-    public void setUsuario(Usuario usuario) {
-       this.usuario = usuario;
+
+    public Long getId() {
+        return this.id;
     }
 
-    
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
+    }
+
+    public Usuario getUsuario() {
+        return usuario;
+    }
 
 }

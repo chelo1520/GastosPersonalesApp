@@ -1,8 +1,8 @@
-package com.tallerwebi.dominio;
+package com.tallerwebi.dominio.gasto;
 
 import java.util.List;
 
-import com.tallerwebi.dominio.gasto.Gasto;
+import com.tallerwebi.dominio.Usuario;
 
 /**
  * RepositorioGasto

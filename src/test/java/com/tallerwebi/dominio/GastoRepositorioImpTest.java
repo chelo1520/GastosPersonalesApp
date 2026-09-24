@@ -18,6 +18,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tallerwebi.dominio.gasto.Gasto;
+import com.tallerwebi.dominio.gasto.RepositorioGastoImpl;
+import com.tallerwebi.dominio.gasto.RepositorioGasto;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = HibernateConfig.class)

@@ -1,4 +1,4 @@
-package com.tallerwebi.dominio;
+package com.tallerwebi.dominio.gasto;
 
 import java.util.List;
 
@@ -7,7 +7,7 @@ import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import com.tallerwebi.dominio.gasto.Gasto;
+import com.tallerwebi.dominio.Usuario;
 
 /**
  * RepositorioGastoImpl
