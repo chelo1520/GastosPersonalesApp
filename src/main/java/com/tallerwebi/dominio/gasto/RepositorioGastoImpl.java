@@ -1,5 +1,6 @@
 package com.tallerwebi.dominio.gasto;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.hibernate.SessionFactory;
@@ -36,5 +37,17 @@ public class RepositorioGastoImpl implements  RepositorioGasto{
         return query.getResultList();
 
 	}
+
+    @Override
+    public List<Gasto> obtenerGastosEntreFechas(Usuario usuario,LocalDate desde, LocalDate hasta) {
+        String hql = "FROM Gasto WHERE usuario = :usuario AND fecha BETWEEN :desde AND :hasta";
+        Query<Gasto> query = sessionFactory.getCurrentSession().createQuery(hql, Gasto.class);
+
+        query.setParameter("usuario", usuario);
+        query.setParameter("desde", desde);
+        query.setParameter("hasta", hasta);
+
+        return query.getResultList();
+    }
 
 }
