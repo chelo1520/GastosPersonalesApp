@@ -14,12 +14,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 @Controller
-public class ControladorGastos {
+public class ControladorGasto {
 
   private GastoServicio gastoServicio;
 
   @Autowired
-  public ControladorGastos(GastoServicio gastoServicio) {
+  public ControladorGasto(GastoServicio gastoServicio) {
     this.gastoServicio = gastoServicio;
   }
 
@@ -46,8 +46,8 @@ public class ControladorGastos {
   public ModelAndView sumarGastos(
 
           @RequestParam("usuario") Usuario usuario,
-          @RequestParam("fecha") LocalDate desde,
-          @RequestParam("fecha") LocalDate hasta) {
+          @RequestParam("desde") LocalDate desde,
+          @RequestParam("hasta") LocalDate hasta) {
 
     Double total = gastoServicio.sumarGastos(usuario, desde, hasta);
 
