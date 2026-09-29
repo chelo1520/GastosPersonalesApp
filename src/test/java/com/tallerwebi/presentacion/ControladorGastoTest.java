@@ -1,108 +1,73 @@
 package com.tallerwebi.presentacion;
 
-import com.tallerwebi.dominio.Usuario;
-import com.tallerwebi.dominio.gasto.Gasto;
-import com.tallerwebi.dominio.gasto.GastoServicio;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import org.springframework.web.servlet.ModelAndView;
-
-import java.time.LocalDate;
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.gasto.Gasto;
+import com.tallerwebi.dominio.gasto.GastoServicio;
+import java.time.LocalDate;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.web.servlet.ModelAndView;
+
 public class ControladorGastoTest {
 
-    private GastoServicio gastoServicio;
-    private ControladorGasto controladorGasto;
+  private GastoServicio gastoServicio;
+  private ControladorGasto controladorGasto;
 
-    private Usuario usuario;
-    private Gasto gasto;
+  private Usuario usuario;
+  private Gasto gasto;
 
-    @BeforeEach
-    public void init() {
+  @BeforeEach
+  public void init() {
+    gastoServicio = mock(GastoServicio.class);
 
-        gastoServicio = mock(GastoServicio.class);
+    controladorGasto = new ControladorGasto(gastoServicio);
 
-        controladorGasto = new ControladorGasto(gastoServicio);
+    usuario = mock(Usuario.class);
 
-        usuario = mock(Usuario.class);
+    gasto = new Gasto(15000.0, LocalDate.of(2026, 9, 26), "Supermercado");
+  }
 
-        gasto = new Gasto(
-                15000.0,
-                LocalDate.of(2026, 9, 26),
-                "Supermercado"
-        );
-    }
+  @Test
+  public void debeMostrarLosGastosDelUsuario() {
+    List<Gasto> gastos = List.of(gasto);
 
-    @Test
-    public void debeMostrarLosGastosDelUsuario() {
+    when(gastoServicio.obtenerGastos(usuario)).thenReturn(gastos);
 
-        List<Gasto> gastos = List.of(gasto);
+    ModelAndView resultado = controladorGasto.mostrarGastos(usuario);
 
-        when(gastoServicio.obtenerGastos(usuario))
-                .thenReturn(gastos);
+    assertEquals("mostrar-gastos", resultado.getViewName());
 
-        ModelAndView resultado =
-                controladorGasto.mostrarGastos(usuario);
+    assertEquals(gastos, resultado.getModel().get("gastos"));
 
-        assertEquals("mostrar-gastos", resultado.getViewName());
+    verify(gastoServicio).obtenerGastos(usuario);
+  }
 
-        assertEquals(
-                gastos,
-                resultado.getModel().get("gastos")
-        );
+  @Test
+  public void debeRegistrarUnGasto() {
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, usuario);
 
-        verify(gastoServicio)
-                .obtenerGastos(usuario);
-    }
+    assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
 
-    @Test
-    public void debeRegistrarUnGasto() {
+    verify(gastoServicio).registrarGasto(gasto, usuario);
+  }
 
-        ModelAndView resultado =
-                controladorGasto.registrarGasto(gasto, usuario);
+  @Test
+  public void debeSumarLosGastosEntreFechas() {
+    LocalDate desde = LocalDate.of(2026, 9, 1);
+    LocalDate hasta = LocalDate.of(2026, 9, 30);
 
-        assertEquals(
-                "redirect:/mostrar-gastos",
-                resultado.getViewName()
-        );
+    when(gastoServicio.sumarGastos(usuario, desde, hasta)).thenReturn(45000.0);
 
-        verify(gastoServicio)
-                .registrarGasto(gasto, usuario);
-    }
+    ModelAndView resultado = controladorGasto.sumarGastos(usuario, desde, hasta);
 
-    @Test
-    public void debeSumarLosGastosEntreFechas() {
+    assertEquals("sumar-gastos", resultado.getViewName());
 
-        LocalDate desde = LocalDate.of(2026, 9, 1);
-        LocalDate hasta = LocalDate.of(2026, 9, 30);
+    assertEquals(45000.0, resultado.getModel().get("total"));
 
-        when(gastoServicio.sumarGastos(usuario, desde, hasta))
-                .thenReturn(45000.0);
-
-        ModelAndView resultado =
-                controladorGasto.sumarGastos(
-                        usuario,
-                        desde,
-                        hasta
-                );
-
-        assertEquals(
-                "sumar-gastos",
-                resultado.getViewName()
-        );
-
-        assertEquals(
-                45000.0,
-                resultado.getModel().get("total")
-        );
-
-        verify(gastoServicio)
-                .sumarGastos(usuario, desde, hasta);
-    }
+    verify(gastoServicio).sumarGastos(usuario, desde, hasta);
+  }
 }

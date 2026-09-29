@@ -3,7 +3,6 @@ package com.tallerwebi.presentacion;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +24,6 @@ public class ControladorGasto {
 
   @RequestMapping(path = "/mostrar-gastos", method = RequestMethod.GET)
   public ModelAndView mostrarGastos(Usuario usuario) {
-
     List<Gasto> gastos = gastoServicio.obtenerGastos(usuario);
 
     Map<String, Object> model = new ModelMap();
@@ -36,7 +34,6 @@ public class ControladorGasto {
 
   @RequestMapping(path = "/registrar-gasto", method = RequestMethod.POST)
   public ModelAndView registrarGasto(Gasto gasto, Usuario usuario) {
-
     gastoServicio.registrarGasto(gasto, usuario);
 
     return new ModelAndView("redirect:/mostrar-gastos");
@@ -44,11 +41,10 @@ public class ControladorGasto {
 
   @RequestMapping(path = "/sumar-gastos", method = RequestMethod.GET)
   public ModelAndView sumarGastos(
-
-          @RequestParam("usuario") Usuario usuario,
-          @RequestParam("desde") LocalDate desde,
-          @RequestParam("hasta") LocalDate hasta) {
-
+    @RequestParam("usuario") Usuario usuario,
+    @RequestParam("desde") LocalDate desde,
+    @RequestParam("hasta") LocalDate hasta
+  ) {
     Double total = gastoServicio.sumarGastos(usuario, desde, hasta);
 
     Map<String, Object> model = new ModelMap();
