@@ -1,6 +1,7 @@
 package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
 import java.time.LocalDate;
@@ -32,9 +33,27 @@ public class ControladorGasto {
     return new ModelAndView("mostrar-gastos", model);
   }
 
+  @RequestMapping(path = "/registrar-gasto", method = RequestMethod.GET)
+  public ModelAndView mostrarFormularioRegistrarGasto() {
+    Gasto gasto = new Gasto();
+    gasto.setFecha(LocalDate.now());
+
+    Map<String, Object> model = new ModelMap();
+    model.put("gasto", gasto);
+
+    return new ModelAndView("registrar-gasto", model);
+  }
+
   @RequestMapping(path = "/registrar-gasto", method = RequestMethod.POST)
   public ModelAndView registrarGasto(Gasto gasto, Usuario usuario) {
-    gastoServicio.registrarGasto(gasto, usuario);
+    try {
+      gastoServicio.registrarGasto(gasto, usuario);
+    } catch (GastoInvalidoExeption e) {
+      Map<String, Object> model = new ModelMap();
+      model.put("gasto", gasto);
+      model.put("error", e.getMessage());
+      return new ModelAndView("registrar-gasto", model);
+    }
 
     return new ModelAndView("redirect:/mostrar-gastos");
   }

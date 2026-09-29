@@ -1,0 +1,202 @@
+/* Estilos de GastosApp, según el prototipo de vistas */
+
+:root {
+  --app-verde: #0f766e;
+  --app-verde-hover: #115e59;
+  --app-oscuro: #17302e;
+  --app-oscuro-activo: #2a4744;
+  --app-fondo: #f5f4ef;
+  --app-texto: #1b1b18;
+  --app-texto-suave: #5c5b55;
+  --app-texto-nav: #d6e4e1;
+  --app-borde: #e4e2da;
+  --app-borde-input: #d9d6cc;
+  --app-error: #b91c1c;
+}
+
+body {
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  color: var(--app-texto);
+  background: var(--app-fondo);
+}
+
+a {
+  color: var(--app-verde);
+}
+
+a:hover {
+  color: var(--app-verde-hover);
+}
+
+/* Navbar desktop */
+
+.app-navbar {
+  height: 64px;
+  align-items: center;
+  gap: 40px;
+  padding: 0 40px;
+  background: var(--app-oscuro);
+}
+
+.app-navbar a {
+  text-decoration: none;
+}
+
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--app-fondo);
+}
+
+.app-brand:hover {
+  color: #fff;
+}
+
+.app-nav {
+  display: flex;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.app-nav a {
+  padding: 8px 14px;
+  border-radius: 8px;
+  color: var(--app-texto-nav);
+}
+
+.app-nav a:hover {
+  color: #fff;
+}
+
+.app-nav a[aria-current="page"] {
+  background: var(--app-oscuro-activo);
+  color: #fff;
+  font-weight: 600;
+}
+
+.app-nav a.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.app-salir {
+  font-size: 14px;
+  color: var(--app-texto-nav);
+}
+
+/* Header mobile */
+
+.app-header-mobile {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px;
+  background: var(--app-oscuro);
+  color: var(--app-fondo);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.app-volver {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--app-fondo);
+}
+
+/* Contenido */
+
+.app-main {
+  padding: 16px;
+}
+
+.app-form-card {
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .app-main {
+    padding: 40px;
+  }
+
+  .app-form-card {
+    padding: 32px;
+    background: #fff;
+    border: 1px solid var(--app-borde);
+    border-radius: 16px;
+  }
+}
+
+/* Formularios */
+
+.form-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.form-control,
+.input-group-text {
+  min-height: 48px;
+  border-color: var(--app-borde-input);
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.form-control:focus {
+  border-color: var(--app-verde);
+  box-shadow: 0 0 0 0.2rem rgba(15, 118, 110, 0.2);
+}
+
+.form-control.is-invalid {
+  border-color: var(--app-error);
+}
+
+.input-group-text {
+  background: #fff;
+  color: var(--app-texto-suave);
+}
+
+.app-importe,
+.input-group-text {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 18px;
+}
+
+.alert-danger {
+  --bs-alert-bg: #fdecec;
+  --bs-alert-color: #7f1d1d;
+  --bs-alert-border-color: transparent;
+  font-size: 14px;
+}
+
+/* Botones */
+
+.btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--app-verde);
+  --bs-btn-border-color: var(--app-verde);
+  --bs-btn-hover-bg: var(--app-verde-hover);
+  --bs-btn-hover-border-color: var(--app-verde-hover);
+  --bs-btn-active-bg: var(--app-verde-hover);
+  --bs-btn-active-border-color: var(--app-verde-hover);
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: var(--app-texto);
+  --bs-btn-border-color: var(--app-borde-input);
+  --bs-btn-hover-bg: var(--app-fondo);
+  --bs-btn-hover-color: var(--app-texto);
+  --bs-btn-hover-border-color: var(--app-borde-input);
+}

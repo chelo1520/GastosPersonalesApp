@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
 import java.time.LocalDate;
@@ -53,6 +54,29 @@ public class ControladorGastoTest {
     assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
 
     verify(gastoServicio).registrarGasto(gasto, usuario);
+  }
+
+  @Test
+  public void debeMostrarElFormularioDeRegistroConLaFechaDeHoy() {
+    ModelAndView resultado = controladorGasto.mostrarFormularioRegistrarGasto();
+
+    assertEquals("registrar-gasto", resultado.getViewName());
+
+    Gasto gastoDelFormulario = (Gasto) resultado.getModel().get("gasto");
+    assertEquals(LocalDate.now(), gastoDelFormulario.getFecha());
+  }
+
+  @Test
+  public void debeVolverAlFormularioConErrorSiElGastoEsInvalido() {
+    doThrow(new GastoInvalidoExeption("El importe debe ser mayor a cero"))
+      .when(gastoServicio)
+      .registrarGasto(gasto, usuario);
+
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, usuario);
+
+    assertEquals("registrar-gasto", resultado.getViewName());
+    assertEquals("El importe debe ser mayor a cero", resultado.getModel().get("error"));
+    assertEquals(gasto, resultado.getModel().get("gasto"));
   }
 
   @Test

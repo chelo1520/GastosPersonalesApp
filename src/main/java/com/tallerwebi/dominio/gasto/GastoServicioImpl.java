@@ -31,10 +31,12 @@ public class GastoServicioImpl implements GastoServicio {
     repositorioGasto.guardar(gasto);
   }
 
+  @Override
   public List<Gasto> obtenerGastos(Usuario usuario) {
     return repositorioGasto.BuscarGastosPorUsuario(usuario);
   }
 
+  @Override
   public Double sumarGastos(Usuario usuario, LocalDate desde, LocalDate hasta) {
     List<Gasto> gastos = repositorioGasto.obtenerGastosEntreFechas(usuario, desde, hasta);
 
