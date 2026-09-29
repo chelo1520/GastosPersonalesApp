@@ -6,13 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.tallerwebi.config.HibernateConfig;
+import com.tallerwebi.infraestructura.config.HibernateInfraestructuraTestConfig;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,8 +23,9 @@ import com.tallerwebi.dominio.gasto.RepositorioGastoImpl;
 import com.tallerwebi.dominio.gasto.RepositorioGasto;
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = HibernateConfig.class)
+@ContextConfiguration(classes = HibernateInfraestructuraTestConfig.class)
 @Transactional
+@Rollback
 public class GastoRepositorioImpTest {
 
     @Autowired

@@ -33,6 +33,8 @@ public class Gasto {
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
+    public Gasto() {}
+
     public Gasto(Double importe, LocalDate fecha, String descripcion) {
         this.importe = importe;
         this.fecha = fecha;
