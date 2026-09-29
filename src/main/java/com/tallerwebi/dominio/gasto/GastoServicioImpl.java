@@ -2,6 +2,7 @@ package com.tallerwebi.dominio.gasto;
 
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -11,6 +12,7 @@ import java.util.List;
  * GastoServicioImpl
  */
 @Service
+@Transactional
 public class GastoServicioImpl implements GastoServicio {
 
     private RepositorioGasto repositorioGasto;
