@@ -1,13 +1,6 @@
 package com.tallerwebi.dominio.gasto;
 
-import java.time.LocalDate;
-
-import javax.annotation.processing.Generated;
-
-import org.hibernate.annotations.ManyToAny;
-
 import com.tallerwebi.dominio.Usuario;
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -15,66 +8,69 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import java.time.LocalDate;
+import javax.annotation.processing.Generated;
+import org.hibernate.annotations.ManyToAny;
 
 /**
  * Gasto
  */
 @Entity
 public class Gasto {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-    private Double importe;
-    private LocalDate fecha;
-    private String descripcion;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "usuario_id")
-    private Usuario usuario;
+  private Double importe;
+  private LocalDate fecha;
+  private String descripcion;
 
-    public Gasto() {}
+  @ManyToOne
+  @JoinColumn(name = "usuario_id")
+  private Usuario usuario;
 
-    public Gasto(Double importe, LocalDate fecha, String descripcion) {
-        this.importe = importe;
-        this.fecha = fecha;
-        this.descripcion = descripcion;
-    }
+  public Gasto() {}
 
-    public Double getImporte() {
-        return importe;
-    }
+  public Gasto(Double importe, LocalDate fecha, String descripcion) {
+    this.importe = importe;
+    this.fecha = fecha;
+    this.descripcion = descripcion;
+  }
 
-    public LocalDate getFecha() {
-        return fecha;
-    }
+  public Double getImporte() {
+    return importe;
+  }
 
-    public String getDescripcion() {
-        return descripcion;
-    }
+  public LocalDate getFecha() {
+    return fecha;
+  }
 
-    public void setImporte(Double importe) {
-        this.importe = importe;
-    }
+  public String getDescripcion() {
+    return descripcion;
+  }
 
-    public void setFecha(LocalDate fecha) {
-        this.fecha = fecha;
-    }
+  public void setImporte(Double importe) {
+    this.importe = importe;
+  }
 
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
-    }
+  public void setFecha(LocalDate fecha) {
+    this.fecha = fecha;
+  }
 
-    public Long getId() {
-        return this.id;
-    }
+  public void setDescripcion(String descripcion) {
+    this.descripcion = descripcion;
+  }
 
-    public void setUsuario(Usuario usuario) {
-        this.usuario = usuario;
-    }
+  public Long getId() {
+    return this.id;
+  }
 
-    public Usuario getUsuario() {
-        return usuario;
-    }
+  public void setUsuario(Usuario usuario) {
+    this.usuario = usuario;
+  }
 
+  public Usuario getUsuario() {
+    return usuario;
+  }
 }

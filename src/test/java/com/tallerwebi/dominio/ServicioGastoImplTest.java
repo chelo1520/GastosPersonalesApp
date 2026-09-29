@@ -6,51 +6,51 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-import java.time.LocalDate;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import com.tallerwebi.dominio.gasto.RepositorioGasto;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
 import com.tallerwebi.dominio.gasto.GastoServicioImpl;
+import com.tallerwebi.dominio.gasto.RepositorioGasto;
+import java.time.LocalDate;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ServicioGastoImplTest {
-    private RepositorioGasto repositorioGastoMock;
-    private RepositorioUsuario repositorioUsuarioMock;
 
-    @BeforeEach
-    public void init() {
-        this.repositorioGastoMock = mock(RepositorioGasto.class);
-        this.repositorioUsuarioMock = mock(RepositorioUsuario.class);
-    }
+  private RepositorioGasto repositorioGastoMock;
+  private RepositorioUsuario repositorioUsuarioMock;
 
-    @Test
-    void deberiaRegistrarUnGastoAsociadoAUnUsuario() {
-        GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock);
-        Usuario usuario = new Usuario();
-        usuario.setEmail("marce@gmail.com");
-        usuario.setPassword("123");
+  @BeforeEach
+  public void init() {
+    this.repositorioGastoMock = mock(RepositorioGasto.class);
+    this.repositorioUsuarioMock = mock(RepositorioUsuario.class);
+  }
 
-        Gasto gasto = new Gasto(1000.00, LocalDate.of(2026, 9, 13), "Supermercado");
+  @Test
+  void deberiaRegistrarUnGastoAsociadoAUnUsuario() {
+    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock);
+    Usuario usuario = new Usuario();
+    usuario.setEmail("marce@gmail.com");
+    usuario.setPassword("123");
 
-        gastoServicio.registrarGasto(gasto, usuario);
+    Gasto gasto = new Gasto(1000.00, LocalDate.of(2026, 9, 13), "Supermercado");
 
-        assertEquals(usuario, gasto.getUsuario());
-        verify(repositorioGastoMock).guardar(gasto);
-    }
+    gastoServicio.registrarGasto(gasto, usuario);
 
-    @Test
-    void elImporteNoPuedeSerNegativo() {
-        GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock);
-        Usuario usuario = new Usuario();
-        usuario.setEmail("marce@gmail.com");
-        usuario.setPassword("123");
+    assertEquals(usuario, gasto.getUsuario());
+    verify(repositorioGastoMock).guardar(gasto);
+  }
 
-        Gasto gasto = new Gasto(-1000.00, LocalDate.of(2026, 9, 13), "Supermercado");
+  @Test
+  void elImporteNoPuedeSerNegativo() {
+    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock);
+    Usuario usuario = new Usuario();
+    usuario.setEmail("marce@gmail.com");
+    usuario.setPassword("123");
 
-        assertThrows(GastoInvalidoExeption.class, () -> gastoServicio.registrarGasto(gasto, usuario));
-        verify(repositorioGastoMock, never()).guardar(gasto);
-    }
+    Gasto gasto = new Gasto(-1000.00, LocalDate.of(2026, 9, 13), "Supermercado");
+
+    assertThrows(GastoInvalidoExeption.class, () -> gastoServicio.registrarGasto(gasto, usuario));
+    verify(repositorioGastoMock, never()).guardar(gasto);
+  }
 }

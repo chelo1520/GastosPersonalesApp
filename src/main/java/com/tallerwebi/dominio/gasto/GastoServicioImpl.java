@@ -3,10 +3,9 @@ package com.tallerwebi.dominio.gasto;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import jakarta.transaction.Transactional;
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
 import java.util.List;
+import org.springframework.stereotype.Service;
 
 /**
  * GastoServicioImpl
@@ -15,40 +14,36 @@ import java.util.List;
 @Transactional
 public class GastoServicioImpl implements GastoServicio {
 
-    private RepositorioGasto repositorioGasto;
+  private RepositorioGasto repositorioGasto;
 
-    public GastoServicioImpl(RepositorioGasto repositorioGasto) {
-        this.repositorioGasto = repositorioGasto;
+  public GastoServicioImpl(RepositorioGasto repositorioGasto) {
+    this.repositorioGasto = repositorioGasto;
+  }
+
+  @Override
+  public void registrarGasto(Gasto gasto, Usuario usuario) {
+    if (gasto.getImporte() <= 0) {
+      throw new GastoInvalidoExeption("El importe debe ser mayor a cero");
     }
 
-    @Override
-    public void registrarGasto(Gasto gasto, Usuario usuario) {
+    gasto.setUsuario(usuario);
 
-        if (gasto.getImporte() <= 0) {
-            throw new GastoInvalidoExeption("El importe debe ser mayor a cero");
-        }
+    repositorioGasto.guardar(gasto);
+  }
 
-        gasto.setUsuario(usuario);
+  public List<Gasto> obtenerGastos(Usuario usuario) {
+    return repositorioGasto.BuscarGastosPorUsuario(usuario);
+  }
 
-        repositorioGasto.guardar(gasto);
+  public Double sumarGastos(Usuario usuario, LocalDate desde, LocalDate hasta) {
+    List<Gasto> gastos = repositorioGasto.obtenerGastosEntreFechas(usuario, desde, hasta);
+
+    Double total = 0.0;
+
+    for (Gasto gasto : gastos) {
+      total += gasto.getImporte();
     }
 
-    public List<Gasto> obtenerGastos(Usuario usuario) {
-        return repositorioGasto.BuscarGastosPorUsuario(usuario);
-    }
-
-
-    public Double sumarGastos(Usuario usuario, LocalDate desde, LocalDate hasta) {
-
-        List<Gasto> gastos = repositorioGasto.obtenerGastosEntreFechas(usuario, desde, hasta);
-
-        Double total = 0.0;
-
-        for (Gasto gasto : gastos) {
-            total += gasto.getImporte();
-        }
-
-        return total;
-    }
+    return total;
+  }
 }
-
