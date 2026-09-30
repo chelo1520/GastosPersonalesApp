@@ -17,3 +17,381 @@ h2{
 .navbar-brand{
     margin:0 2rem;
 }
+
+/* Estilos de la pantalla de inicio. Se limitan a .home-page para no alterar
+   las vistas existentes de login y registro. */
+.home-page {
+  min-height: 100vh;
+  padding: 0;
+  color: #1b1b18;
+  background: #f5f4ef;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+}
+
+.home-page h1,
+.home-page h2 {
+  color: #1b1b18;
+}
+
+.home-header {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  padding: 0 clamp(20px, 4vw, 56px);
+  color: #f5f4ef;
+  background: #17302e;
+}
+
+.home-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  font-size: 20px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.home-brand svg {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: #7cc4b8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.home-desktop-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.home-nav-link {
+  padding: 8px 14px;
+  border-radius: 8px;
+  color: #d6e4e1;
+  font-size: 15px;
+  text-decoration: none;
+}
+
+.home-nav-link.is-active {
+  color: #fff;
+  background: #2a4744;
+  font-weight: 600;
+}
+
+.home-nav-link.is-disabled {
+  color: #9aafab;
+  cursor: not-allowed;
+}
+
+.home-main {
+  width: min(100%, 1440px);
+  margin: 0 auto;
+  padding: 36px clamp(20px, 4vw, 56px) 48px;
+}
+
+.home-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 26px;
+}
+
+.home-eyebrow {
+  margin: 0 0 7px;
+  color: #5c5b55;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.home-intro h1 {
+  margin: 0;
+  font-size: clamp(28px, 3vw, 36px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.home-subtitle {
+  margin: 8px 0 0;
+  color: #5c5b55;
+  font-size: 15px;
+}
+
+.home-status-badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  color: #fff;
+  background: #17302e;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.home-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.home-card {
+  min-width: 0;
+  border: 1px solid #e4e2da;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.home-metric-card {
+  padding: 20px 22px;
+}
+
+.home-card-label {
+  margin: 0;
+  color: #5c5b55;
+  font-size: 14px;
+}
+
+.home-metric-value {
+  margin: 5px 0 3px;
+  color: #17302e;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.home-card-note {
+  margin: 0;
+  color: #77766f;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.home-content-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.home-empty-card {
+  padding: 20px 22px;
+}
+
+.home-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #efede6;
+}
+
+.home-section-heading .home-eyebrow {
+  margin-bottom: 5px;
+}
+
+.home-section-heading h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.home-icon,
+.home-empty-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  color: #0f766e;
+  background: #e6f4f1;
+}
+
+.home-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+}
+
+.home-icon svg,
+.home-empty-icon svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.home-empty-state {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 26px 12px 14px;
+  text-align: center;
+}
+
+.home-empty-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+}
+
+.home-empty-title {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.home-empty-copy {
+  max-width: 360px;
+  margin: 0;
+  color: #77766f;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.home-mobile-nav {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .home-header {
+    min-height: 56px;
+    padding: 0 18px;
+  }
+
+  .home-desktop-nav {
+    display: none;
+  }
+
+  .home-main {
+    padding: 24px 16px 28px;
+  }
+
+  .home-intro {
+    align-items: flex-start;
+    margin-bottom: 18px;
+  }
+
+  .home-intro h1 {
+    font-size: 25px;
+  }
+
+  .home-subtitle {
+    max-width: 260px;
+    font-size: 14px;
+  }
+
+  .home-status-badge {
+    margin-top: 2px;
+    padding: 5px 9px;
+    font-size: 11px;
+  }
+
+  .home-metrics {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .home-metric-card {
+    padding: 15px 17px;
+  }
+
+  .home-metric-value {
+    font-size: 28px;
+  }
+
+  .home-content-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .home-empty-card {
+    padding: 17px;
+  }
+
+  .home-section-heading h2 {
+    font-size: 17px;
+  }
+
+  .home-empty-state {
+    min-height: 190px;
+  }
+
+  .home-mobile-nav {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: center;
+    min-height: 68px;
+    padding: 5px 8px max(5px, env(safe-area-inset-bottom));
+    border-top: 1px solid #e4e2da;
+    background: #fff;
+  }
+
+  .home-mobile-link {
+    min-height: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    color: #77766f;
+    font-size: 10px;
+    text-decoration: none;
+  }
+
+  .home-mobile-link svg {
+    width: 21px;
+    height: 21px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+
+  .home-mobile-link.is-active {
+    color: #0f766e;
+    font-weight: 600;
+  }
+
+  .home-mobile-link.is-disabled {
+    color: #aaa9a2;
+    cursor: not-allowed;
+  }
+
+  .home-mobile-add {
+    width: 48px;
+    height: 48px;
+    justify-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #fff;
+    background: #8bb5ae;
+    cursor: not-allowed;
+  }
+
+  .home-mobile-add svg {
+    width: 25px;
+    height: 25px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 2.2;
+  }
+}
