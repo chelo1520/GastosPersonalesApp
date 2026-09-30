@@ -7,6 +7,7 @@ import com.tallerwebi.dominio.gasto.GastoServicio;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,10 +34,16 @@ public class ControladorGasto {
       return new ModelAndView(REDIRECT_LOGIN);
     }
 
-    List<Gasto> gastos = gastoServicio.obtenerGastos(usuario);
+    List<Gasto> gastos = gastoServicio
+      .obtenerGastos(usuario)
+      .stream()
+      .sorted(Comparator.comparing(Gasto::getFecha).reversed())
+      .toList();
+    double total = gastos.stream().mapToDouble(Gasto::getImporte).sum();
 
     Map<String, Object> model = new ModelMap();
     model.put("gastos", gastos);
+    model.put("total", total);
 
     return new ModelAndView("mostrar-gastos", model);
   }

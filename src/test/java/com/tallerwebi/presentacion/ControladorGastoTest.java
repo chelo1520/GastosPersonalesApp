@@ -42,7 +42,8 @@ public class ControladorGastoTest {
 
   @Test
   public void debeMostrarLosGastosDelUsuario() {
-    List<Gasto> gastos = List.of(gasto);
+    Gasto gastoAnterior = new Gasto(5000.0, LocalDate.of(2026, 9, 20), "Farmacia");
+    List<Gasto> gastos = List.of(gastoAnterior, gasto);
 
     when(gastoServicio.obtenerGastos(usuario)).thenReturn(gastos);
 
@@ -50,7 +51,8 @@ public class ControladorGastoTest {
 
     assertEquals("mostrar-gastos", resultado.getViewName());
 
-    assertEquals(gastos, resultado.getModel().get("gastos"));
+    assertEquals(List.of(gasto, gastoAnterior), resultado.getModel().get("gastos"));
+    assertEquals(20000.0, resultado.getModel().get("total"));
 
     verify(gastoServicio).obtenerGastos(usuario);
   }

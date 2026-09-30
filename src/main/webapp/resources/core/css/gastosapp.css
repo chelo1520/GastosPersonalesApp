@@ -121,6 +121,197 @@ a:hover {
   margin: 0 auto;
 }
 
+.app-gastos-main {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding-bottom: 32px;
+}
+
+.app-gastos-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.app-mvp-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--app-oscuro);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.app-registrar-link {
+  white-space: nowrap;
+}
+
+.app-total-card,
+.app-gastos-tabla-card {
+  background: #fff;
+  border: 1px solid var(--app-borde);
+  border-radius: 14px;
+}
+
+.app-total-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 16px 20px;
+  color: var(--app-texto-suave);
+}
+
+.app-total-card strong,
+.app-gasto-importe {
+  color: var(--app-texto);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 18px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.app-gastos-tabla-card {
+  overflow: hidden;
+}
+
+.app-gastos-tabla {
+  font-size: 15px;
+}
+
+.app-gastos-tabla thead th {
+  padding: 16px 20px;
+  color: var(--app-texto-suave);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.app-gastos-tabla tbody td {
+  padding: 14px 20px;
+  border-top: 1px solid #efede6;
+  vertical-align: middle;
+}
+
+.app-gasto-fecha {
+  color: var(--app-texto-suave);
+  font-family: "IBM Plex Mono", monospace;
+  white-space: nowrap;
+}
+
+.app-gastos-mobile-list {
+  padding: 4px 14px;
+}
+
+.app-gasto-mobile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid #efede6;
+}
+
+.app-gasto-mobile:last-child {
+  border-bottom: 0;
+}
+
+.app-gasto-mobile-fecha {
+  width: 82px;
+  flex-shrink: 0;
+  color: var(--app-texto-suave);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+}
+
+.app-gasto-mobile-detalle {
+  min-width: 0;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.app-gasto-mobile-descripcion {
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.app-gasto-mobile .app-gasto-importe {
+  font-size: 14px;
+}
+
+.app-gastos-vacio {
+  padding: 48px 20px;
+  text-align: center;
+}
+
+.app-gastos-vacio p {
+  color: var(--app-texto-suave);
+}
+
+.app-mobile-nav {
+  position: sticky;
+  bottom: 0;
+  z-index: 1020;
+  min-height: 68px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: center;
+  border-top: 1px solid var(--app-borde);
+  background: #fff;
+  font-size: 11px;
+}
+
+.app-mobile-nav a,
+.app-mobile-nav-disabled {
+  min-width: 0;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--app-texto-suave);
+  text-decoration: none;
+}
+
+.app-mobile-nav a.active {
+  color: var(--app-verde);
+  font-weight: 600;
+}
+
+.app-mobile-nav svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.app-mobile-nav .app-mobile-nav-add {
+  justify-self: center;
+  width: 52px;
+  min-height: 52px;
+  border-radius: 50%;
+  background: var(--app-verde);
+  color: #fff;
+}
+
+.app-mobile-nav .app-mobile-nav-add svg {
+  width: 26px;
+  height: 26px;
+  stroke-width: 2.4;
+}
+
+.app-mobile-nav-disabled {
+  opacity: 0.5;
+}
+
 @media (min-width: 768px) {
   .app-main {
     padding: 40px;
@@ -131,6 +322,40 @@ a:hover {
     background: #fff;
     border: 1px solid var(--app-borde);
     border-radius: 16px;
+  }
+
+  .app-gastos-main {
+    padding-bottom: 40px;
+  }
+
+  .app-total-card {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .app-gastos-main {
+    padding-bottom: 20px;
+  }
+
+  .app-gastos-titulo {
+    margin-bottom: 14px;
+  }
+
+  .app-gastos-titulo h1 {
+    font-size: 22px;
+  }
+
+  .app-registrar-link {
+    display: none;
+  }
+
+  .app-total-card {
+    padding: 12px 14px;
+  }
+
+  .app-total-card strong {
+    font-size: 17px;
   }
 }
 

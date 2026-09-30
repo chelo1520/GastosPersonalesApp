@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head('Mis gastos')}"></head>
+
+<body>
+
+  <header th:replace="~{fragments/layout :: navbar('mis-gastos')}"></header>
+  <header th:replace="~{fragments/layout :: header-mobile('Mis gastos')}"></header>
+
+  <main class="app-main app-gastos-main">
+    <div class="app-gastos-titulo">
+      <div class="d-flex align-items-center gap-3">
+        <h1 class="h3 fw-bold mb-0">Mis gastos</h1>
+        <span class="app-mvp-badge">MVP</span>
+      </div>
+      <a class="btn btn-primary app-registrar-link" th:href="@{/registrar-gasto}">+ Registrar gasto</a>
+    </div>
+
+    <section class="app-total-card" aria-label="Total de gastos">
+      <span>Total de gastos</span>
+      <strong>$ <span th:text="${#numbers.formatDecimal(total, 1, 'POINT', 2, 'COMMA')}">0,00</span></strong>
+    </section>
+
+    <div class="app-gastos-tabla-card">
+      <div th:if="${#lists.isEmpty(gastos)}" class="app-gastos-vacio">
+        <h2 class="h5 fw-bold">Todavía no registraste gastos</h2>
+        <p class="mb-3">Cuando registres uno, aparecerá en esta lista.</p>
+        <a class="btn btn-primary" th:href="@{/registrar-gasto}">Registrar gasto</a>
+      </div>
+
+      <div th:unless="${#lists.isEmpty(gastos)}" class="table-responsive d-none d-md-block">
+        <table class="table app-gastos-tabla mb-0">
+          <thead>
+            <tr>
+              <th scope="col">Fecha</th>
+              <th scope="col">Descripción</th>
+              <th scope="col" class="text-end">Importe</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="gasto : ${gastos}">
+              <td class="app-gasto-fecha">
+                <time th:datetime="${gasto.fecha}"
+                  th:text="${#temporals.format(gasto.fecha, 'dd/MM/yyyy')}">30/09/2026</time>
+              </td>
+              <td th:text="${gasto.descripcion}">Compra semanal</td>
+              <td class="app-gasto-importe text-end">
+                $ <span th:text="${#numbers.formatDecimal(gasto.importe, 1, 'POINT', 2, 'COMMA')}">46.200,00</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div th:unless="${#lists.isEmpty(gastos)}" class="app-gastos-mobile-list d-md-none">
+        <article class="app-gasto-mobile" th:each="gasto : ${gastos}">
+          <time class="app-gasto-mobile-fecha" th:datetime="${gasto.fecha}"
+            th:text="${#temporals.format(gasto.fecha, 'dd/MM/yyyy')}">30/09/2026</time>
+          <div class="app-gasto-mobile-detalle">
+            <span class="app-gasto-mobile-descripcion" th:text="${gasto.descripcion}">Compra semanal</span>
+            <strong class="app-gasto-importe">
+              $ <span th:text="${#numbers.formatDecimal(gasto.importe, 1, 'POINT', 2, 'COMMA')}">46.200,00</span>
+            </strong>
+          </div>
+        </article>
+      </div>
+    </div>
+  </main>
+
+  <nav class="app-mobile-nav d-md-none" aria-label="Navegación principal">
+    <a th:href="@{/home}" aria-label="Resumen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7M5 10v10h14V10"></path></svg>
+      <span>Resumen</span>
+    </a>
+    <a class="active" th:href="@{/mostrar-gastos}" aria-current="page" aria-label="Gastos">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>
+      <span>Gastos</span>
+    </a>
+    <a class="app-mobile-nav-add" th:href="@{/registrar-gasto}" aria-label="Registrar gasto">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+    </a>
+    <span class="app-mobile-nav-disabled" aria-disabled="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle></svg>
+      <span>Presup.</span>
+    </span>
+    <span class="app-mobile-nav-disabled" aria-disabled="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="19" cy="12" r="1.5"></circle></svg>
+      <span>Más</span>
+    </span>
+  </nav>
+
+  <script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+
+</html>
