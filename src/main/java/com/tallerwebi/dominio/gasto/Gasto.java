@@ -11,6 +11,7 @@ import jakarta.persistence.OneToMany;
 import java.time.LocalDate;
 import javax.annotation.processing.Generated;
 import org.hibernate.annotations.ManyToAny;
+import org.springframework.format.annotation.DateTimeFormat;
 
 /**
  * Gasto
@@ -23,7 +24,10 @@ public class Gasto {
   private Long id;
 
   private Double importe;
+
+  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
   private LocalDate fecha;
+
   private String descripcion;
 
   @ManyToOne

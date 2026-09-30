@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head('Registrar gasto')}"></head>
+
+<body>
+
+  <header th:replace="~{fragments/layout :: navbar('registrar')}"></header>
+  <header th:replace="~{fragments/layout :: header-mobile('Registrar gasto')}"></header>
+
+  <main class="app-main">
+    <div class="app-form-card">
+      <h1 class="h3 fw-bold mb-4 d-none d-md-block">Registrar gasto</h1>
+
+      <div th:if="${error != null}" class="alert alert-danger" role="alert" th:text="${error}">
+        El importe debe ser mayor a cero.
+      </div>
+
+      <form th:action="@{/registrar-gasto}" th:object="${gasto}" method="post">
+        <div class="mb-3">
+          <label for="importe" class="form-label">Importe</label>
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            <input id="importe" th:field="*{importe}" type="number" step="0.01" min="0.01" inputmode="decimal"
+              class="form-control app-importe" th:classappend="${error != null} ? 'is-invalid'" required>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label for="fecha" class="form-label">Fecha</label>
+            <input id="fecha" th:field="*{fecha}" type="date" class="form-control" required>
+          </div>
+          <!-- Categoría: pendiente, la entidad Gasto todavía no tiene el campo -->
+        </div>
+
+        <div class="mb-4">
+          <label for="descripcion" class="form-label">Descripción</label>
+          <input id="descripcion" th:field="*{descripcion}" type="text" maxlength="255" class="form-control"
+            placeholder="Ej.: Compra semanal en el súper" required>
+        </div>
+
+        <div class="d-grid d-md-flex justify-content-md-end gap-2">
+          <a th:href="@{/home}" class="btn btn-outline-secondary d-none d-md-inline-block">Cancelar</a>
+          <button id="btn-guardar" type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+
+</html>
