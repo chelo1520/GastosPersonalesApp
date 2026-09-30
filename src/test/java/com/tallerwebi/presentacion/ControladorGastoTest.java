@@ -7,6 +7,8 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +22,8 @@ public class ControladorGastoTest {
 
   private Usuario usuario;
   private Gasto gasto;
+  private HttpServletRequest request;
+  private HttpSession session;
 
   @BeforeEach
   public void init() {
@@ -28,28 +32,34 @@ public class ControladorGastoTest {
     controladorGasto = new ControladorGasto(gastoServicio);
 
     usuario = mock(Usuario.class);
+    request = mock(HttpServletRequest.class);
+    session = mock(HttpSession.class);
+    when(request.getSession(false)).thenReturn(session);
+    when(session.getAttribute("USUARIO")).thenReturn(usuario);
 
     gasto = new Gasto(15000.0, LocalDate.of(2026, 9, 26), "Supermercado");
   }
 
   @Test
   public void debeMostrarLosGastosDelUsuario() {
-    List<Gasto> gastos = List.of(gasto);
+    Gasto gastoAnterior = new Gasto(5000.0, LocalDate.of(2026, 9, 20), "Farmacia");
+    List<Gasto> gastos = List.of(gastoAnterior, gasto);
 
     when(gastoServicio.obtenerGastos(usuario)).thenReturn(gastos);
 
-    ModelAndView resultado = controladorGasto.mostrarGastos(usuario);
+    ModelAndView resultado = controladorGasto.mostrarGastos(request);
 
     assertEquals("mostrar-gastos", resultado.getViewName());
 
-    assertEquals(gastos, resultado.getModel().get("gastos"));
+    assertEquals(List.of(gasto, gastoAnterior), resultado.getModel().get("gastos"));
+    assertEquals(20000.0, resultado.getModel().get("total"));
 
     verify(gastoServicio).obtenerGastos(usuario);
   }
 
   @Test
   public void debeRegistrarUnGasto() {
-    ModelAndView resultado = controladorGasto.registrarGasto(gasto, usuario);
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request);
 
     assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
 
@@ -58,7 +68,7 @@ public class ControladorGastoTest {
 
   @Test
   public void debeMostrarElFormularioDeRegistroConLaFechaDeHoy() {
-    ModelAndView resultado = controladorGasto.mostrarFormularioRegistrarGasto();
+    ModelAndView resultado = controladorGasto.mostrarFormularioRegistrarGasto(request);
 
     assertEquals("registrar-gasto", resultado.getViewName());
 
@@ -72,7 +82,7 @@ public class ControladorGastoTest {
       .when(gastoServicio)
       .registrarGasto(gasto, usuario);
 
-    ModelAndView resultado = controladorGasto.registrarGasto(gasto, usuario);
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request);
 
     assertEquals("registrar-gasto", resultado.getViewName());
     assertEquals("El importe debe ser mayor a cero", resultado.getModel().get("error"));
@@ -86,12 +96,52 @@ public class ControladorGastoTest {
 
     when(gastoServicio.sumarGastos(usuario, desde, hasta)).thenReturn(45000.0);
 
-    ModelAndView resultado = controladorGasto.sumarGastos(usuario, desde, hasta);
+    ModelAndView resultado = controladorGasto.sumarGastos(request, desde, hasta);
 
     assertEquals("sumar-gastos", resultado.getViewName());
 
     assertEquals(45000.0, resultado.getModel().get("total"));
 
     verify(gastoServicio).sumarGastos(usuario, desde, hasta);
+  }
+
+  @Test
+  public void debeRedirigirALoginSiNoHayUsuarioEnSesion() {
+    when(session.getAttribute("USUARIO")).thenReturn(null);
+
+    assertEquals("redirect:/login", controladorGasto.mostrarGastos(request).getViewName());
+    assertEquals(
+      "redirect:/login",
+      controladorGasto.mostrarFormularioRegistrarGasto(request).getViewName()
+    );
+    assertEquals("redirect:/login", controladorGasto.registrarGasto(gasto, request).getViewName());
+    assertEquals(
+      "redirect:/login",
+      controladorGasto
+        .sumarGastos(request, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30))
+        .getViewName()
+    );
+
+    verifyNoInteractions(gastoServicio);
+  }
+
+  @Test
+  public void debeRedirigirALoginSiNoExisteLaSesion() {
+    when(request.getSession(false)).thenReturn(null);
+
+    assertEquals("redirect:/login", controladorGasto.mostrarGastos(request).getViewName());
+    assertEquals(
+      "redirect:/login",
+      controladorGasto.mostrarFormularioRegistrarGasto(request).getViewName()
+    );
+    assertEquals("redirect:/login", controladorGasto.registrarGasto(gasto, request).getViewName());
+    assertEquals(
+      "redirect:/login",
+      controladorGasto
+        .sumarGastos(request, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30))
+        .getViewName()
+    );
+
+    verifyNoInteractions(gastoServicio);
   }
 }
