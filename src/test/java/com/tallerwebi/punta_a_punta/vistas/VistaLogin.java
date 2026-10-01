@@ -10,7 +10,7 @@ public class VistaLogin extends VistaWeb {
   }
 
   public String obtenerTextoDeLaBarraDeNavegacion() {
-    return this.obtenerTextoDelElemento("nav a.navbar-brand");
+    return this.obtenerTextoDelElemento(".app-login-marca span");
   }
 
   public String obtenerMensajeDeError() {

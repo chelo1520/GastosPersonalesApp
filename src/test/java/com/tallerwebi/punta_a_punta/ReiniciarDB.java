@@ -5,17 +5,28 @@ import java.nio.charset.StandardCharsets;
 
 public class ReiniciarDB {
 
+  private static final String E2E_DATABASE_NAME = "tallerwebi_e2e";
+
   public static void limpiarBaseDeDatos() {
     try {
       String dbHost = System.getenv("DB_HOST") != null ? System.getenv("DB_HOST") : "localhost";
       String dbPort = System.getenv("DB_PORT") != null ? System.getenv("DB_PORT") : "3306";
-      String dbName = System.getenv("DB_NAME") != null ? System.getenv("DB_NAME") : "tallerwebi";
+      String dbName = System.getenv("DB_NAME");
+      if (!E2E_DATABASE_NAME.equals(dbName)) {
+        throw new IllegalStateException(
+          "Las pruebas E2E solo pueden limpiar la base dedicada '" +
+          E2E_DATABASE_NAME +
+          "'. Configurá DB_NAME antes de ejecutar las pruebas."
+        );
+      }
+
       String dbUser = System.getenv("DB_USER") != null ? System.getenv("DB_USER") : "user";
       String dbPassword = System.getenv("DB_PASSWORD") != null
         ? System.getenv("DB_PASSWORD")
         : "user";
 
       String sqlCommands =
+        "DELETE FROM Gasto;\n" +
         "DELETE FROM Usuario;\n" +
         "ALTER TABLE Usuario AUTO_INCREMENT = 1;\n" +
         "INSERT INTO Usuario(id, email, password, rol, activo) VALUES(null, 'test@unlam.edu.ar', 'test', 'ADMIN', true);";
