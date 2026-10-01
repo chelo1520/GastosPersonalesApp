@@ -1,5 +1,7 @@
-package com.tallerwebi.dominio.gasto;
+package com.tallerwebi.infraestructura;
 
+import com.tallerwebi.dominio.Gasto;
+import com.tallerwebi.dominio.RepositorioGasto;
 import com.tallerwebi.dominio.Usuario;
 import java.time.LocalDate;
 import java.util.List;

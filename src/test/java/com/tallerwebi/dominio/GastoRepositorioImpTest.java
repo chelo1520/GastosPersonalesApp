@@ -4,9 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.tallerwebi.dominio.gasto.Gasto;
-import com.tallerwebi.dominio.gasto.RepositorioGasto;
-import com.tallerwebi.dominio.gasto.RepositorioGastoImpl;
+import com.tallerwebi.infraestructura.RepositorioGastoImpl;
 import com.tallerwebi.infraestructura.config.HibernateInfraestructuraTestConfig;
 import java.time.LocalDate;
 import java.util.List;

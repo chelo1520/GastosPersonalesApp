@@ -3,10 +3,10 @@ package com.tallerwebi.presentacion;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.tallerwebi.dominio.Gasto;
+import com.tallerwebi.dominio.GastoServicio;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
-import com.tallerwebi.dominio.gasto.Gasto;
-import com.tallerwebi.dominio.gasto.GastoServicio;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;

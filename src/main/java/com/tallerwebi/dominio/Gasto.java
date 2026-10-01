@@ -1,16 +1,12 @@
-package com.tallerwebi.dominio.gasto;
+package com.tallerwebi.dominio;
 
-import com.tallerwebi.dominio.Usuario;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import java.time.LocalDate;
-import javax.annotation.processing.Generated;
-import org.hibernate.annotations.ManyToAny;
 import org.springframework.format.annotation.DateTimeFormat;
 
 /**
