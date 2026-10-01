@@ -26,7 +26,8 @@ public class VistaLoginE2E {
   static void abrirNavegador() {
     playwright = Playwright.create();
     browser = playwright.chromium().launch();
-    //browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(false).setSlowMo(500));
+    // browser = playwright.chromium().launch(new
+    // BrowserType.LaunchOptions().setHeadless(false).setSlowMo(500));
   }
 
   @AfterAll
@@ -85,7 +86,7 @@ public class VistaLoginE2E {
 
   private void dadoQueElUsuarioEstaEnLaVistaDeLogin() throws MalformedURLException {
     URL urlLogin = vistaLogin.obtenerURLActual();
-    assertThat(urlLogin.getPath(), matchesPattern("^/spring/login(?:;jsessionid=[^/\\s]+)?$"));
+    assertThat(urlLogin.getPath(), matchesPattern("^/gastitos/login(?:;jsessionid=[^/\\s]+)?$"));
   }
 
   private void cuandoElUsuarioTocaElBotonDeLogin() {
@@ -94,7 +95,7 @@ public class VistaLoginE2E {
 
   private void entoncesDeberiaSerRedirigidoALaVistaDeHome() throws MalformedURLException {
     URL url = vistaLogin.obtenerURLActual();
-    assertThat(url.getPath(), matchesPattern("^/spring/home(?:;jsessionid=[^/\\s]+)?$"));
+    assertThat(url.getPath(), matchesPattern("^/gastitos/home(?:;jsessionid=[^/\\s]+)?$"));
   }
 
   private void entoncesDeberiaVerUnMensajeDeError() {

@@ -1,6 +1,7 @@
 package com.tallerwebi.punta_a_punta;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 public class ReiniciarDB {
 
@@ -19,27 +20,39 @@ public class ReiniciarDB {
         "ALTER TABLE Usuario AUTO_INCREMENT = 1;\n" +
         "INSERT INTO Usuario(id, email, password, rol, activo) VALUES(null, 'test@unlam.edu.ar', 'test', 'ADMIN', true);";
 
-      String comando = String.format(
-        "docker exec tallerwebi-mysql mysql -h %s -P %s -u %s -p%s %s -e \"%s\"",
+      Process process = new ProcessBuilder(
+        "docker",
+        "exec",
+        "tallerwebi-mysql",
+        "mysql",
+        "-h",
         dbHost,
+        "-P",
         dbPort,
+        "-u",
         dbUser,
-        dbPassword,
+        "-p" + dbPassword,
         dbName,
+        "-e",
         sqlCommands
-      );
-
-      Process process = Runtime.getRuntime().exec(new String[] { "/bin/bash", "-c", comando });
+      )
+        .redirectErrorStream(true)
+        .start();
+      String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
       int exitCode = process.waitFor();
 
       if (exitCode == 0) {
         System.out.println("Base de datos limpiada exitosamente");
       } else {
-        System.err.println("Error al limpiar la base de datos. Exit code: " + exitCode);
+        throw new IllegalStateException(
+          "Error al limpiar la base de datos. Exit code: " + exitCode + ". " + output
+        );
       }
-    } catch (IOException | InterruptedException e) {
-      System.err.println("Error ejecutando script de limpieza: " + e.getMessage());
-      e.printStackTrace();
+    } catch (IOException e) {
+      throw new IllegalStateException("Error ejecutando Docker para limpiar la base de datos", e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException("Se interrumpió la limpieza de la base de datos", e);
     }
   }
 }
