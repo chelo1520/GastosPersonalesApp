@@ -7,10 +7,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
-import com.tallerwebi.dominio.gasto.Gasto;
-import com.tallerwebi.dominio.gasto.GastoServicio;
-import com.tallerwebi.dominio.gasto.GastoServicioImpl;
-import com.tallerwebi.dominio.gasto.RepositorioGasto;
 import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

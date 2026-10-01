@@ -1,6 +1,5 @@
-package com.tallerwebi.dominio.gasto;
+package com.tallerwebi.dominio;
 
-import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
