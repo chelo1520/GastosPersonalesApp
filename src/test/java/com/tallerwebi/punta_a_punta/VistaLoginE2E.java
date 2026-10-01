@@ -26,7 +26,8 @@ public class VistaLoginE2E {
   static void abrirNavegador() {
     playwright = Playwright.create();
     browser = playwright.chromium().launch();
-    //browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(false).setSlowMo(500));
+    // browser = playwright.chromium().launch(new
+    // BrowserType.LaunchOptions().setHeadless(false).setSlowMo(500));
   }
 
   @AfterAll
@@ -49,9 +50,9 @@ public class VistaLoginE2E {
   }
 
   @Test
-  void deberiaDecirUNLAMEnElNavbar() throws MalformedURLException {
+  void deberiaMostrarLaMarcaGastitosEnLogin() throws MalformedURLException {
     dadoQueElUsuarioEstaEnLaVistaDeLogin();
-    entoncesDeberiaVerUNLAMEnElNavbar();
+    entoncesDeberiaVerLaMarcaGastitos();
   }
 
   @Test
@@ -62,10 +63,10 @@ public class VistaLoginE2E {
   }
 
   @Test
-  void deberiaNavegarAlHomeSiElUsuarioExiste() throws MalformedURLException {
+  void deberiaNavegarAMisGastosSiElUsuarioExiste() throws MalformedURLException {
     dadoQueElUsuarioCargaSusDatosDeLoginCon("test@unlam.edu.ar", "test");
     cuandoElUsuarioTocaElBotonDeLogin();
-    entoncesDeberiaSerRedirigidoALaVistaDeHome();
+    entoncesDeberiaSerRedirigidoAMisGastos();
   }
 
   @Test
@@ -75,31 +76,34 @@ public class VistaLoginE2E {
     dadoQueElUsuarioEstaEnLaVistaDeLogin();
     dadoQueElUsuarioCargaSusDatosDeLoginCon("juan@unlam.edu.ar", "123456");
     cuandoElUsuarioTocaElBotonDeLogin();
-    entoncesDeberiaSerRedirigidoALaVistaDeHome();
+    entoncesDeberiaSerRedirigidoAMisGastos();
   }
 
-  private void entoncesDeberiaVerUNLAMEnElNavbar() {
+  private void entoncesDeberiaVerLaMarcaGastitos() {
     String texto = vistaLogin.obtenerTextoDeLaBarraDeNavegacion();
-    assertThat("UNLAM", equalToIgnoringCase(texto));
+    assertThat("Gastitos", equalToIgnoringCase(texto));
   }
 
   private void dadoQueElUsuarioEstaEnLaVistaDeLogin() throws MalformedURLException {
     URL urlLogin = vistaLogin.obtenerURLActual();
-    assertThat(urlLogin.getPath(), matchesPattern("^/spring/login(?:;jsessionid=[^/\\s]+)?$"));
+    assertThat(urlLogin.getPath(), matchesPattern("^/gastitos/login(?:;jsessionid=[^/\\s]+)?$"));
   }
 
   private void cuandoElUsuarioTocaElBotonDeLogin() {
     vistaLogin.darClickEnIniciarSesion();
   }
 
-  private void entoncesDeberiaSerRedirigidoALaVistaDeHome() throws MalformedURLException {
+  private void entoncesDeberiaSerRedirigidoAMisGastos() throws MalformedURLException {
     URL url = vistaLogin.obtenerURLActual();
-    assertThat(url.getPath(), matchesPattern("^/spring/home(?:;jsessionid=[^/\\s]+)?$"));
+    assertThat(
+      url.getPath(),
+      matchesPattern("^/gastitos/mostrar-gastos(?:;jsessionid=[^/\\s]+)?$")
+    );
   }
 
   private void entoncesDeberiaVerUnMensajeDeError() {
     String texto = vistaLogin.obtenerMensajeDeError();
-    assertThat("Error Usuario o clave incorrecta", equalToIgnoringCase(texto));
+    assertThat("Usuario o clave incorrecta", equalToIgnoringCase(texto));
   }
 
   private void dadoQueElUsuarioCargaSusDatosDeLoginCon(String email, String clave) {

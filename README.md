@@ -70,18 +70,40 @@ $ mvn clean jetty:run
 
 ## 7. ¿Cómo correr las pruebas de punta a punta?
 
+Las pruebas E2E modifican datos: antes de cada caso limpian las tablas `Gasto` y `Usuario`.
+Ejecutalas únicamente contra una base MySQL dedicada llamada `tallerwebi_e2e`, nunca contra tu
+base de desarrollo o una base compartida.
+
+Crear la base y otorgar permisos al usuario de la aplicación (ajustá el usuario si tu configuración
+es diferente):
+```shell
+docker exec -it tallerwebi-mysql mysql -uroot -p
+```
+En el cliente MySQL:
+```sql
+CREATE DATABASE IF NOT EXISTS tallerwebi_e2e;
+GRANT ALL PRIVILEGES ON tallerwebi_e2e.* TO 'user'@'%';
+```
+
 ### Iniciar el servidor
 ```shell
-# Opción 1
-$ mvn clean jetty:run
+# PowerShell: configurá estas variables en la terminal donde inicies Jetty
+$env:DB_HOST = "localhost"
+$env:DB_NAME = "tallerwebi_e2e"
+mvn jetty:run
 
-# Opción 2 -- ver seccion 10 docker-compose
-$ docker-compose up --build
+# En Linux/macOS, usar en su lugar:
+# DB_HOST=localhost DB_NAME=tallerwebi_e2e mvn jetty:run
 ```
 ### Correr las pruebas en otra terminal
 ```shell
-$ mvn test -Dtest="VistaLoginE2E"
-$ mvn test -Dtest="VistaLoginE2E#deberiaNavegarAlHomeSiElUsuarioExiste"
+# PowerShell: configurá también las variables en esta terminal
+$env:DB_HOST = "localhost"
+$env:DB_NAME = "tallerwebi_e2e"
+mvn '-Dtest=VistaLoginE2E' test
+
+# En Linux/macOS, usar en su lugar:
+# DB_HOST=localhost DB_NAME=tallerwebi_e2e mvn -Dtest=VistaLoginE2E test
 ```
 
 ## 8. ¿Cómo correr las pruebas unitarias de javascript?

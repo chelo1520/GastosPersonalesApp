@@ -420,7 +420,7 @@
                         <port>8080</port>
                     </httpConnector>
                     <webApp>
-                        <contextPath>/spring</contextPath>
+                        <contextPath>/gastitos</contextPath>
                     </webApp>
                 </configuration>
             </plugin>
