@@ -141,7 +141,7 @@ public class ControladorLoginTest {
     ModelAndView modelAndView = controladorLogin.irAHome();
 
     // validacion
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("home"));
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/mostrar-gastos"));
   }
 
   @Test
