@@ -1,4 +1,4 @@
-/* Estilos de GastosApp, según el prototipo de vistas */
+/* Estilos de Gastitos, según el prototipo de vistas */
 
 :root {
   --app-verde: #0f766e;
@@ -46,9 +46,11 @@ a:hover {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 20px;
-  font-weight: 700;
+  font-family: "Outfit", "IBM Plex Sans", sans-serif;
+  font-size: 22px;
+  font-weight: 600;
   color: var(--app-fondo);
+  text-decoration: none;
 }
 
 .app-brand:hover {
@@ -359,6 +361,44 @@ a:hover {
   }
 }
 
+/* Login */
+
+.app-login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.app-login-card {
+  width: 100%;
+  max-width: 400px;
+  background: #fff;
+  border: 1px solid var(--app-borde);
+  border-radius: 16px;
+  padding: 32px 28px;
+}
+
+.app-login-marca {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 24px;
+  font-family: "Outfit", "IBM Plex Sans", sans-serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--app-oscuro);
+}
+
+.app-login-registro {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--app-texto-suave);
+}
+
 /* Formularios */
 
 .form-label {
@@ -416,6 +456,8 @@ a:hover {
   --bs-btn-hover-border-color: var(--app-verde-hover);
   --bs-btn-active-bg: var(--app-verde-hover);
   --bs-btn-active-border-color: var(--app-verde-hover);
+  --bs-btn-disabled-bg: var(--app-verde);
+  --bs-btn-disabled-border-color: var(--app-verde);
 }
 
 .btn-outline-secondary {
