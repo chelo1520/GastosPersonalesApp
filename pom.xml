@@ -22,6 +22,9 @@
         <hsqldb.version>2.7.4</hsqldb.version>
         <checkstyle.version>3.6.0</checkstyle.version>
         <checkstyle.runtime.version>13.8.0</checkstyle.runtime.version>
+        <!-- Si es true, el build falla cuando la cobertura no llega al mínimo de JaCoCo.
+             El perfil 'tests-puntuales' lo pasa a false al usar -Dtest -->
+        <jacoco.haltOnFailure>true</jacoco.haltOnFailure>
     </properties>
 
     <dependencies>
@@ -373,6 +376,8 @@
                         <configuration>
                             <!-- Archivo de datos a validar -->
                             <dataFile>${project.basedir}/.calidad-de-codigo/jacoco/jacoco.exec</dataFile>
+                            <!-- Con la suite completa falla el build; con -Dtest solo avisa -->
+                            <haltOnFailure>${jacoco.haltOnFailure}</haltOnFailure>
                             <rules>
                                 <rule>
                                     <!-- Nivel de granularidad del chequeo (BUNDLE abarca todo el
@@ -506,5 +511,22 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <!-- Se activa solo al correr un subconjunto de tests (mvn test -Dtest=...), por ejemplo
+             los E2E: el mínimo de cobertura solo tiene sentido con la suite completa, y los E2E
+             prueban la app en otro proceso (cobertura 0%). JaCoCo igual genera el reporte y avisa -->
+        <profile>
+            <id>tests-puntuales</id>
+            <activation>
+                <property>
+                    <name>test</name>
+                </property>
+            </activation>
+            <properties>
+                <jacoco.haltOnFailure>false</jacoco.haltOnFailure>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>
