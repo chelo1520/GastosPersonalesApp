@@ -111,15 +111,12 @@ public class ControladorGasto {
       return new ModelAndView(REDIRECT_LOGIN);
     }
 
-    YearMonth mesBase = YearMonth.now();
-    YearMonth mesSimulado = mesBase.plusMonths(1);
+    // Se simula el mes próximo tomando como base los gastos del mes anterior (último mes cerrado)
+    YearMonth mesActual = YearMonth.now();
+    YearMonth mesBase = mesActual.minusMonths(1);
+    YearMonth mesSimulado = mesActual.plusMonths(1);
 
-    List<Gasto> gastos = gastoServicio
-      .obtenerGastos(usuario)
-      .stream()
-      .filter(gasto -> gasto.getFecha() != null && YearMonth.from(gasto.getFecha()).equals(mesBase))
-      .sorted(Comparator.comparing(Gasto::getFecha).reversed())
-      .toList();
+    List<Gasto> gastos = gastoServicio.obtenerGastosDelMesAnterior(usuario, mesActual);
 
     Map<String, Object> model = new ModelMap();
     model.put("gastos", gastos);

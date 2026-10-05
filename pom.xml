@@ -333,6 +333,9 @@
                             <!-- Archivo binario donde se guardarán los datos de ejecución
                             recolectados -->
                             <destFile>${project.basedir}/.calidad-de-codigo/jacoco/jacoco.exec</destFile>
+                            <!-- Sobrescribe los datos en cada corrida: como el archivo está fuera de
+                            'target', 'mvn clean' no lo borra y sin esto se acumularían corridas viejas -->
+                            <append>false</append>
                         </configuration>
                     </execution>
                     <execution>
