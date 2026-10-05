@@ -10,7 +10,10 @@ import com.tallerwebi.dominio.gasto.GastoServicio;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.TextStyle;
 import java.util.List;
+import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.servlet.ModelAndView;
@@ -55,6 +58,46 @@ public class ControladorGastoTest {
     assertEquals(20000.0, resultado.getModel().get("total"));
 
     verify(gastoServicio).obtenerGastos(usuario);
+  }
+
+  @Test
+  public void debeDevolverLaVistaSimulacionConLosGastosDelMesAnteriorQueTraeElServicio() {
+    YearMonth mesActual = YearMonth.now();
+    List<Gasto> gastos = List.of(gasto);
+    when(gastoServicio.obtenerGastosDelMesAnterior(usuario, mesActual)).thenReturn(gastos);
+
+    ModelAndView resultado = controladorGasto.mostrarSimulacion(request);
+
+    assertEquals("simulacion", resultado.getViewName());
+    assertEquals(gastos, resultado.getModel().get("gastos"));
+    verify(gastoServicio).obtenerGastosDelMesAnterior(usuario, mesActual);
+  }
+
+  @Test
+  public void debeTenerComoMesBaseElAnteriorComoMesSimuladoElProximoYPresupuestoCero() {
+    YearMonth mesActual = YearMonth.now();
+    when(gastoServicio.obtenerGastosDelMesAnterior(usuario, mesActual)).thenReturn(List.of());
+
+    ModelAndView resultado = controladorGasto.mostrarSimulacion(request);
+
+    assertEquals(nombreDelMes(mesActual.minusMonths(1)), resultado.getModel().get("mesBase"));
+    assertEquals(nombreDelMes(mesActual.plusMonths(1)), resultado.getModel().get("mesSimulado"));
+    assertEquals(0, resultado.getModel().get("presupuesto"));
+  }
+
+  @Test
+  public void debeRedirigirALoginSinConsultarElServicioSiNoHayUsuarioEnLaSimulacion() {
+    when(session.getAttribute("USUARIO")).thenReturn(null);
+
+    ModelAndView resultado = controladorGasto.mostrarSimulacion(request);
+
+    assertEquals("redirect:/login", resultado.getViewName());
+    verifyNoInteractions(gastoServicio);
+  }
+
+  private String nombreDelMes(YearMonth mes) {
+    String nombre = mes.getMonth().getDisplayName(TextStyle.FULL, new Locale("es", "AR"));
+    return nombre.substring(0, 1).toUpperCase() + nombre.substring(1) + " " + mes.getYear();
   }
 
   @Test
