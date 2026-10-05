@@ -146,6 +146,11 @@
   white-space: nowrap;
 }
 
+.app-sim-item[data-tipo="ordinario"] .app-sim-tag {
+  background: #e3f1ef;
+  color: var(--app-verde);
+}
+
 .app-sim-categoria {
   color: var(--sim-muted);
   font-size: .78rem;

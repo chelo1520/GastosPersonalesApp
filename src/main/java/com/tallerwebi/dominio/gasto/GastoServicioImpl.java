@@ -4,6 +4,7 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
@@ -47,5 +48,10 @@ public class GastoServicioImpl implements GastoServicio {
     }
 
     return total;
+  }
+
+  @Override
+  public List<Gasto> obtenerGastosDelMesAnterior(Usuario usuario, YearMonth mesActual) {
+    return repositorioGasto.obtenerGastosDelMes(usuario, mesActual.minusMonths(1));
   }
 }
