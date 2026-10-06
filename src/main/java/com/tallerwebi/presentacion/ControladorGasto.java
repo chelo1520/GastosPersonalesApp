@@ -60,10 +60,7 @@ public class ControladorGasto {
     Gasto gasto = new Gasto();
     gasto.setFecha(LocalDate.now());
 
-    Map<String, Object> model = new ModelMap();
-    model.put("gasto", gasto);
-
-    return new ModelAndView("registrar-gasto", model);
+    return vistaRegistrarGasto(gasto, null);
   }
 
   @RequestMapping(path = "/registrar-gasto", method = RequestMethod.POST)
@@ -76,13 +73,22 @@ public class ControladorGasto {
     try {
       gastoServicio.registrarGasto(gasto, usuario);
     } catch (GastoInvalidoExeption e) {
-      Map<String, Object> model = new ModelMap();
-      model.put("gasto", gasto);
-      model.put("error", e.getMessage());
-      return new ModelAndView("registrar-gasto", model);
+      return vistaRegistrarGasto(gasto, e.getMessage());
     }
 
     return new ModelAndView("redirect:/mostrar-gastos");
+  }
+
+  // El rango de fechas limita el calendario del formulario al mes actual
+  private ModelAndView vistaRegistrarGasto(Gasto gasto, String error) {
+    Map<String, Object> model = new ModelMap();
+    model.put("gasto", gasto);
+    model.put("fechaMinima", gastoServicio.obtenerFechaMinimaPermitida());
+    model.put("fechaMaxima", gastoServicio.obtenerFechaMaximaPermitida());
+    if (error != null) {
+      model.put("error", error);
+    }
+    return new ModelAndView("registrar-gasto", model);
   }
 
   @RequestMapping(path = "/sumar-gastos", method = RequestMethod.GET)

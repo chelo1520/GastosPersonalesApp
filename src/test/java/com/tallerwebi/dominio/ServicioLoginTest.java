@@ -21,7 +21,7 @@ public class ServicioLoginTest {
   }
 
   @Test
-  public void consultarUsuarioDeberiaLlamarAlRepositorio() {
+  public void debeDevolverElUsuarioDelRepositorioCuandoSeConsultaPorEmailYPassword() {
     // preparacion
     String email = "test@test.com";
     String password = "password";
@@ -37,7 +37,7 @@ public class ServicioLoginTest {
   }
 
   @Test
-  public void registrarUsuarioSiNoExisteDeberiaGuardarlo() throws UsuarioExistente {
+  public void debeGuardarElUsuarioCuandoNoExisteUnoConEseEmailYPassword() throws UsuarioExistente {
     // preparacion
     Usuario usuario = new Usuario();
     usuario.setEmail("nuevo@test.com");
@@ -53,7 +53,7 @@ public class ServicioLoginTest {
   }
 
   @Test
-  public void registrarUsuarioSiExisteDeberiaLanzarExcepcion() {
+  public void debeLanzarUsuarioExistenteSinGuardarCuandoElUsuarioYaExiste() {
     // preparacion
     Usuario usuario = new Usuario();
     usuario.setEmail("existe@test.com");

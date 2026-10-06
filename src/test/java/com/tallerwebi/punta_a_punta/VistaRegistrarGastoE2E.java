@@ -13,6 +13,7 @@ import com.tallerwebi.punta_a_punta.vistas.VistaRegistrarGasto;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -20,6 +21,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class VistaRegistrarGastoE2E {
+
+  private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
   static Playwright playwright;
   static Browser browser;
@@ -65,9 +68,10 @@ public class VistaRegistrarGastoE2E {
     throws MalformedURLException {
     dadoQueElUsuarioInicioSesion();
     dadoQueElUsuarioEstaEnRegistrarGasto();
-    cuandoElUsuarioRegistraUnGasto("46200", LocalDate.of(2026, 9, 30), "Compra semanal");
+    LocalDate hoy = LocalDate.now();
+    cuandoElUsuarioRegistraUnGasto("46200", hoy, "Compra semanal");
     entoncesDeberiaEstarEnMisGastos();
-    entoncesLaTablaDeberiaTenerLaFila("30/09/2026 Compra semanal $ 46.200,00");
+    entoncesLaTablaDeberiaTenerLaFila(hoy.format(FORMATO_FECHA) + " Compra semanal $ 46.200,00");
     entoncesElTotalDeberiaSer("$ 46.200,00");
   }
 
@@ -75,8 +79,19 @@ public class VistaRegistrarGastoE2E {
   void deberiaQuedarseEnRegistrarGastoSinGuardarSiElImporteEsCero() throws MalformedURLException {
     dadoQueElUsuarioInicioSesion();
     dadoQueElUsuarioEstaEnRegistrarGasto();
-    cuandoElUsuarioCompletaElFormularioYTocaGuardar("0", LocalDate.of(2026, 9, 30), "Gasto cero");
+    cuandoElUsuarioCompletaElFormularioYTocaGuardar("0", LocalDate.now(), "Gasto cero");
     entoncesElImporteDeberiaSerInvalido();
+    entoncesDeberiaSeguirEnRegistrarGasto();
+  }
+
+  @Test
+  void deberiaQuedarseEnRegistrarGastoSinGuardarSiLaFechaEsDelMesAnterior()
+    throws MalformedURLException {
+    LocalDate mesAnterior = LocalDate.now().minusMonths(1);
+    dadoQueElUsuarioInicioSesion();
+    dadoQueElUsuarioEstaEnRegistrarGasto();
+    cuandoElUsuarioCompletaElFormularioYTocaGuardar("1000", mesAnterior, "Gasto del mes pasado");
+    entoncesLaFechaDeberiaSerInvalida();
     entoncesDeberiaSeguirEnRegistrarGasto();
   }
 
@@ -129,6 +144,10 @@ public class VistaRegistrarGastoE2E {
 
   private void entoncesElImporteDeberiaSerInvalido() {
     assertThat(vistaRegistrarGasto.elImporteEsValido(), is(false));
+  }
+
+  private void entoncesLaFechaDeberiaSerInvalida() {
+    assertThat(vistaRegistrarGasto.laFechaEsValida(), is(false));
   }
 
   private void entoncesDeberiaSeguirEnRegistrarGasto() throws MalformedURLException {

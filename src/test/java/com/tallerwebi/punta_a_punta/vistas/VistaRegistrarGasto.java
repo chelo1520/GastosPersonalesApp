@@ -30,4 +30,9 @@ public class VistaRegistrarGasto extends VistaWeb {
   public boolean elImporteEsValido() {
     return (Boolean) page.locator("#importe").evaluate("input => input.checkValidity()");
   }
+
+  // Con min/max en el input, el navegador marca inválida una fecha fuera del mes actual
+  public boolean laFechaEsValida() {
+    return (Boolean) page.locator("#fecha").evaluate("input => input.checkValidity()");
+  }
 }

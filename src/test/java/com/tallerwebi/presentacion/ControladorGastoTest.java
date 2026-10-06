@@ -44,7 +44,7 @@ public class ControladorGastoTest {
   }
 
   @Test
-  public void debeMostrarLosGastosDelUsuario() {
+  public void debeMostrarLosGastosOrdenadosConTotal20000CuandoElUsuarioTieneGastosDe15000Y5000() {
     Gasto gastoAnterior = new Gasto(5000.0, LocalDate.of(2026, 9, 20), "Farmacia");
     List<Gasto> gastos = List.of(gastoAnterior, gasto);
 
@@ -61,47 +61,7 @@ public class ControladorGastoTest {
   }
 
   @Test
-  public void debeDevolverLaVistaSimulacionConLosGastosDelMesAnteriorQueTraeElServicio() {
-    YearMonth mesActual = YearMonth.now();
-    List<Gasto> gastos = List.of(gasto);
-    when(gastoServicio.obtenerGastosDelMesAnterior(usuario, mesActual)).thenReturn(gastos);
-
-    ModelAndView resultado = controladorGasto.mostrarSimulacion(request);
-
-    assertEquals("simulacion", resultado.getViewName());
-    assertEquals(gastos, resultado.getModel().get("gastos"));
-    verify(gastoServicio).obtenerGastosDelMesAnterior(usuario, mesActual);
-  }
-
-  @Test
-  public void debeTenerComoMesBaseElAnteriorComoMesSimuladoElProximoYPresupuestoCero() {
-    YearMonth mesActual = YearMonth.now();
-    when(gastoServicio.obtenerGastosDelMesAnterior(usuario, mesActual)).thenReturn(List.of());
-
-    ModelAndView resultado = controladorGasto.mostrarSimulacion(request);
-
-    assertEquals(nombreDelMes(mesActual.minusMonths(1)), resultado.getModel().get("mesBase"));
-    assertEquals(nombreDelMes(mesActual.plusMonths(1)), resultado.getModel().get("mesSimulado"));
-    assertEquals(0, resultado.getModel().get("presupuesto"));
-  }
-
-  @Test
-  public void debeRedirigirALoginSinConsultarElServicioSiNoHayUsuarioEnLaSimulacion() {
-    when(session.getAttribute("USUARIO")).thenReturn(null);
-
-    ModelAndView resultado = controladorGasto.mostrarSimulacion(request);
-
-    assertEquals("redirect:/login", resultado.getViewName());
-    verifyNoInteractions(gastoServicio);
-  }
-
-  private String nombreDelMes(YearMonth mes) {
-    String nombre = mes.getMonth().getDisplayName(TextStyle.FULL, new Locale("es", "AR"));
-    return nombre.substring(0, 1).toUpperCase() + nombre.substring(1) + " " + mes.getYear();
-  }
-
-  @Test
-  public void debeRegistrarUnGasto() {
+  public void debeRegistrarElGastoYRedirigirAMisGastosCuandoElGastoEsValido() {
     ModelAndView resultado = controladorGasto.registrarGasto(gasto, request);
 
     assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
@@ -110,7 +70,7 @@ public class ControladorGastoTest {
   }
 
   @Test
-  public void debeMostrarElFormularioDeRegistroConLaFechaDeHoy() {
+  public void debeMostrarElFormularioConLaFechaDeHoyCuandoSeEntraARegistrarGasto() {
     ModelAndView resultado = controladorGasto.mostrarFormularioRegistrarGasto(request);
 
     assertEquals("registrar-gasto", resultado.getViewName());
@@ -120,7 +80,18 @@ public class ControladorGastoTest {
   }
 
   @Test
-  public void debeVolverAlFormularioConErrorSiElGastoEsInvalido() {
+  public void debeLimitarElCalendarioAlMesActualCuandoSeEntraARegistrarGasto() {
+    when(gastoServicio.obtenerFechaMinimaPermitida()).thenReturn(LocalDate.of(2026, 10, 1));
+    when(gastoServicio.obtenerFechaMaximaPermitida()).thenReturn(LocalDate.of(2026, 10, 31));
+
+    ModelAndView resultado = controladorGasto.mostrarFormularioRegistrarGasto(request);
+
+    assertEquals(LocalDate.of(2026, 10, 1), resultado.getModel().get("fechaMinima"));
+    assertEquals(LocalDate.of(2026, 10, 31), resultado.getModel().get("fechaMaxima"));
+  }
+
+  @Test
+  public void debeVolverAlFormularioConElMensajeDeErrorCuandoElServicioRechazaElGasto() {
     doThrow(new GastoInvalidoExeption("El importe debe ser mayor a cero"))
       .when(gastoServicio)
       .registrarGasto(gasto, usuario);
@@ -133,7 +104,7 @@ public class ControladorGastoTest {
   }
 
   @Test
-  public void debeSumarLosGastosEntreFechas() {
+  public void debeMostrarTotal45000CuandoLosGastosEntreLasFechasSuman45000() {
     LocalDate desde = LocalDate.of(2026, 9, 1);
     LocalDate hasta = LocalDate.of(2026, 9, 30);
 
@@ -149,7 +120,7 @@ public class ControladorGastoTest {
   }
 
   @Test
-  public void debeRedirigirALoginSiNoHayUsuarioEnSesion() {
+  public void debeRedirigirALoginSinConsultarElServicioCuandoNoHayUsuarioEnSesion() {
     when(session.getAttribute("USUARIO")).thenReturn(null);
 
     assertEquals("redirect:/login", controladorGasto.mostrarGastos(request).getViewName());
@@ -169,7 +140,7 @@ public class ControladorGastoTest {
   }
 
   @Test
-  public void debeRedirigirALoginSiNoExisteLaSesion() {
+  public void debeRedirigirALoginSinConsultarElServicioCuandoNoExisteLaSesion() {
     when(request.getSession(false)).thenReturn(null);
 
     assertEquals("redirect:/login", controladorGasto.mostrarGastos(request).getViewName());

@@ -104,13 +104,14 @@ public class VistaSimulacionE2E {
   }
 
   @Test
-  void deberiaMostrarSoloLosGastosRegistradosEnElMesAnteriorYSumarlosAlTotal() {
+  void deberiaMostrarSoloLosGastosDelMesAnteriorYSumarlosAlTotal() {
     LocalDate mesAnterior = LocalDate.now().minusMonths(1);
+    // El formulario solo acepta fechas del mes actual: los meses anteriores se cargan en la base
+    dadoQueExisteEnLaBaseUnGasto(250000, mesAnterior.withDayOfMonth(5), "Alquiler");
+    dadoQueExisteEnLaBaseUnGasto(80000, mesAnterior.withDayOfMonth(20), "Supermercado");
+    dadoQueExisteEnLaBaseUnGasto(9000, mesAnterior.minusMonths(1), "Gasto de hace dos meses");
     dadoQueElUsuarioInicioSesion();
-    dadoQueElUsuarioRegistroUnGasto("250000", mesAnterior.withDayOfMonth(5), "Alquiler");
-    dadoQueElUsuarioRegistroUnGasto("80000", mesAnterior.withDayOfMonth(20), "Supermercado");
     dadoQueElUsuarioRegistroUnGasto("5000", LocalDate.now(), "Gasto del mes actual");
-    dadoQueElUsuarioRegistroUnGasto("9000", mesAnterior.minusMonths(1), "Gasto de hace dos meses");
     cuandoElUsuarioNavegaALaSimulacion();
     entoncesLaListaDeberiaTenerEnOrden("Supermercado", "Alquiler");
     entoncesElAvisoDeMesVacioDeberiaEstarVisible(false);
@@ -130,6 +131,10 @@ public class VistaSimulacionE2E {
     vistaLogin.escribirClave("test");
     vistaLogin.darClickEnIniciarSesion();
     page.waitForURL("**/mostrar-gastos**");
+  }
+
+  private void dadoQueExisteEnLaBaseUnGasto(double importe, LocalDate fecha, String descripcion) {
+    ReiniciarDB.insertarGastoDelUsuarioDePrueba(fecha, importe, descripcion);
   }
 
   private void dadoQueElUsuarioRegistroUnGasto(

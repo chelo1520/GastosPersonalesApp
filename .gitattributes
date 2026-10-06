@@ -1,0 +1,7 @@
+# Los .js siempre con finales de linea LF (lo exige la regla linebreak-style de ESLint),
+# aunque git en Windows este configurado con core.autocrlf=true
+*.js text eol=lf
+
+# Los .java tambien con LF: Prettier (mvn compile/test) los reescribe con LF y, si no,
+# git en Windows los muestra como modificados aunque no tengan cambios
+*.java text eol=lf

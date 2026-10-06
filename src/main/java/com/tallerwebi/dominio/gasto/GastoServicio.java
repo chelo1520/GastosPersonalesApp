@@ -16,4 +16,8 @@ public interface GastoServicio {
   Double sumarGastos(Usuario usuario, LocalDate desde, LocalDate hasta);
 
   List<Gasto> obtenerGastosDelMesAnterior(Usuario usuario, YearMonth mesActual);
+
+  LocalDate obtenerFechaMinimaPermitida();
+
+  LocalDate obtenerFechaMaximaPermitida();
 }

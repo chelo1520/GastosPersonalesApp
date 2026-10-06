@@ -35,7 +35,7 @@ public class ControladorLoginTest {
   }
 
   @Test
-  public void loginConUsuarioYPasswordInorrectosDeberiaLlevarALoginNuevamente() {
+  public void debeVolverAlLoginConErrorUsuarioOClaveIncorrectaCuandoLasCredencialesSonIncorrectas() {
     // preparacion
     when(servicioLoginMock.consultarUsuario(anyString(), anyString())).thenReturn(null);
 
@@ -53,7 +53,7 @@ public class ControladorLoginTest {
   }
 
   @Test
-  public void loginConUsuarioYPasswordCorrectosDeberiaLLevarAHome() {
+  public void debeGuardarElUsuarioEnSesionYRedirigirAMisGastosCuandoLasCredencialesSonCorrectas() {
     // preparacion
     Usuario usuarioEncontradoMock = mock(Usuario.class);
     when(usuarioEncontradoMock.getRol()).thenReturn("ADMIN");
@@ -72,7 +72,7 @@ public class ControladorLoginTest {
   }
 
   @Test
-  public void registrameSiUsuarioNoExisteDeberiaCrearUsuarioYVolverAlLogin()
+  public void debeRegistrarElUsuarioYRedirigirAlLoginCuandoElUsuarioNoExiste()
     throws UsuarioExistente {
     // ejecucion
     ModelAndView modelAndView = controladorLogin.registrarme(usuarioMock);
@@ -83,7 +83,7 @@ public class ControladorLoginTest {
   }
 
   @Test
-  public void registrarmeSiUsuarioExisteDeberiaVolverAFormularioYMostrarError()
+  public void debeVolverAlFormularioConErrorElUsuarioYaExisteCuandoElUsuarioExiste()
     throws UsuarioExistente {
     // preparacion
     doThrow(UsuarioExistente.class).when(servicioLoginMock).registrar(usuarioMock);
@@ -100,7 +100,8 @@ public class ControladorLoginTest {
   }
 
   @Test
-  public void errorEnRegistrarmeDeberiaVolverAFormularioYMostrarError() throws UsuarioExistente {
+  public void debeVolverAlFormularioConErrorAlRegistrarCuandoFallaElRegistro()
+    throws UsuarioExistente {
     // preparacion
     doThrow(RuntimeException.class).when(servicioLoginMock).registrar(usuarioMock);
 
@@ -116,7 +117,7 @@ public class ControladorLoginTest {
   }
 
   @Test
-  public void irALoginDeberiaRetornarVistaLoginConDatosLogin() {
+  public void debeMostrarLaVistaLoginConDatosLoginCuandoSeEntraALogin() {
     // ejecucion
     ModelAndView modelAndView = controladorLogin.irALogin();
 
@@ -126,7 +127,7 @@ public class ControladorLoginTest {
   }
 
   @Test
-  public void nuevoUsuarioDeberiaRetornarVistaNuevoUsuarioConUsuarioVacio() {
+  public void debeMostrarElFormularioDeRegistroConUnUsuarioVacioCuandoSeEntraANuevoUsuario() {
     // ejecucion
     ModelAndView modelAndView = controladorLogin.nuevoUsuario();
 
@@ -136,7 +137,7 @@ public class ControladorLoginTest {
   }
 
   @Test
-  public void irAHomeDeberiaRetornarVistaHome() {
+  public void debeRedirigirAMisGastosCuandoSeEntraAHome() {
     // ejecucion
     ModelAndView modelAndView = controladorLogin.irAHome();
 
@@ -145,7 +146,7 @@ public class ControladorLoginTest {
   }
 
   @Test
-  public void inicioDeberiaRedirigirALogin() {
+  public void debeRedirigirAlLoginCuandoSeEntraALaRaiz() {
     // ejecucion
     ModelAndView modelAndView = controladorLogin.inicio();
 
