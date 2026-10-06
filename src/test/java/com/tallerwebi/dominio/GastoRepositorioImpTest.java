@@ -3,12 +3,14 @@ package com.tallerwebi.dominio;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.RepositorioGasto;
 import com.tallerwebi.dominio.gasto.RepositorioGastoImpl;
 import com.tallerwebi.infraestructura.config.HibernateInfraestructuraTestConfig;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -80,5 +82,65 @@ public class GastoRepositorioImpTest {
 
     assertEquals(1, gastos.size());
     assertEquals("Supermercado", gastos.get(0).getDescripcion());
+  }
+
+  @Test
+  void deberiaDevolverSoloLosDosGastosDeSeptiembreDelUsuarioDelMasNuevoAlMasViejo() {
+    Usuario usuario = new Usuario();
+    usuario.setEmail("becerra@gmai.com");
+    usuario.setPassword("1234");
+    Usuario otroUsuario = new Usuario();
+    otroUsuario.setEmail("otro@gmail.com");
+    otroUsuario.setPassword("1234");
+    this.sessionFactory.getCurrentSession().save(usuario);
+    this.sessionFactory.getCurrentSession().save(otroUsuario);
+
+    guardarGasto(usuario, LocalDate.of(2026, 9, 1), "Alquiler");
+    guardarGasto(usuario, LocalDate.of(2026, 9, 30), "Supermercado");
+    guardarGasto(usuario, LocalDate.of(2026, 8, 31), "Gasto de agosto");
+    guardarGasto(usuario, LocalDate.of(2026, 10, 1), "Gasto de octubre");
+    guardarGasto(otroUsuario, LocalDate.of(2026, 9, 15), "Gasto de otro usuario");
+
+    List<Gasto> gastos = repositorioGasto.obtenerGastosDelMes(usuario, YearMonth.of(2026, 9));
+
+    assertEquals(2, gastos.size());
+    assertEquals("Supermercado", gastos.get(0).getDescripcion());
+    assertEquals("Alquiler", gastos.get(1).getDescripcion());
+  }
+
+  @Test
+  void deberiaDevolverUnaListaVaciaSiElUsuarioNoTieneGastosEnElMes() {
+    Usuario usuario = new Usuario();
+    usuario.setEmail("becerra@gmai.com");
+    usuario.setPassword("1234");
+    this.sessionFactory.getCurrentSession().save(usuario);
+
+    guardarGasto(usuario, LocalDate.of(2026, 10, 5), "Gasto de octubre");
+
+    List<Gasto> gastos = repositorioGasto.obtenerGastosDelMes(usuario, YearMonth.of(2026, 9));
+
+    assertTrue(gastos.isEmpty());
+  }
+
+  @Test
+  void deberiaDevolverElGastoDel29DeFebreroYExcluirElDeMarzoEnUnAnioBisiesto() {
+    Usuario usuario = new Usuario();
+    usuario.setEmail("becerra@gmai.com");
+    usuario.setPassword("1234");
+    this.sessionFactory.getCurrentSession().save(usuario);
+
+    guardarGasto(usuario, LocalDate.of(2028, 2, 29), "Gasto del 29 de febrero");
+    guardarGasto(usuario, LocalDate.of(2028, 3, 1), "Gasto de marzo");
+
+    List<Gasto> gastos = repositorioGasto.obtenerGastosDelMes(usuario, YearMonth.of(2028, 2));
+
+    assertEquals(1, gastos.size());
+    assertEquals("Gasto del 29 de febrero", gastos.get(0).getDescripcion());
+  }
+
+  private void guardarGasto(Usuario usuario, LocalDate fecha, String descripcion) {
+    Gasto gasto = new Gasto(1000.00, fecha, descripcion);
+    gasto.setUsuario(usuario);
+    repositorioGasto.guardar(gasto);
   }
 }

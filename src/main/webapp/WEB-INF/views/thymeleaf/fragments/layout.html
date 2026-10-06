@@ -35,7 +35,7 @@
       <a th:href="@{/registrar-gasto}" th:aria-current="${activo == 'registrar'} ? 'page'">Registrar</a>
       <a th:href="@{/mostrar-gastos}" th:aria-current="${activo == 'mis-gastos'} ? 'page'">Mis gastos</a>
       <a class="disabled" aria-disabled="true">Presupuestos</a>
-      <a class="disabled" aria-disabled="true">Simulación</a>
+      <a th:href="@{/simulacion}" th:aria-current="${activo == 'simulacion'} ? 'page'">Simulación</a>
       <a class="disabled" aria-disabled="true">Comparativa</a>
     </nav>
 

@@ -2,6 +2,7 @@ package com.tallerwebi.dominio.gasto;
 
 import com.tallerwebi.dominio.Usuario;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 
 /**

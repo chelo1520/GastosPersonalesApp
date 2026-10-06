@@ -7,8 +7,11 @@ import com.tallerwebi.dominio.gasto.GastoServicio;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.TextStyle;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -105,6 +108,34 @@ public class ControladorGasto {
     model.put("total", total);
 
     return new ModelAndView("sumar-gastos", model);
+  }
+
+  @RequestMapping(path = "/simulacion", method = RequestMethod.GET)
+  public ModelAndView mostrarSimulacion(HttpServletRequest request) {
+    Usuario usuario = obtenerUsuarioDeSesion(request);
+    if (usuario == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+
+    // Se simula el mes próximo tomando como base los gastos del mes anterior (último mes cerrado)
+    YearMonth mesActual = YearMonth.now();
+    YearMonth mesBase = mesActual.minusMonths(1);
+    YearMonth mesSimulado = mesActual.plusMonths(1);
+
+    List<Gasto> gastos = gastoServicio.obtenerGastosDelMesAnterior(usuario, mesActual);
+
+    Map<String, Object> model = new ModelMap();
+    model.put("gastos", gastos);
+    model.put("mesBase", formatearMes(mesBase));
+    model.put("mesSimulado", formatearMes(mesSimulado));
+    model.put("presupuesto", 0);
+
+    return new ModelAndView("simulacion", model);
+  }
+
+  private String formatearMes(YearMonth mes) {
+    String nombre = mes.getMonth().getDisplayName(TextStyle.FULL, new Locale("es", "AR"));
+    return Character.toUpperCase(nombre.charAt(0)) + nombre.substring(1) + " " + mes.getYear();
   }
 
   private Usuario obtenerUsuarioDeSesion(HttpServletRequest request) {
