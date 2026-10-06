@@ -77,6 +77,11 @@ public class GastoServicioImpl implements GastoServicio {
   }
 
   @Override
+  public List<Gasto> obtenerGastosDelMesAnterior(Usuario usuario, YearMonth mesActual) {
+    return repositorioGasto.obtenerGastosDelMes(usuario, mesActual.minusMonths(1));
+  }
+
+  @Override
   public LocalDate obtenerFechaMinimaPermitida() {
     return YearMonth.now(reloj).atDay(1);
   }

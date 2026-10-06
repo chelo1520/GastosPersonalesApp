@@ -1,7 +1,7 @@
 package com.tallerwebi.integracion;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.gasto.Gasto;
@@ -90,16 +90,22 @@ public class SimulacionIntegracionTest {
   }
 
   @Test
-  public void debeIncluirEnLaSimulacionElGastoRegistradoConFechaDelMesAnterior() {
+  public void debeRechazarElGastoYDejarVaciaLaSimulacionCuandoSeRegistraConFechaDelMesAnterior() {
+    // Solo se pueden registrar gastos del mes actual
     Gasto gasto = new Gasto(25000.0, mesAnterior.withDayOfMonth(5), "Clases de guitarra");
 
-    controladorGasto.registrarGasto(gasto, request);
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request);
     List<Gasto> gastos = gastosDeLaSimulacion();
 
-    assertEquals(1, gastos.size());
-    assertEquals("Clases de guitarra", gastos.get(0).getDescripcion());
-    assertEquals(25000.0, gastos.get(0).getImporte());
-    assertSame(usuario, gastos.get(0).getUsuario());
+    assertEquals("registrar-gasto", resultado.getViewName());
+    assertTrue(
+      resultado
+        .getModel()
+        .get("error")
+        .toString()
+        .startsWith("La fecha debe estar dentro del mes actual")
+    );
+    assertTrue(gastos.isEmpty());
   }
 
   @SuppressWarnings("unchecked")
