@@ -406,6 +406,19 @@ a:hover {
   font-weight: 600;
 }
 
+/* Asterisco de campo obligatorio (el input lleva 'required' para lectores de pantalla) */
+.app-requerido {
+  color: var(--app-error);
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.app-nota-requeridos {
+  font-size: 13px;
+  color: var(--app-texto-suave);
+  margin-bottom: 16px;
+}
+
 .form-control,
 .input-group-text {
   min-height: 48px;

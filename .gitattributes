@@ -1,0 +1,3 @@
+# Los .js siempre con finales de linea LF (lo exige la regla linebreak-style de ESLint),
+# aunque git en Windows este configurado con core.autocrlf=true
+*.js text eol=lf

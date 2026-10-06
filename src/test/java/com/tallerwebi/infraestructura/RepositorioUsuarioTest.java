@@ -38,7 +38,7 @@ public class RepositorioUsuarioTest {
   @Test
   @Transactional
   @Rollback
-  public void deberiaGuardarUnNuevoUsuario() {
+  public void debeEncontrarElUsuarioPorEmailCuandoSeGuardaUnUsuarioNuevo() {
     String emailNuevoUsuario = "nuevo.usuario@test.com";
     // preparacion
     Usuario usuario = this.dadoQueTengoUnUsuario(emailNuevoUsuario, "1234", "USER");
@@ -53,7 +53,7 @@ public class RepositorioUsuarioTest {
   @Test
   @Transactional
   @Rollback
-  public void deberiaEncontrarUnUsuarioExistenteCuandoBuscoPorEmailYPassword() {
+  public void debeDevolverElUsuarioCuandoSeBuscaPorEmailYPasswordDeUnUsuarioExistente() {
     String email = "test@test.com";
     String password = "123";
     Usuario usuario = this.dadoQueTengoUnUsuario(email, password, "USER");
@@ -66,7 +66,7 @@ public class RepositorioUsuarioTest {
 
   @Test
   @Transactional
-  public void noDeberiaEncontrarUnUsuarioInexistenteCuandoBuscoPorEmailYPassword() {
+  public void debeDevolverNullCuandoSeBuscaPorEmailYPasswordDeUnUsuarioInexistente() {
     Usuario obtenido = this.cuandoBuscoUnUsuario("test@test.com", "123");
     this.entoncesElUsuarioObtenidoEsNull(obtenido);
   }
@@ -74,7 +74,7 @@ public class RepositorioUsuarioTest {
   @Test
   @Transactional
   @Rollback
-  public void deberiaEncontrarUnUsuarioExistenteCuandoBuscoPorEmail() {
+  public void debeDevolverElUsuarioCuandoSeBuscaPorEmailDeUnUsuarioExistente() {
     String email = "test@test.com";
     Usuario usuario = this.dadoQueTengoUnUsuario(email, "123", "USER");
     this.dadoQueExisteElUsuario(usuario);
@@ -86,7 +86,7 @@ public class RepositorioUsuarioTest {
 
   @Test
   @Transactional
-  public void noDeberiaEncontrarUnUsuarioInexistenteCuandoBuscoPorEmail() {
+  public void debeDevolverNullCuandoSeBuscaPorEmailDeUnUsuarioInexistente() {
     Usuario obtenido = this.cuandoObtengoUnUsuarioPorEmail("test@test.com");
     this.entoncesElUsuarioObtenidoEsNull(obtenido);
   }
@@ -94,7 +94,7 @@ public class RepositorioUsuarioTest {
   @Test
   @Transactional
   @Rollback
-  public void deberiaModificarUnUsuarioExistente() {
+  public void debeGuardarLaNuevaPasswordYRolCuandoSeModificaUnUsuarioExistente() {
     String email = "test@test.com";
     Usuario usuario = this.dadoQueTengoUnUsuario(email, "123", "USER");
     this.dadoQueExisteElUsuario(usuario);
@@ -112,7 +112,7 @@ public class RepositorioUsuarioTest {
   @Test
   @Transactional
   @Rollback
-  public void deberiaLanzarUnaExcepcionAlIntentarModificarUnUsuarioInexistente() {
+  public void debeLanzarUsuarioNoEncontradoCuandoSeModificaUnUsuarioInexistente() {
     Usuario usuario = this.dadoQueTengoUnUsuario("noexiste@test.com", "123", "USER");
 
     // Al no tener ID (no estar persistido), buscar por id devuelve null y

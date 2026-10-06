@@ -38,7 +38,7 @@ public class GastoRepositorioImpTest {
   }
 
   @Test
-  void deberiaGuardarUnGasto() {
+  void debeEncontrarElGastoPorSuDescripcionCuandoSeGuardaUnGasto() {
     Gasto gasto = new Gasto(1000.00, LocalDate.of(2026, 9, 13), "Supermercado");
 
     repositorioGasto.guardar(gasto);
@@ -52,7 +52,7 @@ public class GastoRepositorioImpTest {
   }
 
   @Test
-  void deberiaGuardarImporteFechaYDescripcion() {
+  void debePersistirImporteFechaYDescripcionCuandoSeGuardaUnGasto() {
     Gasto gasto = new Gasto(1000.00, LocalDate.of(2026, 9, 13), "Supermercado");
 
     repositorioGasto.guardar(gasto);
@@ -65,7 +65,7 @@ public class GastoRepositorioImpTest {
   }
 
   @Test
-  void deberiaBuscarGastosPorUsuario() {
+  void debeDevolverUnGastoCuandoElUsuarioTieneUnGastoGuardado() {
     Usuario usuario = new Usuario();
     usuario.setEmail("becerra@gmai.com");
     usuario.setPassword("1234");
