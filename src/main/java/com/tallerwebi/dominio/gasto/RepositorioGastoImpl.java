@@ -2,6 +2,7 @@ package com.tallerwebi.dominio.gasto;
 
 import com.tallerwebi.dominio.Usuario;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -43,6 +44,19 @@ public class RepositorioGastoImpl implements RepositorioGasto {
     query.setParameter("usuario", usuario);
     query.setParameter("desde", desde);
     query.setParameter("hasta", hasta);
+
+    return query.getResultList();
+  }
+
+  @Override
+  public List<Gasto> obtenerGastosDelMes(Usuario usuario, YearMonth mes) {
+    String hql =
+      "FROM Gasto WHERE usuario = :usuario AND fecha BETWEEN :desde AND :hasta ORDER BY fecha DESC";
+    Query<Gasto> query = sessionFactory.getCurrentSession().createQuery(hql, Gasto.class);
+
+    query.setParameter("usuario", usuario);
+    query.setParameter("desde", mes.atDay(1));
+    query.setParameter("hasta", mes.atEndOfMonth());
 
     return query.getResultList();
   }

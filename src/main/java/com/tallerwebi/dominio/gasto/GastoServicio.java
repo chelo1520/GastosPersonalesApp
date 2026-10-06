@@ -2,6 +2,7 @@ package com.tallerwebi.dominio.gasto;
 
 import com.tallerwebi.dominio.Usuario;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 
 /**
@@ -13,4 +14,6 @@ public interface GastoServicio {
   List<Gasto> obtenerGastos(Usuario usuario);
 
   Double sumarGastos(Usuario usuario, LocalDate desde, LocalDate hasta);
+
+  List<Gasto> obtenerGastosDelMesAnterior(Usuario usuario, YearMonth mesActual);
 }

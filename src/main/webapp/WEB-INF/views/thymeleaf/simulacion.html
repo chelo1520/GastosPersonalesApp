@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head('Simulación')}"></head>
+
+<body>
+
+<link rel="stylesheet" th:href="@{/css/simulacion.css}" />
+
+<header th:replace="~{fragments/layout :: navbar('simulacion')}"></header>
+<header th:replace="~{fragments/layout :: header-mobile('Simulación')}"></header>
+
+<main class="app-main app-sim-main">
+    <div class="app-sim-titulo">
+        <h1 class="h3 fw-bold mb-0">Simulación · <span th:text="${mesSimulado}">Noviembre 2026</span></h1>
+    </div>
+
+    <p class="app-sim-intro">
+        Base: gastos de <span th:text="${mesBase}">Octubre 2026</span>.
+        Marcá o desmarcá gastos y agregá extraordinarios o nuevos gastos ordinarios. No se guarda nada.
+    </p>
+
+    <!-- data-presupuesto: presupuesto del mes simulado (número sin formato, ej. 400000) -->
+    <div class="app-sim-layout" id="simulacion" th:data-presupuesto="${presupuesto}">
+
+        <!-- Columna izquierda -->
+        <section class="app-sim-col-principal" aria-label="Gastos a simular">
+            <div class="app-sim-card">
+                <div th:if="${#lists.isEmpty(gastos)}" class="app-gastos-vacio" id="sim-vacio">
+                    <h2 class="h5 fw-bold">No hay gastos en el mes base</h2>
+                    <p class="mb-0">Podés armar la simulación agregando gastos con los formularios de abajo.</p>
+                </div>
+
+                <!-- La lista se renderiza siempre para poder agregar gastos aunque el mes base esté vacío -->
+                <ul class="app-sim-lista" id="sim-lista">
+                    <li class="app-sim-item" th:each="gasto : ${gastos}"
+                        th:data-importe="${gasto.importe}"
+                        th:data-descripcion="${gasto.descripcion}">
+                        <label class="app-sim-item-label">
+                            <input class="app-sim-check" type="checkbox" checked>
+                            <span class="app-sim-descripcion">
+                  <span th:text="${gasto.descripcion}">Alquiler</span>
+                </span>
+                        </label>
+                        <!-- Gasto todavía no tiene categoría -->
+                        <span class="app-sim-categoria">—</span>
+                        <span class="app-sim-importe"
+                              th:text="${#numbers.formatDecimal(gasto.importe, 1, 'POINT', 0, 'COMMA')}">250.000</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- data-tipo: extraordinario (gasto puntual) | ordinario (gasto nuevo que se repite) -->
+            <form class="app-sim-form" data-tipo="extraordinario" autocomplete="off">
+                <div class="app-sim-campo app-sim-campo-descripcion">
+                    <label for="sim-extra-descripcion">Gasto extraordinario</label>
+                    <input class="form-control app-sim-input-descripcion" type="text" id="sim-extra-descripcion"
+                           placeholder="Ej: Regalo de cumpleaños" maxlength="80" required>
+                </div>
+                <div class="app-sim-campo app-sim-campo-monto">
+                    <label for="sim-extra-monto">Monto</label>
+                    <div class="app-sim-monto-wrap">
+                        <span aria-hidden="true">$</span>
+                        <input class="form-control app-sim-input-monto" type="number" id="sim-extra-monto"
+                               placeholder="20000" min="1" step="1" inputmode="numeric" required>
+                    </div>
+                </div>
+                <button class="btn btn-primary app-sim-agregar" type="submit">Agregar</button>
+            </form>
+
+            <form class="app-sim-form" data-tipo="ordinario" autocomplete="off">
+                <div class="app-sim-campo app-sim-campo-descripcion">
+                    <label for="sim-ordinario-descripcion">Nuevo gasto ordinario</label>
+                    <input class="form-control app-sim-input-descripcion" type="text" id="sim-ordinario-descripcion"
+                           placeholder="Ej: Clases de guitarra" maxlength="80" required>
+                </div>
+                <div class="app-sim-campo app-sim-campo-monto">
+                    <label for="sim-ordinario-monto">Monto</label>
+                    <div class="app-sim-monto-wrap">
+                        <span aria-hidden="true">$</span>
+                        <input class="form-control app-sim-input-monto" type="number" id="sim-ordinario-monto"
+                               placeholder="15000" min="1" step="1" inputmode="numeric" required>
+                    </div>
+                </div>
+                <button class="btn btn-primary app-sim-agregar" type="submit">Agregar</button>
+            </form>
+        </section>
+
+        <!-- Columna derecha -->
+        <aside class="app-sim-resultado" aria-label="Resultado de la simulación" aria-live="polite">
+            <h2 class="app-sim-resultado-titulo">Resultado de la simulación</h2>
+
+            <dl class="app-sim-resumen">
+                <div>
+                    <dt>Total simulado</dt>
+                    <dd class="app-sim-num" id="sim-total">$ 0</dd>
+                </div>
+                <div>
+                    <dt>Presupuesto</dt>
+                    <dd class="app-sim-num" id="sim-presupuesto">$ 0</dd>
+                </div>
+            </dl>
+
+            <div class="app-sim-diferencia" id="sim-diferencia">
+                <span id="sim-diferencia-label">Te pasarías por</span>
+                <strong class="app-sim-num" id="sim-diferencia-valor">$ 0</strong>
+            </div>
+
+            <div class="app-sim-barra" role="progressbar" aria-label="Porcentaje del presupuesto"
+                 aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="sim-barra">
+                <div class="app-sim-barra-fill" id="sim-barra-fill"></div>
+            </div>
+
+            <p class="app-sim-sugerencia" id="sim-sugerencia" hidden></p>
+        </aside>
+    </div>
+</main>
+
+<script th:src="@{/js/simulacion.js}" charset="utf-8"></script>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+
+</html>
