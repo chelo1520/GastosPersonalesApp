@@ -2,6 +2,7 @@ package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
+import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +24,7 @@ import org.springframework.web.servlet.ModelAndView;
 public class ControladorGasto {
 
   private static final String REDIRECT_LOGIN = "redirect:/login";
+  private static final String REDIRECT_MOSTRAR_GASTOS = "redirect:/mostrar-gastos";
   private GastoServicio gastoServicio;
 
   @Autowired
@@ -76,11 +78,69 @@ public class ControladorGasto {
       return vistaRegistrarGasto(gasto, e.getMessage());
     }
 
-    return new ModelAndView("redirect:/mostrar-gastos");
+    return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);
   }
 
-  // El rango de fechas limita el calendario del formulario al mes actual
+  @RequestMapping(path = "/modificar-gasto/{id}", method = RequestMethod.GET)
+  public ModelAndView mostrarFormularioModificarGasto(
+    @PathVariable("id") Long id,
+    HttpServletRequest request
+  ) {
+    Usuario usuario = obtenerUsuarioDeSesion(request);
+    if (usuario == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+
+    try {
+      Gasto gasto = gastoServicio.obtenerGasto(id, usuario);
+      return vistaModificarGasto(id, gasto, null);
+    } catch (GastoNoEncontrado e) {
+      return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);
+    }
+  }
+
+  @RequestMapping(path = "/modificar-gasto/{id}", method = RequestMethod.POST)
+  public ModelAndView modificarGasto(
+    @PathVariable("id") Long id,
+    Gasto gasto,
+    HttpServletRequest request
+  ) {
+    Usuario usuario = obtenerUsuarioDeSesion(request);
+    if (usuario == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+
+    try {
+      gastoServicio.modificarGasto(id, gasto, usuario);
+    } catch (GastoInvalidoExeption e) {
+      return vistaModificarGasto(id, gasto, e.getMessage());
+    } catch (GastoNoEncontrado e) {
+      return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);
+    }
+
+    return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);
+  }
+
   private ModelAndView vistaRegistrarGasto(Gasto gasto, String error) {
+    ModelAndView vista = vistaFormularioGasto(gasto, error);
+    vista.addObject("titulo", "Registrar gasto");
+    vista.addObject("accion", "/registrar-gasto");
+    vista.addObject("urlCancelar", "/home");
+    vista.addObject("seccion", "registrar");
+    return vista;
+  }
+
+   private ModelAndView vistaModificarGasto(Long id, Gasto gasto, String error) {
+    ModelAndView vista = vistaFormularioGasto(gasto, error);
+    vista.addObject("titulo", "Modificar gasto");
+    vista.addObject("accion", "/modificar-gasto/" + id);
+    vista.addObject("urlCancelar", "/mostrar-gastos");
+    vista.addObject("seccion", "mis-gastos");
+    return vista;
+  }
+
+  // Registrar y modificar comparten el mismo formulario.
+  private ModelAndView vistaFormularioGasto(Gasto gasto, String error) {
     Map<String, Object> model = new ModelMap();
     model.put("gasto", gasto);
     model.put("fechaMinima", gastoServicio.obtenerFechaMinimaPermitida());

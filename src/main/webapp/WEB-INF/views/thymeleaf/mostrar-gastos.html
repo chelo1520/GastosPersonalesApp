@@ -36,6 +36,7 @@
               <th scope="col">Fecha</th>
               <th scope="col">Descripción</th>
               <th scope="col" class="text-end">Importe</th>
+              <th scope="col"><span class="visually-hidden">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
@@ -47,6 +48,10 @@
               <td th:text="${gasto.descripcion}">Compra semanal</td>
               <td class="app-gasto-importe text-end">
                 $ <span th:text="${#numbers.formatDecimal(gasto.importe, 1, 'POINT', 2, 'COMMA')}">46.200,00</span>
+              </td>
+              <td class="text-end">
+                <a class="btn btn-sm btn-outline-secondary app-gasto-editar"
+                  th:href="@{/modificar-gasto/{id}(id=${gasto.id})}">Editar</a>
               </td>
             </tr>
           </tbody>
@@ -63,6 +68,8 @@
               $ <span th:text="${#numbers.formatDecimal(gasto.importe, 1, 'POINT', 2, 'COMMA')}">46.200,00</span>
             </strong>
           </div>
+          <a class="btn btn-sm btn-outline-secondary app-gasto-editar"
+            th:href="@{/modificar-gasto/{id}(id=${gasto.id})}">Editar</a>
         </article>
       </div>
     </div>

@@ -3,12 +3,14 @@ package com.tallerwebi.dominio;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
+import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
 import com.tallerwebi.dominio.gasto.GastoServicioImpl;
@@ -120,10 +122,119 @@ public class ServicioGastoImplTest {
   }
 
   @Test
+  void debeActualizarImporteFechaYDescripcionCuandoSeModificaUnGastoPropioConDatosValidos() {
+    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    Usuario usuario = usuarioConId(1L);
+    Gasto gastoGuardado = gastoDe(usuario);
+    when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoGuardado);
+
+    Gasto datos = new Gasto(2500.00, LocalDate.of(2026, 10, 20), "Farmacia");
+    gastoServicio.modificarGasto(10L, datos, usuario);
+
+    assertEquals(2500.00, gastoGuardado.getImporte());
+    assertEquals(LocalDate.of(2026, 10, 20), gastoGuardado.getFecha());
+    assertEquals("Farmacia", gastoGuardado.getDescripcion());
+    assertEquals(usuario, gastoGuardado.getUsuario());
+    verify(repositorioGastoMock).modificar(gastoGuardado);
+  }
+
+  @Test
+  void debeLanzarGastoInvalidoSinModificarCuandoElNuevoImporteEsCero() {
+    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    Usuario usuario = usuarioConId(1L);
+    Gasto gastoGuardado = gastoDe(usuario);
+    when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoGuardado);
+
+    Gasto datos = new Gasto(0.0, LocalDate.of(2026, 10, 20), "Farmacia");
+
+    GastoInvalidoExeption error = assertThrows(
+      GastoInvalidoExeption.class,
+      () -> gastoServicio.modificarGasto(10L, datos, usuario)
+    );
+
+    assertEquals("El importe debe ser mayor a cero", error.getMessage());
+    assertEquals(1000.00, gastoGuardado.getImporte());
+    verify(repositorioGastoMock, never()).modificar(any());
+  }
+
+  @Test
+  void debeLanzarGastoInvalidoSinModificarCuandoLaNuevaFechaEstaFueraDelMesActual() {
+    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    Usuario usuario = usuarioConId(1L);
+    when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoDe(usuario));
+
+    Gasto datos = new Gasto(2500.00, LocalDate.of(2026, 9, 30), "Farmacia");
+
+    assertThrows(
+      GastoInvalidoExeption.class,
+      () -> gastoServicio.modificarGasto(10L, datos, usuario)
+    );
+    verify(repositorioGastoMock, never()).modificar(any());
+  }
+
+  @Test
+  void debeLanzarGastoNoEncontradoSinModificarCuandoElGastoNoExiste() {
+    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    when(repositorioGastoMock.buscarPorId(99L)).thenReturn(null);
+
+    Gasto datos = new Gasto(2500.00, LocalDate.of(2026, 10, 20), "Farmacia");
+
+    assertThrows(
+      GastoNoEncontrado.class,
+      () -> gastoServicio.modificarGasto(99L, datos, usuarioConId(1L))
+    );
+    verify(repositorioGastoMock, never()).modificar(any());
+  }
+
+  @Test
+  void debeLanzarGastoNoEncontradoSinModificarCuandoElGastoEsDeOtroUsuario() {
+    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoDe(usuarioConId(2L)));
+
+    Gasto datos = new Gasto(2500.00, LocalDate.of(2026, 10, 20), "Farmacia");
+
+    assertThrows(
+      GastoNoEncontrado.class,
+      () -> gastoServicio.modificarGasto(10L, datos, usuarioConId(1L))
+    );
+    verify(repositorioGastoMock, never()).modificar(any());
+  }
+
+  @Test
+  void debeDevolverElGastoCuandoPerteneceAlUsuario() {
+    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    Usuario usuario = usuarioConId(1L);
+    Gasto gastoGuardado = gastoDe(usuario);
+    when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoGuardado);
+
+    assertEquals(gastoGuardado, gastoServicio.obtenerGasto(10L, usuario));
+  }
+
+  @Test
+  void debeLanzarGastoNoEncontradoAlObtenerUnGastoDeOtroUsuario() {
+    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoDe(usuarioConId(2L)));
+
+    assertThrows(GastoNoEncontrado.class, () -> gastoServicio.obtenerGasto(10L, usuarioConId(1L)));
+  }
+
+  @Test
   void debePermitirDesdeEl1HastaEl31DeOctubreCuandoHoyEs6DeOctubre() {
     GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
 
     assertEquals(LocalDate.of(2026, 10, 1), gastoServicio.obtenerFechaMinimaPermitida());
     assertEquals(LocalDate.of(2026, 10, 31), gastoServicio.obtenerFechaMaximaPermitida());
+  }
+
+  private Usuario usuarioConId(Long id) {
+    Usuario usuario = new Usuario();
+    usuario.setId(id);
+    return usuario;
+  }
+
+  private Gasto gastoDe(Usuario usuario) {
+    Gasto gasto = new Gasto(1000.00, LocalDate.of(2026, 10, 5), "Supermercado");
+    gasto.setUsuario(usuario);
+    return gasto;
   }
 }

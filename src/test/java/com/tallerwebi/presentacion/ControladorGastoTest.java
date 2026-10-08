@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
+import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
 import jakarta.servlet.http.HttpServletRequest;
@@ -101,6 +102,67 @@ public class ControladorGastoTest {
     assertEquals("registrar-gasto", resultado.getViewName());
     assertEquals("El importe debe ser mayor a cero", resultado.getModel().get("error"));
     assertEquals(gasto, resultado.getModel().get("gasto"));
+  }
+
+  @Test
+  public void debeMostrarElFormularioPrecargadoConElGastoCuandoSeEntraAModificarGasto() {
+    when(gastoServicio.obtenerGasto(10L, usuario)).thenReturn(gasto);
+
+    ModelAndView resultado = controladorGasto.mostrarFormularioModificarGasto(10L, request);
+
+    assertEquals("registrar-gasto", resultado.getViewName());
+    assertEquals(gasto, resultado.getModel().get("gasto"));
+    assertEquals("Modificar gasto", resultado.getModel().get("titulo"));
+    assertEquals("/modificar-gasto/10", resultado.getModel().get("accion"));
+    assertEquals("/mostrar-gastos", resultado.getModel().get("urlCancelar"));
+  }
+
+  @Test
+  public void debeRedirigirAMisGastosCuandoSeQuiereModificarUnGastoInexistenteODeOtroUsuario() {
+    when(gastoServicio.obtenerGasto(99L, usuario)).thenThrow(new GastoNoEncontrado());
+
+    ModelAndView resultado = controladorGasto.mostrarFormularioModificarGasto(99L, request);
+
+    assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
+  }
+
+  @Test
+  public void debeModificarElGastoYRedirigirAMisGastosCuandoLosDatosSonValidos() {
+    ModelAndView resultado = controladorGasto.modificarGasto(10L, gasto, request);
+
+    assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
+
+    verify(gastoServicio).modificarGasto(10L, gasto, usuario);
+  }
+
+  @Test
+  public void debeVolverAlFormularioDeModificarConElErrorCuandoElServicioRechazaLosDatos() {
+    doThrow(new GastoInvalidoExeption("El importe debe ser mayor a cero"))
+      .when(gastoServicio)
+      .modificarGasto(10L, gasto, usuario);
+
+    ModelAndView resultado = controladorGasto.modificarGasto(10L, gasto, request);
+
+    assertEquals("registrar-gasto", resultado.getViewName());
+    assertEquals("El importe debe ser mayor a cero", resultado.getModel().get("error"));
+    assertEquals(gasto, resultado.getModel().get("gasto"));
+    assertEquals("/modificar-gasto/10", resultado.getModel().get("accion"));
+  }
+
+  @Test
+  public void debeRedirigirALoginSinModificarCuandoNoHayUsuarioEnSesion() {
+    when(session.getAttribute("USUARIO")).thenReturn(null);
+
+    assertEquals(
+      "redirect:/login",
+      controladorGasto.mostrarFormularioModificarGasto(10L, request).getViewName()
+    );
+    assertEquals(
+      "redirect:/login",
+      controladorGasto.modificarGasto(10L, gasto, request).getViewName()
+    );
+
+    verifyNoInteractions(gastoServicio);
   }
 
   @Test

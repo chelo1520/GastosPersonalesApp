@@ -58,4 +58,36 @@ public class MostrarGastosVistaTest {
       .andExpect(content().string(containsString("30/09/2026")))
       .andExpect(content().string(containsString("1.800,00")));
   }
+
+  @Test
+  public void debeRenderizarElFormularioDeModificarPrecargadoDesdeElLinkEditarDelListado()
+    throws Exception {
+    Usuario usuario = new Usuario();
+    Gasto gasto = new Gasto(2300.5, LocalDate.of(2026, 9, 15), "Gasto a editar");
+    gasto.setUsuario(usuario);
+
+    try (Session session = sessionFactory.openSession()) {
+      Transaction transaction = session.beginTransaction();
+      session.persist(usuario);
+      session.persist(gasto);
+      transaction.commit();
+    }
+
+    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+    String urlEditar = "/modificar-gasto/" + gasto.getId();
+
+    mockMvc
+      .perform(get("/mostrar-gastos").sessionAttr("USUARIO", usuario))
+      .andExpect(content().string(containsString("href=\"" + urlEditar + "\"")));
+
+    mockMvc
+      .perform(get(urlEditar).sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(view().name("registrar-gasto"))
+      .andExpect(content().string(containsString("Modificar gasto")))
+      .andExpect(content().string(containsString("action=\"" + urlEditar + "\"")))
+      .andExpect(content().string(containsString("value=\"Gasto a editar\"")))
+      .andExpect(content().string(containsString("value=\"2026-09-15\"")))
+      .andExpect(content().string(containsString("href=\"/mostrar-gastos\"")));
+  }
 }

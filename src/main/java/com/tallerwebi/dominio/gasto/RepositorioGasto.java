@@ -11,6 +11,10 @@ import java.util.List;
 public interface RepositorioGasto {
   void guardar(Gasto gasto);
 
+  void modificar(Gasto gasto);
+
+  Gasto buscarPorId(Long id);
+
   List<Gasto> BuscarGastosPorUsuario(Usuario usuario);
 
   List<Gasto> obtenerGastosEntreFechas(Usuario usuario, LocalDate desde, LocalDate hasta);

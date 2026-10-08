@@ -2,12 +2,14 @@ package com.tallerwebi.dominio.gasto;
 
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
+import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +38,45 @@ public class GastoServicioImpl implements GastoServicio {
 
   @Override
   public void registrarGasto(Gasto gasto, Usuario usuario) {
-    if (gasto.getImporte() <= 0) {
+    validar(gasto);
+
+    gasto.setUsuario(usuario);
+
+    repositorioGasto.guardar(gasto);
+  }
+
+  @Override
+  public Gasto obtenerGasto(Long id, Usuario usuario) {
+    Gasto gasto = id == null ? null : repositorioGasto.buscarPorId(id);
+    // Un gasto de otro usuario se trata igual que uno inexistente
+    if (gasto == null || !esDelUsuario(gasto, usuario)) {
+      throw new GastoNoEncontrado();
+    }
+    return gasto;
+  }
+
+  @Override
+  public void modificarGasto(Long id, Gasto datos, Usuario usuario) {
+    Gasto gasto = obtenerGasto(id, usuario);
+    validar(datos);
+
+    gasto.setImporte(datos.getImporte());
+    gasto.setFecha(datos.getFecha());
+    gasto.setDescripcion(datos.getDescripcion());
+
+    repositorioGasto.modificar(gasto);
+  }
+
+  private boolean esDelUsuario(Gasto gasto, Usuario usuario) {
+    return (
+      usuario != null &&
+      gasto.getUsuario() != null &&
+      Objects.equals(gasto.getUsuario().getId(), usuario.getId())
+    );
+  }
+
+  private void validar(Gasto gasto) {
+    if (gasto.getImporte() == null || gasto.getImporte() <= 0) {
       throw new GastoInvalidoExeption("El importe debe ser mayor a cero");
     }
 
@@ -52,10 +92,6 @@ public class GastoServicioImpl implements GastoServicio {
         ")"
       );
     }
-
-    gasto.setUsuario(usuario);
-
-    repositorioGasto.guardar(gasto);
   }
 
   @Override
