@@ -1,7 +1,13 @@
-# Los .js siempre con finales de linea LF (lo exige la regla linebreak-style de ESLint),
-# aunque git en Windows este configurado con core.autocrlf=true
-*.js text eol=lf
+# Todos los archivos de texto se guardan en el repo con finales de linea LF,
+# sin importar el sistema operativo ni el core.autocrlf de cada uno.
+# Convencion acordada en la review del 2026-10-01.
+* text=auto eol=lf
 
-# Los .java tambien con LF: Prettier (mvn compile/test) los reescribe con LF y, si no,
-# git en Windows los muestra como modificados aunque no tengan cambios
-*.java text eol=lf
+# Binarios: git no debe tocarles los bytes
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.jar binary
