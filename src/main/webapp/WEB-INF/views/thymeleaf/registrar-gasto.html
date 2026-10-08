@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 
-<head th:replace="~{fragments/layout :: head('Registrar gasto')}"></head>
+<head th:replace="~{fragments/layout :: head(${titulo})}"></head>
 
 <body>
 
-  <header th:replace="~{fragments/layout :: navbar('registrar')}"></header>
-  <header th:replace="~{fragments/layout :: header-mobile('Registrar gasto')}"></header>
+  <header th:replace="~{fragments/layout :: navbar(${seccion})}"></header>
+  <header th:replace="~{fragments/layout :: header-mobile(${titulo})}"></header>
 
   <main class="app-main">
     <div class="app-form-card">
-      <h1 class="h3 fw-bold mb-4 d-none d-md-block">Registrar gasto</h1>
+      <h1 class="h3 fw-bold mb-4 d-none d-md-block" th:text="${titulo}">Registrar gasto</h1>
 
       <div th:if="${error != null}" class="alert alert-danger" role="alert" th:text="${error}">
         El importe debe ser mayor a cero.
       </div>
 
-      <form th:action="@{/registrar-gasto}" th:object="${gasto}" method="post">
+      <form th:action="@{${accion}}" th:object="${gasto}" method="post">
         <div class="mb-3">
           <label for="importe" class="form-label">Importe <span class="app-requerido" aria-hidden="true">*</span></label>
           <div class="input-group">
@@ -42,7 +42,7 @@
         </div>
 
         <div class="d-grid d-md-flex justify-content-md-end gap-2">
-          <a th:href="@{/home}" class="btn btn-outline-secondary d-none d-md-inline-block">Cancelar</a>
+          <a th:href="@{${urlCancelar}}" class="btn btn-outline-secondary d-none d-md-inline-block">Cancelar</a>
           <button id="btn-guardar" type="submit" class="btn btn-primary">Guardar</button>
         </div>
       </form>

@@ -245,6 +245,11 @@ a:hover {
   font-size: 14px;
 }
 
+.app-gasto-editar {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .app-gastos-vacio {
   padding: 48px 20px;
   text-align: center;

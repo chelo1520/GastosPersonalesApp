@@ -3,6 +3,7 @@ package com.tallerwebi.dominio;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.tallerwebi.dominio.gasto.Gasto;
@@ -136,6 +137,31 @@ public class GastoRepositorioImpTest {
 
     assertEquals(1, gastos.size());
     assertEquals("Gasto del 29 de febrero", gastos.get(0).getDescripcion());
+  }
+
+  @Test
+  void debePersistirLosNuevosDatosCuandoSeModificaUnGastoGuardado() {
+    Gasto gasto = new Gasto(1000.00, LocalDate.of(2026, 9, 13), "Supermercado");
+    repositorioGasto.guardar(gasto);
+
+    Gasto gastoAModificar = repositorioGasto.buscarPorId(gasto.getId());
+    gastoAModificar.setImporte(2500.00);
+    gastoAModificar.setFecha(LocalDate.of(2026, 9, 20));
+    gastoAModificar.setDescripcion("Farmacia");
+    repositorioGasto.modificar(gastoAModificar);
+
+    this.sessionFactory.getCurrentSession().flush();
+    this.sessionFactory.getCurrentSession().clear();
+    Gasto gastoGuardado = repositorioGasto.buscarPorId(gasto.getId());
+
+    assertEquals(2500.00, gastoGuardado.getImporte());
+    assertEquals(LocalDate.of(2026, 9, 20), gastoGuardado.getFecha());
+    assertEquals("Farmacia", gastoGuardado.getDescripcion());
+  }
+
+  @Test
+  void debeDevolverNullCuandoSeBuscaUnGastoQueNoExiste() {
+    assertNull(repositorioGasto.buscarPorId(999L));
   }
 
   private void guardarGasto(Usuario usuario, LocalDate fecha, String descripcion) {

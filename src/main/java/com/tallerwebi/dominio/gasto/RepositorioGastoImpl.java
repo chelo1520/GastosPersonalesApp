@@ -28,6 +28,16 @@ public class RepositorioGastoImpl implements RepositorioGasto {
   }
 
   @Override
+  public void modificar(Gasto gasto) {
+    sessionFactory.getCurrentSession().update(gasto);
+  }
+
+  @Override
+  public Gasto buscarPorId(Long id) {
+    return sessionFactory.getCurrentSession().get(Gasto.class, id);
+  }
+
+  @Override
   public List<Gasto> BuscarGastosPorUsuario(Usuario usuario) {
     String hql = "FROM Gasto WHERE usuario = :usuario";
     Query<Gasto> query = sessionFactory.getCurrentSession().createQuery(hql, Gasto.class);

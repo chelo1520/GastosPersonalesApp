@@ -11,6 +11,10 @@ import java.util.List;
 public interface GastoServicio {
   void registrarGasto(Gasto gasto, Usuario usuario);
 
+  Gasto obtenerGasto(Long id, Usuario usuario);
+
+  void modificarGasto(Long id, Gasto datos, Usuario usuario);
+
   List<Gasto> obtenerGastos(Usuario usuario);
 
   Double sumarGastos(Usuario usuario, LocalDate desde, LocalDate hasta);

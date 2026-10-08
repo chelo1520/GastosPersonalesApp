@@ -44,7 +44,7 @@
 
   <!-- Header mobile: flecha de volver + título de la pantalla -->
   <header th:fragment="header-mobile(titulo)" class="app-header-mobile d-md-none">
-    <a class="app-volver" th:href="@{/home}" aria-label="Volver">
+    <a class="app-volver" th:href="@{${urlCancelar ?: '/home'}}" aria-label="Volver">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
         stroke-linecap="round" aria-hidden="true">
         <path d="M15 6l-6 6 6 6"></path>
