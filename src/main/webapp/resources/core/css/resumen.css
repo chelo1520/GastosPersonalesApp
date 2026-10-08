@@ -1,0 +1,263 @@
+/* ===== Resumen ===== */
+.app-resumen-main {
+  --res-border: var(--app-borde);
+  --res-muted: var(--app-texto-suave);
+  --res-green: #167a3e;
+  --res-orange: #c2500a;
+  --res-red: var(--app-error);
+  --res-track: #ece9e2;
+  --res-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* Paleta de categorías (el gráfico lee estos colores desde los puntos de la tabla) */
+  --app-cat-1: #0f4c47;
+  --app-cat-2: #2e9183;
+  --app-cat-3: #7fc4b8;
+  --app-cat-4: #d4a82a;
+  --app-cat-5: #bf520a;
+  --app-cat-6: #9e9a92;
+
+  max-width: 1180px;
+  margin-inline: auto;
+  padding-bottom: 32px;
+}
+
+/* Encabezado */
+.app-resumen-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.app-resumen-mes {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-mes-btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: #fff;
+  border: 1px solid var(--res-border);
+  border-radius: 10px;
+  color: var(--app-texto);
+}
+
+.app-mes-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.app-mes-btn:hover,
+.app-mes-btn:focus-visible {
+  background: #f0eee9;
+  color: var(--app-texto);
+}
+
+/* Tarjetas */
+.app-resumen-card {
+  background: #fff;
+  border: 1px solid var(--res-border);
+  border-radius: 14px;
+  padding: 20px 24px;
+}
+
+.app-resumen-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.app-resumen-card-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--res-muted);
+  font-size: 0.9rem;
+}
+
+.app-resumen-monto {
+  display: block;
+  font-family: var(--res-mono);
+  font-size: 2.4rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.app-resumen-disponible {
+  color: var(--res-green);
+}
+
+.app-resumen-disponible.is-neg {
+  color: var(--res-red);
+}
+
+/* Barra de presupuesto usado */
+.app-resumen-barra {
+  height: 8px;
+  margin-top: 12px;
+  border-radius: 999px;
+  background: var(--res-track);
+  overflow: hidden;
+}
+
+.app-resumen-barra-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--res-orange);
+  transition: width 0.25s ease;
+}
+
+.app-resumen-barra.is-over .app-resumen-barra-fill {
+  background: var(--res-red);
+}
+
+.app-resumen-barra-texto {
+  display: block;
+  margin-top: 6px;
+  color: var(--res-muted);
+  font-size: 0.8rem;
+}
+
+/* Gráfico + tabla */
+.app-resumen-detalle {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.app-resumen-card-titulo {
+  margin: 0 0 16px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.app-resumen-canvas {
+  position: relative;
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 1;
+  margin-inline: auto;
+}
+
+/* Tabla */
+.app-resumen-tabla {
+  --bs-table-bg: transparent;
+  font-size: 0.95rem;
+}
+
+.app-resumen-tabla thead th {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--res-border);
+  color: var(--res-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.app-resumen-tabla tbody td {
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--res-border);
+  vertical-align: middle;
+}
+
+.app-resumen-tabla tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.app-resumen-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-cat-dot {
+  flex: 0 0 11px;
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  background: var(--app-cat-6);
+}
+
+.app-cat-1 { background: var(--app-cat-1); }
+.app-cat-2 { background: var(--app-cat-2); }
+.app-cat-3 { background: var(--app-cat-3); }
+.app-cat-4 { background: var(--app-cat-4); }
+.app-cat-5 { background: var(--app-cat-5); }
+.app-cat-6 { background: var(--app-cat-6); }
+
+.app-resumen-num {
+  font-family: var(--res-mono);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.app-resumen-num.is-neg {
+  color: var(--res-red);
+}
+
+/* Chips de estado */
+.app-estado {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-family: var(--res-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.app-estado.is-ok   { background: #e3f4ea; color: #1e6b3d; }
+.app-estado.is-warn { background: #fdf0e3; color: #a8470a; }
+.app-estado.is-over { background: var(--res-red); color: #fff; }
+
+/* Tablet */
+@media (max-width: 991.98px) {
+  .app-resumen-stats {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .app-resumen-monto {
+    font-size: 2rem;
+  }
+
+  .app-resumen-detalle {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mobile */
+@media (max-width: 575.98px) {
+  /* En mobile se usa el botón + de la barra inferior */
+  .app-resumen-registrar {
+    display: none;
+  }
+
+  .app-resumen-card {
+    padding: 16px;
+  }
+
+  .app-resumen-tabla {
+    font-size: 0.85rem;
+  }
+
+  /* Se oculta "% del total" para que la tabla entre sin scroll horizontal */
+  .app-resumen-tabla th:nth-child(3),
+  .app-resumen-tabla td:nth-child(3) {
+    display: none;
+  }
+}

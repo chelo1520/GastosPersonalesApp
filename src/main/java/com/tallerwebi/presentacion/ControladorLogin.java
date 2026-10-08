@@ -72,11 +72,6 @@ public class ControladorLogin {
     return new ModelAndView("nuevo-usuario", model);
   }
 
-  @RequestMapping(path = "/home", method = RequestMethod.GET)
-  public ModelAndView irAHome() {
-    return new ModelAndView("redirect:/mostrar-gastos");
-  }
-
   @RequestMapping(path = "/", method = RequestMethod.GET)
   public ModelAndView inicio() {
     return new ModelAndView("redirect:/login");
