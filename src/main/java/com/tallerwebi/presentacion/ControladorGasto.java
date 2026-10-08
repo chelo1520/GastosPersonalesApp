@@ -22,6 +22,8 @@ public class ControladorGasto {
 
   private static final String REDIRECT_LOGIN = "redirect:/login";
   private static final String REDIRECT_MOSTRAR_GASTOS = "redirect:/mostrar-gastos";
+  // Fijo hasta que exista la entidad Presupuesto
+  private static final int PRESUPUESTO_SIMULACION = 550000;
   private GastoServicio gastoServicio;
 
   @Autowired
@@ -185,7 +187,7 @@ public class ControladorGasto {
     model.put("gastos", gastos);
     model.put("mesBase", NombreDeMes.de(mesBase));
     model.put("mesSimulado", NombreDeMes.de(mesSimulado));
-    model.put("presupuesto", 0);
+    model.put("presupuesto", PRESUPUESTO_SIMULACION);
 
     return new ModelAndView("simulacion", model);
   }
