@@ -8,10 +8,24 @@ import java.net.URL;
 
 public class VistaWeb {
 
+  public static final String CONTEXT_PATH = "/gastitos";
+  public static final String URL_BASE = "http://localhost:" + puertoDeLaApp() + CONTEXT_PATH;
+
   protected Page page;
 
   public VistaWeb(Page page) {
     this.page = page;
+  }
+
+  // Mismo nombre de variable que usa docker-compose para publicar la app
+  private static String puertoDeLaApp() {
+    String puerto = System.getenv("APP_HOST_PORT");
+    return puerto != null ? puerto : "8080";
+  }
+
+  // Patron para comparar el path actual, tolerando el ;jsessionid que agrega el servidor
+  public static String patronDeRuta(String ruta) {
+    return "^" + CONTEXT_PATH + ruta + "(?:;jsessionid=[^/\\s]+)?$";
   }
 
   public URL obtenerURLActual() throws MalformedURLException {

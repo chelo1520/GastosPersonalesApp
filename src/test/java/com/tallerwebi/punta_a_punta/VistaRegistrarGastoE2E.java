@@ -10,6 +10,7 @@ import com.microsoft.playwright.*;
 import com.tallerwebi.punta_a_punta.vistas.VistaLogin;
 import com.tallerwebi.punta_a_punta.vistas.VistaMisGastos;
 import com.tallerwebi.punta_a_punta.vistas.VistaRegistrarGasto;
+import com.tallerwebi.punta_a_punta.vistas.VistaWeb;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDate;
@@ -130,7 +131,7 @@ public class VistaRegistrarGastoE2E {
   private void entoncesDeberiaEstarEnMisGastos() throws MalformedURLException {
     assertThat(
       vistaRegistrarGasto.obtenerURLActual().getPath(),
-      matchesPattern("^/spring/mostrar-gastos(?:;jsessionid=[^/\\s]+)?$")
+      matchesPattern(VistaWeb.patronDeRuta("/mostrar-gastos"))
     );
   }
 
@@ -152,11 +153,11 @@ public class VistaRegistrarGastoE2E {
 
   private void entoncesDeberiaSeguirEnRegistrarGasto() throws MalformedURLException {
     URL url = vistaRegistrarGasto.obtenerURLActual();
-    assertThat(url.getPath(), matchesPattern("^/spring/registrar-gasto(?:;jsessionid=[^/\\s]+)?$"));
+    assertThat(url.getPath(), matchesPattern(VistaWeb.patronDeRuta("/registrar-gasto")));
   }
 
   private void entoncesDeberiaSerRedirigidoAlLogin() throws MalformedURLException {
     URL url = vistaRegistrarGasto.obtenerURLActual();
-    assertThat(url.getPath(), matchesPattern("^/spring/login(?:;jsessionid=[^/\\s]+)?$"));
+    assertThat(url.getPath(), matchesPattern(VistaWeb.patronDeRuta("/login")));
   }
 }

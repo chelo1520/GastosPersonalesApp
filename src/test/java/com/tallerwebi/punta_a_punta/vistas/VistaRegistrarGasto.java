@@ -7,7 +7,7 @@ public class VistaRegistrarGasto extends VistaWeb {
 
   public VistaRegistrarGasto(Page page) {
     super(page);
-    page.navigate("localhost:8080/spring/registrar-gasto");
+    page.navigate(URL_BASE + "/registrar-gasto");
   }
 
   public void registrarGasto(String importe, LocalDate fecha, String descripcion) {
