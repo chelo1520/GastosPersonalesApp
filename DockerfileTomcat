@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y wget && \
     tar -xzvf apache-tomcat-${TOMCAT_VERSION}.tar.gz -C $TOMCAT_HOME --strip-components=1 && \
     rm apache-tomcat-${TOMCAT_VERSION}.tar.gz
 
-COPY target/tallerwebi-base-1.0-SNAPSHOT.war $TOMCAT_HOME/webapps/
+COPY target/tallerwebi-base-1.0-SNAPSHOT.war $TOMCAT_HOME/webapps/gastitos.war
 
 EXPOSE 8080
 

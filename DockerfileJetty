@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y wget && \
     rm jetty.tar.gz && \
     cd $JETTY_HOME && echo "y" | java -jar start.jar --add-modules=server,http,deploy,ee10-deploy,ee10-webapp,ee10-servlet,ee10-annotations,ee10-jsp
 
-COPY target/tallerwebi-base-1.0-SNAPSHOT.war $JETTY_HOME/webapps/spring.war
+COPY target/tallerwebi-base-1.0-SNAPSHOT.war $JETTY_HOME/webapps/gastitos.war
 
 EXPOSE 8080
 

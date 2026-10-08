@@ -7,6 +7,7 @@ import static org.hamcrest.Matchers.matchesPattern;
 import com.microsoft.playwright.*;
 import com.tallerwebi.punta_a_punta.vistas.VistaLogin;
 import com.tallerwebi.punta_a_punta.vistas.VistaPerfil;
+import com.tallerwebi.punta_a_punta.vistas.VistaWeb;
 import java.net.URI;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -58,21 +59,15 @@ public class VistaPerfilE2E {
     dadoQueElUsuarioInicioSesion();
     cuandoNavegaAlPerfilDesdeElNavbar();
 
-    assertThat(
-      URI.create(page.url()).getPath(),
-      matchesPattern("^/spring/perfil(?:;jsessionid=[^/\\s]+)?$")
-    );
+    assertThat(URI.create(page.url()).getPath(), matchesPattern(VistaWeb.patronDeRuta("/perfil")));
     assertThat(vistaPerfil.obtenerEmail(), equalTo("test@unlam.edu.ar"));
   }
 
   @Test
   void deberiaRedirigirAlLoginSiSeEntraAlPerfilSinIniciarSesion() {
-    page.navigate("localhost:8080/spring/perfil");
+    page.navigate(VistaWeb.URL_BASE + "/perfil");
 
-    assertThat(
-      URI.create(page.url()).getPath(),
-      matchesPattern("^/spring/login(?:;jsessionid=[^/\\s]+)?$")
-    );
+    assertThat(URI.create(page.url()).getPath(), matchesPattern(VistaWeb.patronDeRuta("/login")));
   }
 
   private void dadoQueElUsuarioInicioSesion() {

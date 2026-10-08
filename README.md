@@ -51,7 +51,7 @@ docker run --env-file .env --name tallerwebi-mysql -d -p 3306:3306 mysql
 
 # Iniciamos el proyecto
 $ mvn clean jetty:run
-# http://localhost:8080/spring
+# http://localhost:8080/gastitos
 ```
 ## 2. Thymeleaf
 * [Documentación](https://www.thymeleaf.org/doc/tutorials/3.0/usingthymeleaf.html)

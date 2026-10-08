@@ -10,6 +10,7 @@ import com.microsoft.playwright.*;
 import com.tallerwebi.punta_a_punta.vistas.VistaLogin;
 import com.tallerwebi.punta_a_punta.vistas.VistaRegistrarGasto;
 import com.tallerwebi.punta_a_punta.vistas.VistaSimulacion;
+import com.tallerwebi.punta_a_punta.vistas.VistaWeb;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDate;
@@ -150,7 +151,7 @@ public class VistaSimulacionE2E {
   }
 
   private void cuandoElUsuarioNavegaALaSimulacion() {
-    page.navigate("localhost:8080/spring/simulacion");
+    page.navigate(VistaWeb.URL_BASE + "/simulacion");
   }
 
   private void cuandoElUsuarioTocaSimulacionEnElNavbar() {
@@ -172,7 +173,7 @@ public class VistaSimulacionE2E {
 
   private void entoncesDeberiaEstarEnLaVistaDeSimulacion() throws MalformedURLException {
     URL url = vistaSimulacion.obtenerURLActual();
-    assertThat(url.getPath(), matchesPattern("^/spring/simulacion(?:;jsessionid=[^/\\s]+)?$"));
+    assertThat(url.getPath(), matchesPattern(VistaWeb.patronDeRuta("/simulacion")));
   }
 
   private void entoncesDeberiaVerElTituloDelMesProximo() {
@@ -209,6 +210,6 @@ public class VistaSimulacionE2E {
 
   private void entoncesDeberiaSerRedirigidoAlLogin() throws MalformedURLException {
     URL url = vistaSimulacion.obtenerURLActual();
-    assertThat(url.getPath(), matchesPattern("^/spring/login(?:;jsessionid=[^/\\s]+)?$"));
+    assertThat(url.getPath(), matchesPattern(VistaWeb.patronDeRuta("/login")));
   }
 }
