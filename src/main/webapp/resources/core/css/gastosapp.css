@@ -254,6 +254,115 @@ a:hover {
   color: var(--app-texto-suave);
 }
 
+/* Perfil */
+
+.app-perfil-main {
+  max-width: 1120px;
+  min-height: calc(100vh - 64px);
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+.app-perfil-titulo {
+  margin-bottom: 24px;
+}
+
+.app-perfil-titulo p,
+.app-perfil-identidad p {
+  color: var(--app-texto-suave);
+}
+
+.app-perfil-card {
+  max-width: 760px;
+  padding: 28px;
+  background: #fff;
+  border: 1px solid var(--app-borde);
+  border-radius: 14px;
+}
+
+.app-perfil-identidad {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.app-perfil-avatar {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #e5f1ee;
+  color: var(--app-verde);
+}
+
+.app-perfil-avatar svg {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.app-perfil-identidad h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.app-perfil-identidad p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.app-perfil-datos {
+  border-top: 1px solid var(--app-borde);
+}
+
+.app-perfil-dato {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--app-borde);
+}
+
+.app-perfil-dato dt {
+  color: var(--app-texto-suave);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.app-perfil-dato dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.app-perfil-estado {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.app-perfil-estado-activa {
+  background: #e5f1ee;
+  color: #115e59;
+}
+
+.app-perfil-estado-inactiva {
+  background: #efede6;
+  color: var(--app-texto-suave);
+}
+
 .app-mobile-nav {
   position: sticky;
   bottom: 0;
@@ -336,6 +445,42 @@ a:hover {
 }
 
 @media (max-width: 767.98px) {
+  .app-perfil-main {
+    min-height: calc(100vh - 124px);
+    padding-bottom: 24px;
+  }
+
+  .app-perfil-titulo {
+    margin-bottom: 18px;
+  }
+
+  .app-perfil-card {
+    padding: 20px 16px;
+  }
+
+  .app-perfil-identidad {
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .app-perfil-avatar {
+    width: 48px;
+    height: 48px;
+    flex-basis: 48px;
+  }
+
+  .app-perfil-identidad h2 {
+    font-size: 16px;
+  }
+
+  .app-perfil-dato {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px 0;
+  }
+
   .app-gastos-main {
     padding-bottom: 20px;
   }

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head('Perfil')}"></head>
+
+<body>
+    <header th:replace="~{fragments/layout :: navbar('perfil')}"></header>
+    <header th:replace="~{fragments/layout :: header-mobile('Perfil')}"></header>
+
+    <main class="app-main app-perfil-main">
+        <div class="app-perfil-titulo">
+            <h1 class="h3 fw-bold mb-2">Mi perfil</h1>
+            <p class="mb-0">Información asociada a tu cuenta de Gastitos.</p>
+        </div>
+
+        <section class="app-perfil-card" aria-labelledby="perfil-datos-titulo">
+            <div class="app-perfil-identidad">
+                <span class="app-perfil-avatar" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="8" r="3.5"></circle>
+                        <path d="M5 20c.6-3.5 3.1-5.5 7-5.5s6.4 2 7 5.5"></path>
+                    </svg>
+                </span>
+                <div>
+                    <h2 id="perfil-datos-titulo">Datos de la cuenta</h2>
+                    <p>Estos son los datos actuales de tu perfil.</p>
+                </div>
+            </div>
+
+            <dl class="app-perfil-datos mb-0">
+                <div class="app-perfil-dato">
+                    <dt>Email</dt>
+                    <dd id="perfil-email" th:text="${usuario.email}">email@ejemplo.com</dd>
+                </div>
+                <div class="app-perfil-dato">
+                    <dt>Estado de la cuenta</dt>
+                    <dd>
+                        <span id="perfil-estado"
+                              class="app-perfil-estado"
+                              th:classappend="${usuario.activo} ? ' app-perfil-estado-activa' : ' app-perfil-estado-inactiva'"
+                              th:text="${usuario.activo} ? 'Activa' : 'Inactiva'">Activa</span>
+                    </dd>
+                </div>
+            </dl>
+        </section>
+    </main>
+
+    <nav class="app-mobile-nav d-md-none" aria-label="Navegación principal">
+        <a th:href="@{/home}" aria-label="Resumen">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7M5 10v10h14V10"></path></svg>
+            <span>Resumen</span>
+        </a>
+        <a th:href="@{/mostrar-gastos}" aria-label="Gastos">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>
+            <span>Gastos</span>
+        </a>
+        <a class="app-mobile-nav-add" th:href="@{/registrar-gasto}" aria-label="Registrar gasto">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+        </a>
+        <span class="app-mobile-nav-disabled" aria-disabled="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle></svg>
+            <span>Presup.</span>
+        </span>
+        <a class="active" th:href="@{/perfil}" aria-current="page" aria-label="Perfil">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.6-3.5 3.1-5.5 7-5.5s6.4 2 7 5.5"></path></svg>
+            <span>Perfil</span>
+        </a>
+    </nav>
+
+    <script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+
+</html>
