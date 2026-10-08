@@ -23,7 +23,7 @@
 
 <body>
 
-  <!-- Navbar desktop: activo = resumen | registrar | mis-gastos | presupuestos -->
+  <!-- Navbar desktop: activo = resumen | registrar | mis-gastos | simulacion | perfil -->
   <header th:fragment="navbar(activo)" class="app-navbar d-none d-md-flex">
     <a class="app-brand" th:href="@{/home}">
       <img th:src="@{/img/isotipo-sobre-oscuro.svg}" width="28" height="28" alt="">
@@ -34,6 +34,7 @@
       <a th:href="@{/home}" th:aria-current="${activo == 'resumen'} ? 'page'">Resumen</a>
       <a th:href="@{/registrar-gasto}" th:aria-current="${activo == 'registrar'} ? 'page'">Registrar</a>
       <a th:href="@{/mostrar-gastos}" th:aria-current="${activo == 'mis-gastos'} ? 'page'">Mis gastos</a>
+      <a th:href="@{/perfil}" th:aria-current="${activo == 'perfil'} ? 'page'">Perfil</a>
       <a class="disabled" aria-disabled="true">Presupuestos</a>
       <a th:href="@{/simulacion}" th:aria-current="${activo == 'simulacion'} ? 'page'">Simulación</a>
       <a class="disabled" aria-disabled="true">Comparativa</a>
