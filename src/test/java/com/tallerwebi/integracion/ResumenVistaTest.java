@@ -69,6 +69,9 @@ public class ResumenVistaTest {
       .andExpect(view().name("resumen"))
       .andExpect(content().string(containsString("Septiembre 2026")))
       .andExpect(content().string(containsString("$ 259.800")))
+      // Presupuesto fijo de 550.000: quedan 290.200 disponibles
+      .andExpect(content().string(containsString("$ 550.000")))
+      .andExpect(content().string(containsString("$ 290.200")))
       .andExpect(content().string(containsString("Sin categoría")))
       .andExpect(content().string(containsString("100,0 %")))
       .andExpect(content().string(containsString("href=\"/home?mes=2026-08\"")))

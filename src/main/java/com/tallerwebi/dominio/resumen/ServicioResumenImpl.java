@@ -3,6 +3,7 @@ package com.tallerwebi.dominio.resumen;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.RepositorioGasto;
+import com.tallerwebi.dominio.presupuesto.PresupuestoMensual;
 import jakarta.transaction.Transactional;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -19,9 +20,6 @@ import org.springframework.stereotype.Service;
 @Service
 @Transactional
 public class ServicioResumenImpl implements ServicioResumen {
-
-  // Todavía no existen los presupuestos: se toma 0, igual que en la simulación
-  private static final double PRESUPUESTO_SIN_DEFINIR = 0.0;
 
   // Gasto todavía no tiene categoría: todos los gastos van a esta
   static final String SIN_CATEGORIA = "Sin categoría";
@@ -44,7 +42,11 @@ public class ServicioResumenImpl implements ServicioResumen {
       gastadoPorCategoria.merge(SIN_CATEGORIA, gasto.getImporte(), Double::sum);
     }
 
-    // De la que más se gastó a la que menos, como se lee el gráfico de torta
+    double presupuesto = PresupuestoMensual.MONTO;
+
+    // De la que más se gastó a la que menos, como se lee el gráfico de torta.
+    // No hay presupuesto por categoría: como hoy todos los gastos van a una sola,
+    // esa categoría se compara contra el presupuesto del mes
     List<ResumenCategoria> categorias = new ArrayList<>();
     for (Map.Entry<String, Double> categoria : gastadoPorCategoria.entrySet()) {
       double gastadoCategoria = categoria.getValue();
@@ -53,8 +55,8 @@ public class ServicioResumenImpl implements ServicioResumen {
           categoria.getKey(),
           gastadoCategoria,
           porcentaje(gastadoCategoria, gastado),
-          PRESUPUESTO_SIN_DEFINIR - gastadoCategoria,
-          porcentajeUsado(gastadoCategoria, PRESUPUESTO_SIN_DEFINIR)
+          presupuesto - gastadoCategoria,
+          porcentajeUsado(gastadoCategoria, presupuesto)
         )
       );
     }
@@ -62,9 +64,9 @@ public class ServicioResumenImpl implements ServicioResumen {
 
     return new ResumenMensual(
       gastado,
-      PRESUPUESTO_SIN_DEFINIR,
-      PRESUPUESTO_SIN_DEFINIR - gastado,
-      porcentajeUsado(gastado, PRESUPUESTO_SIN_DEFINIR),
+      presupuesto,
+      presupuesto - gastado,
+      porcentajeUsado(gastado, presupuesto),
       categorias
     );
   }

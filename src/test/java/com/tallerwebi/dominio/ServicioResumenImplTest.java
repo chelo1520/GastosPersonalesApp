@@ -45,15 +45,26 @@ public class ServicioResumenImplTest {
   }
 
   @Test
-  void debeTenerPresupuestoCeroYDisponibleNegativoCuandoNoHayPresupuestoDefinido() {
+  void debeTenerDisponible110000Y80PorCientoUsadoCuandoSeGastan440000DeUnPresupuestoDe550000() {
     when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE))
-      .thenReturn(List.of(gasto(45000.0, "Alquiler")));
+      .thenReturn(List.of(gasto(440000.0, "Alquiler")));
 
     ResumenMensual resumen = servicioResumen.obtenerResumen(usuario, SEPTIEMBRE);
 
-    assertEquals(0.0, resumen.getPresupuesto());
-    assertEquals(-45000.0, resumen.getDisponible());
-    assertEquals(100.0, resumen.getPorcentajeUsado());
+    assertEquals(550000.0, resumen.getPresupuesto());
+    assertEquals(110000.0, resumen.getDisponible());
+    assertEquals(80.0, resumen.getPorcentajeUsado());
+  }
+
+  @Test
+  void debeTenerDisponibleNegativoCuandoLoGastadoSuperaElPresupuesto() {
+    when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE))
+      .thenReturn(List.of(gasto(600000.0, "Alquiler")));
+
+    ResumenMensual resumen = servicioResumen.obtenerResumen(usuario, SEPTIEMBRE);
+
+    assertEquals(-50000.0, resumen.getDisponible());
+    assertEquals(109.09, resumen.getPorcentajeUsado(), 0.01);
   }
 
   @Test
@@ -77,7 +88,7 @@ public class ServicioResumenImplTest {
     ResumenMensual resumen = servicioResumen.obtenerResumen(usuario, SEPTIEMBRE);
 
     assertEquals(0.0, resumen.getGastado());
-    assertEquals(0.0, resumen.getDisponible());
+    assertEquals(550000.0, resumen.getDisponible());
     assertEquals(0.0, resumen.getPorcentajeUsado());
     assertTrue(resumen.getCategorias().isEmpty());
   }

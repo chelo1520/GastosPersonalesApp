@@ -5,6 +5,7 @@ import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
+import com.tallerwebi.dominio.presupuesto.PresupuestoMensual;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -22,8 +23,6 @@ public class ControladorGasto {
 
   private static final String REDIRECT_LOGIN = "redirect:/login";
   private static final String REDIRECT_MOSTRAR_GASTOS = "redirect:/mostrar-gastos";
-  // Fijo hasta que exista la entidad Presupuesto
-  private static final int PRESUPUESTO_SIMULACION = 550000;
   private GastoServicio gastoServicio;
 
   @Autowired
@@ -187,7 +186,7 @@ public class ControladorGasto {
     model.put("gastos", gastos);
     model.put("mesBase", NombreDeMes.de(mesBase));
     model.put("mesSimulado", NombreDeMes.de(mesSimulado));
-    model.put("presupuesto", PRESUPUESTO_SIMULACION);
+    model.put("presupuesto", PresupuestoMensual.MONTO);
 
     return new ModelAndView("simulacion", model);
   }
