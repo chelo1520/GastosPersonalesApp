@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head('Resumen')}"></head>
+
+<body>
+
+  <link rel="stylesheet" th:href="@{/css/resumen.css}" />
+
+  <header th:replace="~{fragments/layout :: navbar('resumen')}"></header>
+  <header th:replace="~{fragments/layout :: header-mobile('Resumen')}"></header>
+
+  <!--
+    Modelo esperado:
+      mesActual (String, ej. "Octubre 2026"), mesAnterior / mesSiguiente (String, ej. "2026-09")
+      gastado, presupuesto, disponible (números), porcentajeUsado (número, ej. 80)
+      categorias: lista con nombre, gastado, porcentajeTotal, disponible, porcentajeUsado
+  -->
+  <main class="app-main app-resumen-main">
+
+    <!-- Encabezado -->
+    <div class="app-resumen-titulo">
+      <div class="app-resumen-mes">
+        <a class="app-mes-btn" th:href="@{/home(mes=${mesAnterior})}" aria-label="Mes anterior">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
+        </a>
+        <h1 class="h3 fw-bold mb-0" th:text="${mesActual}">Octubre 2026</h1>
+        <a class="app-mes-btn" th:href="@{/home(mes=${mesSiguiente})}" aria-label="Mes siguiente">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+        </a>
+        <span class="app-mvp-badge">MVP</span>
+      </div>
+      <a class="btn btn-primary app-registrar-link app-resumen-registrar" th:href="@{/registrar-gasto}">+ Registrar gasto</a>
+    </div>
+
+    <!-- Tarjetas de totales -->
+    <section class="app-resumen-stats" aria-label="Totales del mes">
+      <article class="app-resumen-card">
+        <span class="app-resumen-card-label">Gastado en el mes</span>
+        <strong class="app-resumen-monto"
+                th:text="'$ ' + ${#numbers.formatDecimal(gastado, 1, 'POINT', 0, 'COMMA')}">$ 320.500</strong>
+      </article>
+
+      <article class="app-resumen-card">
+        <span class="app-resumen-card-label">Presupuesto del mes</span>
+        <strong class="app-resumen-monto"
+                th:text="'$ ' + ${#numbers.formatDecimal(presupuesto, 1, 'POINT', 0, 'COMMA')}">$ 400.000</strong>
+      </article>
+
+      <article class="app-resumen-card">
+        <span class="app-resumen-card-label">Disponible</span>
+        <strong class="app-resumen-monto app-resumen-disponible"
+                th:classappend="${disponible < 0} ? 'is-neg'"
+                th:text="'$ ' + ${#numbers.formatDecimal(disponible, 1, 'POINT', 0, 'COMMA')}">$ 79.500</strong>
+        <div class="app-resumen-barra" th:classappend="${porcentajeUsado > 100} ? 'is-over'"
+             role="progressbar" aria-label="Presupuesto usado" aria-valuemin="0" aria-valuemax="100"
+             aria-valuenow="80"
+             th:attr="aria-valuenow=${porcentajeUsado > 100 ? 100 : porcentajeUsado}">
+          <div class="app-resumen-barra-fill" style="width: 80%"
+               th:style="'width:' + ${#numbers.formatInteger(porcentajeUsado > 100 ? 100 : porcentajeUsado, 1)} + '%'"></div>
+        </div>
+        <small class="app-resumen-barra-texto">
+          <span th:text="${#numbers.formatInteger(porcentajeUsado, 1)}">80</span> % del presupuesto usado
+        </small>
+      </article>
+    </section>
+
+    <!-- Gráfico + tabla -->
+    <section class="app-resumen-detalle">
+
+      <article class="app-resumen-card app-resumen-grafico">
+        <h2 class="app-resumen-card-titulo">Distribución por categoría</h2>
+
+        <div th:if="${#lists.isEmpty(categorias)}" class="app-gastos-vacio">
+          <p class="mb-0">Todavía no hay gastos este mes.</p>
+        </div>
+
+        <div class="app-resumen-canvas" th:unless="${#lists.isEmpty(categorias)}">
+          <canvas id="grafico-categorias" role="img" aria-label="Gráfico de distribución de gastos por categoría"></canvas>
+        </div>
+      </article>
+
+      <article class="app-resumen-card app-resumen-tabla-card">
+        <div class="table-responsive" th:unless="${#lists.isEmpty(categorias)}">
+          <table class="table app-resumen-tabla mb-0" id="tabla-categorias">
+            <thead>
+              <tr>
+                <th scope="col">Categoría</th>
+                <th scope="col" class="text-end">Gastado</th>
+                <th scope="col" class="text-end">% del total</th>
+                <th scope="col" class="text-end">Disponible</th>
+                <th scope="col">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="cat, iter : ${categorias}"
+                  th:data-nombre="${cat.nombre}"
+                  th:data-gastado="${cat.gastado}">
+                <td>
+                  <span class="app-resumen-cat">
+                    <!-- El color se asigna por posición (app-cat-1 … app-cat-6) y el gráfico lo lee de acá -->
+                    <span class="app-cat-dot" th:classappend="'app-cat-' + ${iter.index % 6 + 1}"></span>
+                    <span th:text="${cat.nombre}">Supermercado</span>
+                  </span>
+                </td>
+                <td class="app-resumen-num text-end"
+                    th:text="${#numbers.formatDecimal(cat.gastado, 1, 'POINT', 0, 'COMMA')}">118.400</td>
+                <td class="app-resumen-num text-end"
+                    th:text="${#numbers.formatDecimal(cat.porcentajeTotal, 1, 'POINT', 1, 'COMMA')} + ' %'">37,0 %</td>
+                <td class="app-resumen-num text-end" th:classappend="${cat.disponible < 0} ? 'is-neg'"
+                    th:text="${#numbers.formatDecimal(cat.disponible, 1, 'POINT', 0, 'COMMA')}">11.600</td>
+                <td>
+                  <!-- ok: menos de 80 % · warn: 80 a 100 % · over: más de 100 % -->
+                  <span class="app-estado"
+                        th:classappend="${cat.porcentajeUsado > 100} ? 'is-over' : (${cat.porcentajeUsado >= 80} ? 'is-warn' : 'is-ok')"
+                        th:text="${#numbers.formatInteger(cat.porcentajeUsado, 1)} + ' %'">91 %</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+    </section>
+  </main>
+
+  <nav class="app-mobile-nav d-md-none" aria-label="Navegación principal">
+    <a class="active" th:href="@{/home}" aria-current="page" aria-label="Resumen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7M5 10v10h14V10"></path></svg>
+      <span>Resumen</span>
+    </a>
+    <a th:href="@{/mostrar-gastos}" aria-label="Gastos">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>
+      <span>Gastos</span>
+    </a>
+    <a class="app-mobile-nav-add" th:href="@{/registrar-gasto}" aria-label="Registrar gasto">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+    </a>
+    <span class="app-mobile-nav-disabled" aria-disabled="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle></svg>
+      <span>Presup.</span>
+    </span>
+    <span class="app-mobile-nav-disabled" aria-disabled="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="19" cy="12" r="1.5"></circle></svg>
+      <span>Más</span>
+    </span>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script th:src="@{/js/resumen.js}" charset="utf-8"></script>
+  <script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+
+</html>

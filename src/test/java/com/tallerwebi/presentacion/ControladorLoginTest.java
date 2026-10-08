@@ -137,15 +137,6 @@ public class ControladorLoginTest {
   }
 
   @Test
-  public void debeRedirigirAMisGastosCuandoSeEntraAHome() {
-    // ejecucion
-    ModelAndView modelAndView = controladorLogin.irAHome();
-
-    // validacion
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/mostrar-gastos"));
-  }
-
-  @Test
   public void debeRedirigirAlLoginCuandoSeEntraALaRaiz() {
     // ejecucion
     ModelAndView modelAndView = controladorLogin.inicio();

@@ -5,14 +5,12 @@ import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
+import com.tallerwebi.dominio.presupuesto.PresupuestoMensual;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.format.TextStyle;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -34,7 +32,7 @@ public class ControladorGasto {
 
   @RequestMapping(path = "/mostrar-gastos", method = RequestMethod.GET)
   public ModelAndView mostrarGastos(HttpServletRequest request) {
-    Usuario usuario = obtenerUsuarioDeSesion(request);
+    Usuario usuario = SesionUsuario.obtener(request);
     if (usuario == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
@@ -55,7 +53,7 @@ public class ControladorGasto {
 
   @RequestMapping(path = "/registrar-gasto", method = RequestMethod.GET)
   public ModelAndView mostrarFormularioRegistrarGasto(HttpServletRequest request) {
-    if (obtenerUsuarioDeSesion(request) == null) {
+    if (SesionUsuario.obtener(request) == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
 
@@ -67,7 +65,7 @@ public class ControladorGasto {
 
   @RequestMapping(path = "/registrar-gasto", method = RequestMethod.POST)
   public ModelAndView registrarGasto(Gasto gasto, HttpServletRequest request) {
-    Usuario usuario = obtenerUsuarioDeSesion(request);
+    Usuario usuario = SesionUsuario.obtener(request);
     if (usuario == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
@@ -86,7 +84,7 @@ public class ControladorGasto {
     @PathVariable("id") Long id,
     HttpServletRequest request
   ) {
-    Usuario usuario = obtenerUsuarioDeSesion(request);
+    Usuario usuario = SesionUsuario.obtener(request);
     if (usuario == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
@@ -105,7 +103,7 @@ public class ControladorGasto {
     Gasto gasto,
     HttpServletRequest request
   ) {
-    Usuario usuario = obtenerUsuarioDeSesion(request);
+    Usuario usuario = SesionUsuario.obtener(request);
     if (usuario == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
@@ -130,7 +128,7 @@ public class ControladorGasto {
     return vista;
   }
 
-   private ModelAndView vistaModificarGasto(Long id, Gasto gasto, String error) {
+  private ModelAndView vistaModificarGasto(Long id, Gasto gasto, String error) {
     ModelAndView vista = vistaFormularioGasto(gasto, error);
     vista.addObject("titulo", "Modificar gasto");
     vista.addObject("accion", "/modificar-gasto/" + id);
@@ -157,7 +155,7 @@ public class ControladorGasto {
     @RequestParam("desde") LocalDate desde,
     @RequestParam("hasta") LocalDate hasta
   ) {
-    Usuario usuario = obtenerUsuarioDeSesion(request);
+    Usuario usuario = SesionUsuario.obtener(request);
     if (usuario == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
@@ -172,7 +170,7 @@ public class ControladorGasto {
 
   @RequestMapping(path = "/simulacion", method = RequestMethod.GET)
   public ModelAndView mostrarSimulacion(HttpServletRequest request) {
-    Usuario usuario = obtenerUsuarioDeSesion(request);
+    Usuario usuario = SesionUsuario.obtener(request);
     if (usuario == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
@@ -186,25 +184,10 @@ public class ControladorGasto {
 
     Map<String, Object> model = new ModelMap();
     model.put("gastos", gastos);
-    model.put("mesBase", formatearMes(mesBase));
-    model.put("mesSimulado", formatearMes(mesSimulado));
-    model.put("presupuesto", 0);
+    model.put("mesBase", NombreDeMes.de(mesBase));
+    model.put("mesSimulado", NombreDeMes.de(mesSimulado));
+    model.put("presupuesto", PresupuestoMensual.MONTO);
 
     return new ModelAndView("simulacion", model);
-  }
-
-  private String formatearMes(YearMonth mes) {
-    String nombre = mes.getMonth().getDisplayName(TextStyle.FULL, new Locale("es", "AR"));
-    return Character.toUpperCase(nombre.charAt(0)) + nombre.substring(1) + " " + mes.getYear();
-  }
-
-  private Usuario obtenerUsuarioDeSesion(HttpServletRequest request) {
-    HttpSession session = request.getSession(false);
-    if (session == null) {
-      return null;
-    }
-
-    Object usuario = session.getAttribute("USUARIO");
-    return usuario instanceof Usuario ? (Usuario) usuario : null;
   }
 }
