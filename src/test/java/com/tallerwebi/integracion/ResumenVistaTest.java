@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.integracion.config.HibernateTestConfig;
 import com.tallerwebi.integracion.config.SpringWebTestConfig;
@@ -50,13 +51,19 @@ public class ResumenVistaTest {
     Gasto alquiler = new Gasto(250000.0, LocalDate.of(2026, 9, 1), "Alquiler");
     Gasto farmacia = new Gasto(9800.0, LocalDate.of(2026, 9, 15), "Farmacia");
     Gasto deOctubre = new Gasto(5000.0, LocalDate.of(2026, 10, 2), "Gasto de octubre");
+    Categoria vivienda = categoria("Vivienda");
+    Categoria salud = categoria("Salud");
     alquiler.setUsuario(usuario);
     farmacia.setUsuario(usuario);
     deOctubre.setUsuario(usuario);
+    alquiler.setCategoria(vivienda);
+    farmacia.setCategoria(salud);
 
     try (Session session = sessionFactory.openSession()) {
       Transaction transaction = session.beginTransaction();
       session.persist(usuario);
+      session.persist(vivienda);
+      session.persist(salud);
       session.persist(alquiler);
       session.persist(farmacia);
       session.persist(deOctubre);
@@ -72,10 +79,19 @@ public class ResumenVistaTest {
       // Presupuesto fijo de 550.000: quedan 290.200 disponibles
       .andExpect(content().string(containsString("$ 550.000")))
       .andExpect(content().string(containsString("$ 290.200")))
-      .andExpect(content().string(containsString("Sin categoría")))
-      .andExpect(content().string(containsString("100,0 %")))
+      .andExpect(content().string(containsString("Vivienda")))
+      .andExpect(content().string(containsString("Salud")))
+      .andExpect(content().string(containsString("96,2 %")))
+      .andExpect(content().string(containsString("3,8 %")))
       .andExpect(content().string(containsString("href=\"/home?mes=2026-08\"")))
       .andExpect(content().string(containsString("href=\"/home?mes=2026-10\"")));
+  }
+
+  private Categoria categoria(String nombre) {
+    Categoria categoria = new Categoria();
+    categoria.setNombre(nombre);
+    categoria.setDescripcion("Categoría de prueba");
+    return categoria;
   }
 
   @Test

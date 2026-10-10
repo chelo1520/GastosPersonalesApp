@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class ServicioResumenImpl implements ServicioResumen {
 
-  // Gasto todavía no tiene categoría: todos los gastos van a esta
   static final String SIN_CATEGORIA = "Sin categoría";
 
   private RepositorioGasto repositorioGasto;
@@ -39,7 +38,13 @@ public class ServicioResumenImpl implements ServicioResumen {
     Map<String, Double> gastadoPorCategoria = new LinkedHashMap<>();
     for (Gasto gasto : gastos) {
       gastado += gasto.getImporte();
-      gastadoPorCategoria.merge(SIN_CATEGORIA, gasto.getImporte(), Double::sum);
+      String nombreCategoria = gasto.getCategoria() == null
+        ? null
+        : gasto.getCategoria().getNombre();
+      if (nombreCategoria == null || nombreCategoria.isBlank()) {
+        nombreCategoria = SIN_CATEGORIA;
+      }
+      gastadoPorCategoria.merge(nombreCategoria, gasto.getImporte(), Double::sum);
     }
 
     double presupuesto = PresupuestoMensual.MONTO;
@@ -54,9 +59,7 @@ public class ServicioResumenImpl implements ServicioResumen {
         new ResumenCategoria(
           categoria.getKey(),
           gastadoCategoria,
-          porcentaje(gastadoCategoria, gastado),
-          presupuesto - gastadoCategoria,
-          porcentajeUsado(gastadoCategoria, presupuesto)
+          porcentaje(gastadoCategoria, gastado)
         )
       );
     }

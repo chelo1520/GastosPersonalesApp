@@ -48,7 +48,7 @@ public class ControladorResumenTest {
     when(session.getAttribute("USUARIO")).thenReturn(usuario);
 
     List<ResumenCategoria> categorias = List.of(
-      new ResumenCategoria("Sin categoría", 45000.0, 100.0, -45000.0, 100.0)
+      new ResumenCategoria("Sin categoría", 45000.0, 100.0)
     );
     resumen = new ResumenMensual(45000.0, 0.0, -45000.0, 100.0, categorias);
   }

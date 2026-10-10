@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
 import com.tallerwebi.dominio.gasto.Gasto;
@@ -129,11 +130,15 @@ public class ServicioGastoImplTest {
     when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoGuardado);
 
     Gasto datos = new Gasto(2500.00, LocalDate.of(2026, 10, 20), "Farmacia");
+    Categoria categoria = new Categoria();
+    categoria.setId(2L);
+    datos.setCategoria(categoria);
     gastoServicio.modificarGasto(10L, datos, usuario);
 
     assertEquals(2500.00, gastoGuardado.getImporte());
     assertEquals(LocalDate.of(2026, 10, 20), gastoGuardado.getFecha());
     assertEquals("Farmacia", gastoGuardado.getDescripcion());
+    assertEquals(categoria, gastoGuardado.getCategoria());
     assertEquals(usuario, gastoGuardado.getUsuario());
     verify(repositorioGastoMock).modificar(gastoGuardado);
   }

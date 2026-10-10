@@ -1,6 +1,7 @@
 package com.tallerwebi.dominio.gasto;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.categoria.Categoria;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -31,6 +32,10 @@ public class Gasto {
   @JoinColumn(name = "usuario_id")
   private Usuario usuario;
 
+  @ManyToOne
+  @JoinColumn(name = "categoria_id")
+  private Categoria categoria;
+
   public Gasto() {}
 
   public Gasto(Double importe, LocalDate fecha, String descripcion) {
@@ -51,6 +56,10 @@ public class Gasto {
     return descripcion;
   }
 
+  public Categoria getCategoria() {
+    return categoria;
+  }
+
   public void setImporte(Double importe) {
     this.importe = importe;
   }
@@ -61,6 +70,10 @@ public class Gasto {
 
   public void setDescripcion(String descripcion) {
     this.descripcion = descripcion;
+  }
+
+  public void setCategoria(Categoria categoria) {
+    this.categoria = categoria;
   }
 
   public Long getId() {

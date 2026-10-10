@@ -1,6 +1,7 @@
 package com.tallerwebi.punta_a_punta.vistas;
 
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.SelectOption;
 import java.time.LocalDate;
 
 public class VistaRegistrarGasto extends VistaWeb {
@@ -20,6 +21,7 @@ public class VistaRegistrarGasto extends VistaWeb {
     this.escribirEnElElemento("#importe", importe);
     // El input type="date" no acepta tipeo: se completa con el valor ISO (yyyy-MM-dd)
     page.locator("#fecha").fill(fecha.toString());
+    page.locator("#categoria").selectOption(new SelectOption().setLabel("Alimentación"));
     this.escribirEnElElemento("#descripcion", descripcion);
   }
 
