@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.categoria.Categoria;
+import com.tallerwebi.dominio.categoria.CategoriaRepositorioImpl;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicioImpl;
 import com.tallerwebi.dominio.gasto.RepositorioGastoImpl;
@@ -44,7 +46,11 @@ public class SimulacionIntegracionTest {
   @BeforeEach
   public void init() {
     RepositorioGastoImpl repositorioGasto = new RepositorioGastoImpl(sessionFactory);
-    controladorGasto = new ControladorGasto(new GastoServicioImpl(repositorioGasto));
+    controladorGasto =
+      new ControladorGasto(
+        new GastoServicioImpl(repositorioGasto),
+        new CategoriaRepositorioImpl(sessionFactory)
+      );
 
     usuario = guardarUsuario("lourdes@gmail.com");
     request = requestConUsuario(usuario);
@@ -93,6 +99,11 @@ public class SimulacionIntegracionTest {
   public void debeRechazarElGastoYDejarVaciaLaSimulacionCuandoSeRegistraConFechaDelMesAnterior() {
     // Solo se pueden registrar gastos del mes actual
     Gasto gasto = new Gasto(25000.0, mesAnterior.withDayOfMonth(5), "Clases de guitarra");
+    Categoria categoria = new Categoria();
+    categoria.setNombre("Educación");
+    categoria.setDescripcion("Estudios");
+    sessionFactory.getCurrentSession().save(categoria);
+    gasto.setCategoria(categoria);
 
     ModelAndView resultado = controladorGasto.registrarGasto(gasto, request);
     List<Gasto> gastos = gastosDeLaSimulacion();

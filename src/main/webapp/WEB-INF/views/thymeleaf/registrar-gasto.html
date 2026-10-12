@@ -32,7 +32,14 @@
             <input id="fecha" th:field="*{fecha}" type="date" class="form-control" required
               th:min="${fechaMinima}" th:max="${fechaMaxima}">
           </div>
-          <!-- Categoría: pendiente, la entidad Gasto todavía no tiene el campo -->
+          <div class="col-md-6">
+            <label for="categoria" class="form-label">Categoría <span class="app-requerido" aria-hidden="true">*</span></label>
+            <select id="categoria" th:field="*{categoria.id}" class="form-select" required>
+              <option value="">Seleccioná una categoría</option>
+              <option th:each="categoria : ${categorias}" th:value="${categoria.id}"
+                      th:text="${categoria.nombre}">Alimentación</option>
+            </select>
+          </div>
         </div>
 
         <div class="mb-4">

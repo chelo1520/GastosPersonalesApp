@@ -1,28 +1,16 @@
 package com.tallerwebi.dominio.resumen;
 
-/**
- * Lo gastado en una categoría durante un mes, comparado con su presupuesto
- */
+/** Gastos mensuales agrupados por categoría. */
 public class ResumenCategoria {
 
   private final String nombre;
   private final Double gastado;
   private final Double porcentajeTotal;
-  private final Double disponible;
-  private final Double porcentajeUsado;
 
-  public ResumenCategoria(
-    String nombre,
-    Double gastado,
-    Double porcentajeTotal,
-    Double disponible,
-    Double porcentajeUsado
-  ) {
+  public ResumenCategoria(String nombre, Double gastado, Double porcentajeTotal) {
     this.nombre = nombre;
     this.gastado = gastado;
     this.porcentajeTotal = porcentajeTotal;
-    this.disponible = disponible;
-    this.porcentajeUsado = porcentajeUsado;
   }
 
   public String getNombre() {
@@ -35,13 +23,5 @@ public class ResumenCategoria {
 
   public Double getPorcentajeTotal() {
     return porcentajeTotal;
-  }
-
-  public Double getDisponible() {
-    return disponible;
-  }
-
-  public Double getPorcentajeUsado() {
-    return porcentajeUsado;
   }
 }

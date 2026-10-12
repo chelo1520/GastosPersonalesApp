@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.RepositorioGasto;
 import com.tallerwebi.dominio.gasto.RepositorioGastoImpl;
@@ -65,6 +66,24 @@ public class GastoRepositorioImpTest {
     assertEquals("Supermercado", gastoGuardado.getDescripcion());
     assertEquals(1000.00, gastoGuardado.getImporte());
     assertEquals(LocalDate.of(2026, 9, 13), gastoGuardado.getFecha());
+  }
+
+  @Test
+  void debePersistirLaCategoriaAsociadaAlGasto() {
+    Categoria categoria = new Categoria();
+    categoria.setNombre("Alimentación");
+    categoria.setDescripcion("Comidas y compras de alimentos");
+    sessionFactory.getCurrentSession().persist(categoria);
+
+    Gasto gasto = new Gasto(1000.00, LocalDate.of(2026, 9, 13), "Compra");
+    gasto.setCategoria(categoria);
+    repositorioGasto.guardar(gasto);
+
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+    Gasto gastoGuardado = repositorioGasto.buscarPorId(gasto.getId());
+
+    assertEquals("Alimentación", gastoGuardado.getCategoria().getNombre());
   }
 
   @Test

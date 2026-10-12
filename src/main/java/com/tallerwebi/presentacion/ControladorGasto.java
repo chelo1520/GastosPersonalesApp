@@ -1,6 +1,8 @@
 package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.categoria.Categoria;
+import com.tallerwebi.dominio.categoria.CategoriaRepositorio;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
 import com.tallerwebi.dominio.gasto.Gasto;
@@ -24,10 +26,12 @@ public class ControladorGasto {
   private static final String REDIRECT_LOGIN = "redirect:/login";
   private static final String REDIRECT_MOSTRAR_GASTOS = "redirect:/mostrar-gastos";
   private GastoServicio gastoServicio;
+  private CategoriaRepositorio categoriaRepositorio;
 
   @Autowired
-  public ControladorGasto(GastoServicio gastoServicio) {
+  public ControladorGasto(GastoServicio gastoServicio, CategoriaRepositorio categoriaRepositorio) {
     this.gastoServicio = gastoServicio;
+    this.categoriaRepositorio = categoriaRepositorio;
   }
 
   @RequestMapping(path = "/mostrar-gastos", method = RequestMethod.GET)
@@ -71,6 +75,10 @@ public class ControladorGasto {
     }
 
     try {
+      String errorCategoria = asignarCategoriaExistente(gasto);
+      if (errorCategoria != null) {
+        return vistaRegistrarGasto(gasto, errorCategoria);
+      }
       gastoServicio.registrarGasto(gasto, usuario);
     } catch (GastoInvalidoExeption e) {
       return vistaRegistrarGasto(gasto, e.getMessage());
@@ -109,6 +117,10 @@ public class ControladorGasto {
     }
 
     try {
+      String errorCategoria = asignarCategoriaExistente(gasto);
+      if (errorCategoria != null) {
+        return vistaModificarGasto(id, gasto, errorCategoria);
+      }
       gastoServicio.modificarGasto(id, gasto, usuario);
     } catch (GastoInvalidoExeption e) {
       return vistaModificarGasto(id, gasto, e.getMessage());
@@ -141,12 +153,28 @@ public class ControladorGasto {
   private ModelAndView vistaFormularioGasto(Gasto gasto, String error) {
     Map<String, Object> model = new ModelMap();
     model.put("gasto", gasto);
+    model.put("categorias", categoriaRepositorio.obtenerTodas());
     model.put("fechaMinima", gastoServicio.obtenerFechaMinimaPermitida());
     model.put("fechaMaxima", gastoServicio.obtenerFechaMaximaPermitida());
     if (error != null) {
       model.put("error", error);
     }
     return new ModelAndView("registrar-gasto", model);
+  }
+
+  private String asignarCategoriaExistente(Gasto gasto) {
+    Categoria seleccionada = gasto.getCategoria();
+    if (seleccionada == null || seleccionada.getId() == null) {
+      return "Seleccioná una categoría";
+    }
+
+    Categoria categoriaExistente = categoriaRepositorio.buscarPorId(seleccionada.getId());
+    if (categoriaExistente == null) {
+      return "La categoría seleccionada no existe";
+    }
+
+    gasto.setCategoria(categoriaExistente);
+    return null;
   }
 
   @RequestMapping(path = "/sumar-gastos", method = RequestMethod.GET)

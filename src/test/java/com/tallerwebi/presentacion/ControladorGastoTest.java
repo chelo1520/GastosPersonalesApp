@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.categoria.Categoria;
+import com.tallerwebi.dominio.categoria.CategoriaRepositorio;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
 import com.tallerwebi.dominio.gasto.Gasto;
@@ -22,18 +24,26 @@ import org.springframework.web.servlet.ModelAndView;
 public class ControladorGastoTest {
 
   private GastoServicio gastoServicio;
+  private CategoriaRepositorio categoriaRepositorio;
   private ControladorGasto controladorGasto;
 
   private Usuario usuario;
   private Gasto gasto;
+  private Categoria categoria;
   private HttpServletRequest request;
   private HttpSession session;
 
   @BeforeEach
   public void init() {
     gastoServicio = mock(GastoServicio.class);
+    categoriaRepositorio = mock(CategoriaRepositorio.class);
 
-    controladorGasto = new ControladorGasto(gastoServicio);
+    controladorGasto = new ControladorGasto(gastoServicio, categoriaRepositorio);
+    categoria = new Categoria();
+    categoria.setId(1L);
+    categoria.setNombre("Alimentación");
+    when(categoriaRepositorio.obtenerTodas()).thenReturn(List.of(categoria));
+    when(categoriaRepositorio.buscarPorId(1L)).thenReturn(categoria);
 
     usuario = mock(Usuario.class);
     request = mock(HttpServletRequest.class);
@@ -42,6 +52,7 @@ public class ControladorGastoTest {
     when(session.getAttribute("USUARIO")).thenReturn(usuario);
 
     gasto = new Gasto(15000.0, LocalDate.of(2026, 9, 26), "Supermercado");
+    gasto.setCategoria(categoria);
   }
 
   @Test
@@ -78,6 +89,31 @@ public class ControladorGastoTest {
 
     Gasto gastoDelFormulario = (Gasto) resultado.getModel().get("gasto");
     assertEquals(LocalDate.now(), gastoDelFormulario.getFecha());
+    assertEquals(List.of(categoria), resultado.getModel().get("categorias"));
+  }
+
+  @Test
+  public void debeRechazarLaCategoriaInexistenteYVolverAlFormulario() {
+    Categoria categoriaInexistente = new Categoria();
+    categoriaInexistente.setId(99L);
+    gasto.setCategoria(categoriaInexistente);
+
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request);
+
+    assertEquals("registrar-gasto", resultado.getViewName());
+    assertEquals("La categoría seleccionada no existe", resultado.getModel().get("error"));
+    verify(gastoServicio, never()).registrarGasto(gasto, usuario);
+  }
+
+  @Test
+  public void debePedirUnaCategoriaCuandoNoSeSeleccionaNinguna() {
+    gasto.setCategoria(null);
+
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request);
+
+    assertEquals("registrar-gasto", resultado.getViewName());
+    assertEquals("Seleccioná una categoría", resultado.getModel().get("error"));
+    verify(gastoServicio, never()).registrarGasto(gasto, usuario);
   }
 
   @Test

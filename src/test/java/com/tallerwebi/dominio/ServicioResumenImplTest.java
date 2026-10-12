@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.RepositorioGasto;
 import com.tallerwebi.dominio.resumen.ResumenCategoria;
@@ -82,6 +83,31 @@ public class ServicioResumenImplTest {
   }
 
   @Test
+  void debeAgruparLosGastosPorCategoriaYOrdenarlosPorImporteDescendente() {
+    Categoria vivienda = categoria("Vivienda");
+    Categoria alimentacion = categoria("Alimentación");
+    Gasto alquiler = gasto(250000.0, "Alquiler");
+    alquiler.setCategoria(vivienda);
+    Gasto compra = gasto(40000.0, "Compra semanal");
+    compra.setCategoria(alimentacion);
+    Gasto expensas = gasto(50000.0, "Expensas");
+    expensas.setCategoria(vivienda);
+    when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE))
+      .thenReturn(List.of(alquiler, compra, expensas));
+
+    ResumenMensual resumen = servicioResumen.obtenerResumen(usuario, SEPTIEMBRE);
+
+    assertEquals(
+      List.of("Vivienda", "Alimentación"),
+      resumen.getCategorias().stream().map(ResumenCategoria::getNombre).toList()
+    );
+    assertEquals(300000.0, resumen.getCategorias().get(0).getGastado());
+    assertEquals(40000.0, resumen.getCategorias().get(1).getGastado());
+    assertEquals((300000.0 / 340000.0) * 100, resumen.getCategorias().get(0).getPorcentajeTotal());
+    assertEquals(340000.0, resumen.getGastado());
+  }
+
+  @Test
   void debeDevolverTodoEnCeroYSinCategoriasCuandoElMesNoTieneGastos() {
     when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE)).thenReturn(List.of());
 
@@ -95,5 +121,11 @@ public class ServicioResumenImplTest {
 
   private Gasto gasto(Double importe, String descripcion) {
     return new Gasto(importe, LocalDate.of(2026, 9, 10), descripcion);
+  }
+
+  private Categoria categoria(String nombre) {
+    Categoria categoria = new Categoria();
+    categoria.setNombre(nombre);
+    return categoria;
   }
 }

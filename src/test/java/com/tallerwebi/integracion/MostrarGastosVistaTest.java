@@ -1,12 +1,15 @@
 package com.tallerwebi.integracion;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.integracion.config.HibernateTestConfig;
 import com.tallerwebi.integracion.config.SpringWebTestConfig;
@@ -55,6 +58,57 @@ public class MostrarGastosVistaTest {
       .andExpect(content().string(containsString("Compra de prueba")))
       .andExpect(content().string(containsString("30/09/2026")))
       .andExpect(content().string(containsString("1.800,00")));
+  }
+
+  @Test
+  public void debeMostrarLasCategoriasDisponiblesEnElFormularioDeRegistro() throws Exception {
+    Usuario usuario = new Usuario();
+    Categoria categoria = new Categoria();
+    categoria.setNombre("Alimentación");
+    categoria.setDescripcion("Comidas y compras de alimentos");
+    sessionFactory.getCurrentSession().persist(usuario);
+    sessionFactory.getCurrentSession().persist(categoria);
+
+    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+    mockMvc
+      .perform(get("/registrar-gasto").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(view().name("registrar-gasto"))
+      .andExpect(content().string(containsString("id=\"categoria\"")))
+      .andExpect(content().string(containsString("Alimentación")));
+  }
+
+  @Test
+  public void debeGuardarElGastoConLaCategoriaSeleccionadaDesdeElFormulario() throws Exception {
+    Usuario usuario = new Usuario();
+    Categoria categoria = new Categoria();
+    categoria.setNombre("Alimentación");
+    categoria.setDescripcion("Comidas y compras de alimentos");
+    sessionFactory.getCurrentSession().persist(usuario);
+    sessionFactory.getCurrentSession().persist(categoria);
+
+    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+    mockMvc
+      .perform(
+        post("/registrar-gasto")
+          .sessionAttr("USUARIO", usuario)
+          .param("importe", "1200")
+          .param("fecha", LocalDate.now().toString())
+          .param("descripcion", "Compra")
+          .param("categoria.id", categoria.getId().toString())
+      )
+      .andExpect(status().is3xxRedirection())
+      .andExpect(view().name("redirect:/mostrar-gastos"));
+
+    Gasto gastoGuardado = sessionFactory
+      .getCurrentSession()
+      .createQuery("FROM Gasto WHERE descripcion = :descripcion", Gasto.class)
+      .setParameter("descripcion", "Compra")
+      .getSingleResult();
+
+    assertEquals("Alimentación", gastoGuardado.getCategoria().getNombre());
   }
 
   @Test

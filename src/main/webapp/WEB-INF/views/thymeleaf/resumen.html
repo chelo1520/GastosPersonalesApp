@@ -88,8 +88,6 @@
                 <th scope="col">Categoría</th>
                 <th scope="col" class="text-end">Gastado</th>
                 <th scope="col" class="text-end">% del total</th>
-                <th scope="col" class="text-end">Disponible</th>
-                <th scope="col">Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -107,14 +105,6 @@
                     th:text="${#numbers.formatDecimal(cat.gastado, 1, 'POINT', 0, 'COMMA')}">118.400</td>
                 <td class="app-resumen-num text-end"
                     th:text="${#numbers.formatDecimal(cat.porcentajeTotal, 1, 'POINT', 1, 'COMMA')} + ' %'">37,0 %</td>
-                <td class="app-resumen-num text-end" th:classappend="${cat.disponible < 0} ? 'is-neg'"
-                    th:text="${#numbers.formatDecimal(cat.disponible, 1, 'POINT', 0, 'COMMA')}">11.600</td>
-                <td>
-                  <!-- ok: menos de 80 % · warn: 80 a 100 % · over: más de 100 % -->
-                  <span class="app-estado"
-                        th:classappend="${cat.porcentajeUsado > 100} ? 'is-over' : (${cat.porcentajeUsado >= 80} ? 'is-warn' : 'is-ok')"
-                        th:text="${#numbers.formatInteger(cat.porcentajeUsado, 1)} + ' %'">91 %</span>
-                </td>
               </tr>
             </tbody>
           </table>

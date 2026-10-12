@@ -63,6 +63,7 @@ public class GastoServicioImpl implements GastoServicio {
     gasto.setImporte(datos.getImporte());
     gasto.setFecha(datos.getFecha());
     gasto.setDescripcion(datos.getDescripcion());
+    gasto.setCategoria(datos.getCategoria());
 
     repositorioGasto.modificar(gasto);
   }
