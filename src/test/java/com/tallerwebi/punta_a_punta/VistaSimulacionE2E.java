@@ -35,7 +35,8 @@ public class VistaSimulacionE2E {
   static void abrirNavegador() {
     playwright = Playwright.create();
     // Con -DverNavegador=true se abre la ventana y se ve cada paso en cámara lenta
-    boolean verNavegador = Boolean.parseBoolean(System.getProperty("verNavegador", "false"));
+
+    boolean verNavegador = Boolean.parseBoolean(System.getProperty("verNavegador", "true"));
     browser =
       playwright
         .chromium()

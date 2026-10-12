@@ -13,6 +13,8 @@ public interface RepositorioGasto {
 
   void modificar(Gasto gasto);
 
+  void eliminar(Gasto gasto);
+
   Gasto buscarPorId(Long id);
 
   List<Gasto> BuscarGastosPorUsuario(Usuario usuario);

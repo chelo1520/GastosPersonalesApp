@@ -15,6 +15,8 @@ public interface GastoServicio {
 
   void modificarGasto(Long id, Gasto datos, Usuario usuario);
 
+  void eliminarGasto(Long id, Usuario usuario);
+
   List<Gasto> obtenerGastos(Usuario usuario);
 
   Double sumarGastos(Usuario usuario, LocalDate desde, LocalDate hasta);
