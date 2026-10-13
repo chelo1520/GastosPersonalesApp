@@ -200,7 +200,7 @@ public class LecturasDelPeriodoTest {
   }
 
   @Test
-  void debeAvisarHormigaAltaConElMargenElPicoLaEquivalenciaYLoQueVaDelMes() {
+  void debeAvisarHormigaAltaConElMargenElPicoYLaEquivalenciaSinMirarElMesEnCurso() {
     // Seis meses cerrados con presupuesto 840.000 y gastado 760.000: sobran 80.000 por mes
     List<MesGastoReal> meses = new ArrayList<>();
     double[] hormiga = { 54300, 55700, 57100, 70200, 60000, 61500 };
@@ -234,7 +234,8 @@ public class LecturasDelPeriodoTest {
     );
     // Vivienda es la más grande pero no cuenta: la equivalencia va contra Alimentación
     assertThat(texto, containsString("Con la mitad pagabas 0,9 meses de Alimentación."));
-    assertThat(texto, containsString("Este mes ya llevás $ 12.000."));
+    // El mes en curso (12.000 de hormiga) no entra: es de Resumen
+    assertThat(texto, not(containsString("12.000")));
   }
 
   @Test

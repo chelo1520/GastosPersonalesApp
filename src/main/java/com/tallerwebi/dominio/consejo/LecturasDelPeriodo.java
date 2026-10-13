@@ -250,7 +250,8 @@ public class LecturasDelPeriodo {
     return new Consejo(usuario, mesActual, TipoConsejo.HABITOS_CON_LA_INFLACION, null, texto, null);
   }
 
-  // Los gastos hormiga de los meses cerrados: cuánto fueron, qué parte del margen se llevaron y a qué equivalen
+  // Los gastos hormiga de los meses cerrados: cuánto fueron, qué parte del margen se llevaron y a qué
+  // equivalen. El mes en curso no entra: eso lo muestra Resumen (reglas del asistente, 1)
   private Consejo hormiga(Usuario usuario, YearMonth mesActual, GastoReal gastoReal) {
     AcumuladoHormiga acumulado = acumularHormiga(gastoReal);
     if (acumulado == null) {
@@ -311,7 +312,6 @@ public class LecturasDelPeriodo {
       )
     );
     texto.append(equivalencia(gastoReal, acumulado.total() / 2));
-    texto.append(esteMes(gastoReal));
     return new Consejo(usuario, mesActual, TipoConsejo.HORMIGA_ALTA, null, texto.toString(), null);
   }
 
@@ -383,15 +383,6 @@ public class LecturasDelPeriodo {
       meses,
       principal.getNombre()
     );
-  }
-
-  private static String esteMes(GastoReal gastoReal) {
-    for (MesGastoReal mes : gastoReal.getMeses()) {
-      if (mes.isEnCurso() && mes.getHormiga() != null && mes.getHormiga() > 0) {
-        return String.format(ARGENTINA, " Este mes ya llevás $ %,.0f.", mes.getHormiga());
-      }
-    }
-    return "";
   }
 
   static String nombreDeMes(YearMonth mes) {
