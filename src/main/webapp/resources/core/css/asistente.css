@@ -1,0 +1,152 @@
+/* Asistente ("Tu gasto real"): reutiliza tarjetas, tabla y chips de resumen.css */
+
+.app-asistente-periodos {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.app-asistente-periodos a {
+  padding: 6px 14px;
+  border: 1px solid var(--res-border);
+  border-radius: 999px;
+  color: var(--res-muted);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.app-asistente-periodos a.is-activo {
+  background: var(--app-texto);
+  border-color: var(--app-texto);
+  color: #fff;
+}
+
+/* Veredicto: borde izquierdo con el color del semáforo */
+.app-asistente-veredicto {
+  margin-bottom: 24px;
+  border-left: 6px solid var(--res-track);
+}
+
+.app-asistente-veredicto.is-ok { border-left-color: var(--res-green); }
+.app-asistente-veredicto.is-warn { border-left-color: var(--res-orange); }
+.app-asistente-veredicto.is-over { border-left-color: var(--res-red); }
+
+.app-asistente-chip {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--app-texto);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.app-asistente-veredicto-texto {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.app-asistente-nota {
+  display: block;
+  margin-top: 8px;
+  color: var(--res-muted);
+}
+
+.app-asistente-aviso {
+  margin-bottom: 24px;
+  border-left: 6px solid var(--res-orange);
+}
+
+/* Gráfico */
+.app-asistente-grafico {
+  margin-bottom: 24px;
+}
+
+.app-asistente-grafico-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.app-asistente-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--res-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.app-asistente-canvas {
+  position: relative;
+  height: 280px;
+  margin: 8px 0 16px;
+}
+
+.app-asistente-tabla-meses {
+  font-size: 0.9rem;
+}
+
+/* Toggle a dólares: la tabla muestra una u otra columna (sin el atributo hidden: Bootstrap lo fuerza con !important) */
+.app-asistente-tabla-meses .usd { display: none; }
+.app-asistente-tabla-meses.is-usd .usd { display: inline; }
+.app-asistente-tabla-meses.is-usd .ars { display: none; }
+
+.app-asistente-estimado {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--res-track);
+  color: var(--res-muted);
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 500;
+  vertical-align: middle;
+}
+
+.app-asistente-categorias {
+  margin-bottom: 16px;
+}
+
+.app-estado.is-none { background: var(--res-track); color: var(--res-muted); }
+
+.app-asistente-pie {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  padding: 8px 4px 24px;
+  color: var(--res-muted);
+  font-size: 0.8rem;
+}
+
+.app-asistente-cache {
+  color: var(--res-orange);
+}
+
+@media (max-width: 575.98px) {
+  .app-asistente-veredicto-texto {
+    font-size: 1.1rem;
+  }
+
+  .app-asistente-canvas {
+    height: 220px;
+  }
+
+  /* En mobile la tabla de meses deja solo mes, gastado y pesos de hoy */
+  #tabla-meses th:nth-child(4),
+  #tabla-meses td:nth-child(4),
+  #tabla-meses th:nth-child(5),
+  #tabla-meses td:nth-child(5),
+  #tabla-categorias th:nth-child(2),
+  #tabla-categorias td:nth-child(2),
+  #tabla-categorias th:nth-child(4),
+  #tabla-categorias td:nth-child(4) {
+    display: none;
+  }
+}

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head('Asistente')}"></head>
+
+<body>
+
+  <link rel="stylesheet" th:href="@{/css/resumen.css}" />
+  <link rel="stylesheet" th:href="@{/css/asistente.css}" />
+
+  <header th:replace="~{fragments/layout :: navbar('asistente')}"></header>
+  <header th:replace="~{fragments/layout :: header-mobile('Asistente')}"></header>
+
+  <!--
+    Modelo esperado:
+      periodo (3, 6 o 12), periodos
+      gastoReal: meses, veredicto, ultimoMesCerrado, categorias, indicadoresActualizadosEn, indicadoresAlDia
+      meses: lista de MesAsistente (etiqueta + datos: gastado, gastadoEnPesosDeHoy, gastadoUsd, ipc, ipcEstimado, enCurso)
+      veredictoTexto (String, puede faltar), ultimoMesCerrado (String)
+      indicadoresNoDisponibles (true cuando no hay IPC ni dólar)
+  -->
+  <main class="app-main app-resumen-main app-asistente-main">
+
+    <div class="app-resumen-titulo">
+      <h1 class="h3 fw-bold mb-0">Tu gasto real</h1>
+      <nav class="app-asistente-periodos" aria-label="Período">
+        <a th:each="p : ${periodos}" th:href="@{/asistente(periodo=${p})}" th:text="${p} + ' meses'"
+           th:classappend="${p == periodo} ? 'is-activo'">6 meses</a>
+      </nav>
+    </div>
+
+    <!-- Sin indicadores no hay análisis -->
+    <section th:if="${indicadoresNoDisponibles}" class="app-resumen-card app-asistente-aviso" role="alert">
+      <strong>No pude consultar la inflación ni el dólar.</strong>
+      La fuente de indicadores no responde y todavía no tengo datos guardados. Volvé a intentar en un rato.
+    </section>
+
+    <th:block th:unless="${indicadoresNoDisponibles}">
+
+      <!-- Veredicto -->
+      <section class="app-resumen-card app-asistente-veredicto" th:if="${veredictoTexto != null}"
+               th:classappend="'is-' + ${gastoReal.veredicto.estado.estilo}">
+        <span class="app-asistente-chip">Tu asistente</span>
+        <p class="app-asistente-veredicto-texto" id="veredicto" th:text="${veredictoTexto}">
+          Desde Mayo 2026 tus gastos subieron 25 %. La inflación fue 21 %: gastás 3,5 % más en serio.
+        </p>
+        <small class="app-asistente-nota">Comparo el primer mes del período con el último cerrado; el mes en curso no cuenta.</small>
+      </section>
+      <section class="app-resumen-card app-asistente-veredicto" th:if="${veredictoTexto == null}">
+        <span class="app-asistente-chip">Tu asistente</span>
+        <p class="app-asistente-veredicto-texto">Todavía no tengo dos meses cerrados con gastos para comparar. Elegí un período más largo o seguí cargando gastos.</p>
+      </section>
+
+      <!-- Tarjetas -->
+      <section class="app-resumen-stats" aria-label="Resumen del período" th:if="${gastoReal.veredicto != null}">
+        <article class="app-resumen-card">
+          <span class="app-resumen-card-label">Tus gastos (nominal)</span>
+          <strong class="app-resumen-monto"
+                  th:text="${gastoReal.veredicto.variacionNominal >= 0 ? '+' : ''} + ${#numbers.formatDecimal(gastoReal.veredicto.variacionNominal, 1, 'POINT', 1, 'COMMA')} + ' %'">+25,0 %</strong>
+        </article>
+        <article class="app-resumen-card">
+          <span class="app-resumen-card-label">Inflación del período</span>
+          <strong class="app-resumen-monto"
+                  th:text="'+' + ${#numbers.formatDecimal(gastoReal.veredicto.inflacionAcumulada, 1, 'POINT', 1, 'COMMA')} + ' %'">+21,0 %</strong>
+        </article>
+        <article class="app-resumen-card">
+          <span class="app-resumen-card-label" th:text="${ultimoMesCerrado} + ' en dólares'">Septiembre 2026 en dólares</span>
+          <strong class="app-resumen-monto"
+                  th:text="'USD ' + ${#numbers.formatDecimal(gastoReal.gastadoUsdDelUltimoMesCerrado, 1, 'POINT', 0, 'COMMA')}">USD 480</strong>
+        </article>
+      </section>
+
+      <!-- Gráfico -->
+      <section class="app-resumen-card app-asistente-grafico">
+        <div class="app-asistente-grafico-titulo">
+          <h2 class="app-resumen-card-titulo">Gasto por mes: nominal vs. en pesos de hoy</h2>
+          <label class="app-asistente-toggle">
+            <input type="checkbox" id="toggle-usd"> Ver en dólares
+          </label>
+        </div>
+        <div class="app-asistente-canvas">
+          <canvas id="grafico-gasto-real" role="img" aria-label="Gasto nominal y deflactado por mes"></canvas>
+        </div>
+        <!-- Datos del gráfico: el JS los lee de acá -->
+        <table class="table app-resumen-tabla app-asistente-tabla-meses" id="tabla-meses">
+          <thead>
+            <tr>
+              <th scope="col">Mes</th>
+              <th scope="col" class="text-end">Gastado</th>
+              <th scope="col" class="text-end">En pesos de hoy</th>
+              <th scope="col" class="text-end">IPC del mes</th>
+              <th scope="col" class="text-end">Dólar</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="m : ${meses}"
+                th:data-etiqueta="${m.etiqueta}"
+                th:data-nominal="${m.datos.gastado}"
+                th:data-real="${m.datos.gastadoEnPesosDeHoy}"
+                th:data-usd="${m.datos.gastadoUsd}"
+                th:data-en-curso="${m.datos.enCurso}">
+              <td th:text="${m.etiqueta}">Oct 2026</td>
+              <td class="app-resumen-num text-end">
+                <span class="ars" th:text="'$ ' + ${#numbers.formatDecimal(m.datos.gastado, 1, 'POINT', 0, 'COMMA')}">$ 780.000</span>
+                <span class="usd" th:text="'USD ' + ${#numbers.formatDecimal(m.datos.gastadoUsd, 1, 'POINT', 0, 'COMMA')}">USD 508</span>
+              </td>
+              <td class="app-resumen-num text-end"
+                  th:text="'$ ' + ${#numbers.formatDecimal(m.datos.gastadoEnPesosDeHoy, 1, 'POINT', 0, 'COMMA')}">$ 800.000</td>
+              <td class="app-resumen-num text-end">
+                <span th:text="${#numbers.formatDecimal(m.datos.ipc, 1, 'POINT', 1, 'COMMA')} + ' %'">1,7 %</span>
+                <span class="app-asistente-estimado" th:if="${m.datos.ipcEstimado}" title="El INDEC todavía no publicó este mes">estimado</span>
+              </td>
+              <td class="app-resumen-num text-end"
+                  th:text="'$ ' + ${#numbers.formatDecimal(m.datos.dolarCierre, 1, 'POINT', 0, 'COMMA')}">$ 1.535</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Por categoría -->
+      <section class="app-resumen-card app-asistente-categorias" th:if="${!#lists.isEmpty(gastoReal.categorias)}">
+        <h2 class="app-resumen-card-titulo">
+          <span th:text="${ultimoMesCerrado}">Septiembre 2026</span> por categoría: ¿precio o consumo?
+        </h2>
+        <div class="table-responsive">
+          <table class="table app-resumen-tabla mb-0" id="tabla-categorias">
+            <thead>
+              <tr>
+                <th scope="col">Categoría</th>
+                <th scope="col" class="text-end">Gastado</th>
+                <th scope="col" class="text-end">vs. mes anterior</th>
+                <th scope="col" class="text-end">IPC</th>
+                <th scope="col" class="text-end">Real</th>
+                <th scope="col">Diagnóstico</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="cat : ${gastoReal.categorias}">
+                <td th:text="${cat.nombre}">Entretenimiento</td>
+                <td class="app-resumen-num text-end"
+                    th:text="${#numbers.formatDecimal(cat.gastado, 1, 'POINT', 0, 'COMMA')}">63.000</td>
+                <td class="app-resumen-num text-end">
+                  <span th:if="${cat.variacionNominal != null}"
+                        th:text="${cat.variacionNominal >= 0 ? '+' : ''} + ${#numbers.formatDecimal(cat.variacionNominal, 1, 'POINT', 1, 'COMMA')} + ' %'">+35,0 %</span>
+                  <span th:unless="${cat.variacionNominal != null}">—</span>
+                </td>
+                <td class="app-resumen-num text-end"
+                    th:text="'+' + ${#numbers.formatDecimal(cat.ipc, 1, 'POINT', 1, 'COMMA')} + ' %'">+1,7 %</td>
+                <td class="app-resumen-num text-end">
+                  <span th:if="${cat.variacionReal != null}"
+                        th:classappend="${cat.variacionReal > 0} ? 'is-neg'"
+                        th:text="${cat.variacionReal >= 0 ? '+' : ''} + ${#numbers.formatDecimal(cat.variacionReal, 1, 'POINT', 1, 'COMMA')} + ' %'">+32,7 %</span>
+                  <span th:unless="${cat.variacionReal != null}">—</span>
+                </td>
+                <td>
+                  <span class="app-estado" th:classappend="'is-' + ${cat.diagnostico.estilo}"
+                        th:text="${cat.diagnostico.texto}">Consumís más</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <footer class="app-asistente-pie">
+        <span>Fuente: ArgentinaDatos (INDEC y dólar oficial) y DolarApi.</span>
+        <span th:if="${gastoReal.indicadoresActualizadosEn != null}"
+              th:text="'Actualizado: ' + ${#temporals.format(gastoReal.indicadoresActualizadosEn, 'dd/MM/yyyy HH:mm')}">Actualizado: 13/10/2026 16:37</span>
+        <span class="app-asistente-cache" th:unless="${gastoReal.indicadoresAlDia}">
+          La fuente no respondió hoy: estás viendo los últimos datos guardados.
+        </span>
+      </footer>
+    </th:block>
+  </main>
+
+  <nav class="app-mobile-nav d-md-none" aria-label="Navegación principal">
+    <a th:href="@{/home}" aria-label="Resumen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7M5 10v10h14V10"></path></svg>
+      <span>Resumen</span>
+    </a>
+    <a th:href="@{/mostrar-gastos}" aria-label="Gastos">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>
+      <span>Gastos</span>
+    </a>
+    <a class="app-mobile-nav-add" th:href="@{/registrar-gasto}" aria-label="Registrar gasto">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+    </a>
+    <a th:href="@{/presupuestos}" aria-label="Presupuestos">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle></svg>
+      <span>Presup.</span>
+    </a>
+    <a class="active" th:href="@{/asistente}" aria-current="page" aria-label="Asistente">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M6 15l4-5 4 3 4-6"></path></svg>
+      <span>Asist.</span>
+    </a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script th:src="@{/js/asistente.js}" charset="utf-8"></script>
+  <script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+
+</html>
