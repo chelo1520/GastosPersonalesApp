@@ -102,7 +102,7 @@
               <td th:text="${m.etiqueta}">Oct 2026</td>
               <td class="app-resumen-num text-end">
                 <span class="ars" th:text="'$ ' + ${#numbers.formatDecimal(m.datos.gastado, 1, 'POINT', 0, 'COMMA')}">$ 780.000</span>
-                <span class="usd" hidden th:text="'USD ' + ${#numbers.formatDecimal(m.datos.gastadoUsd, 1, 'POINT', 0, 'COMMA')}">USD 508</span>
+                <span class="usd" th:text="'USD ' + ${#numbers.formatDecimal(m.datos.gastadoUsd, 1, 'POINT', 0, 'COMMA')}">USD 508</span>
               </td>
               <td class="app-resumen-num text-end"
                   th:text="'$ ' + ${#numbers.formatDecimal(m.datos.gastadoEnPesosDeHoy, 1, 'POINT', 0, 'COMMA')}">$ 800.000</td>

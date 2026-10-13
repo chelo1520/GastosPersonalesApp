@@ -93,7 +93,7 @@
   font-size: 0.9rem;
 }
 
-/* Toggle a dólares: la tabla muestra una u otra columna */
+/* Toggle a dólares: la tabla muestra una u otra columna (sin el atributo hidden: Bootstrap lo fuerza con !important) */
 .app-asistente-tabla-meses .usd { display: none; }
 .app-asistente-tabla-meses.is-usd .usd { display: inline; }
 .app-asistente-tabla-meses.is-usd .ars { display: none; }
