@@ -118,7 +118,7 @@ public class ControladorPresupuestoTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void debeListarTodasLasCategoriasConSuPresupuestoGastadoYEstadoOSinPresupuestoYElTotalDelMes() {
+  public void debeListarTodasLasCategoriasConSuEstadoYElTotalDelMesCuandoSoloUnaTienePresupuesto() {
     ResumenCategoria conPresupuesto = new ResumenCategoria(
       "Alimentación",
       118400.0,
