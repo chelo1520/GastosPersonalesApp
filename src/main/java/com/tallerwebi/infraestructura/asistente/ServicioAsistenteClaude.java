@@ -52,7 +52,9 @@ public class ServicioAsistenteClaude implements ServicioAsistente {
     "dos oraciones, y devolverlos ordenados del más importante al menos importante. Reglas: usá " +
     "solo los números y hechos que recibís, sin inventar ni redondear distinto; no agregues consejos " +
     "nuevos ni omitas ninguno; si un consejo propone un monto, mencionalo tal cual; no uses emojis " +
-    "ni signos de exclamación; no repitas el nombre de la app. Respondé únicamente con el JSON pedido.";
+    "ni signos de exclamación; no repitas el nombre de la app. El consejo de tipo VEREDICTO_* es el " +
+    "resumen del período y va siempre primero: decile al usuario cuánto subieron sus gastos, cuánto " +
+    "la inflación y cuánto cambió en serio, con esos tres números. Respondé únicamente con el JSON pedido.";
 
   private static final Logger LOG = Logger.getLogger(ServicioAsistenteClaude.class.getName());
 

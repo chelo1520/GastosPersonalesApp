@@ -3,7 +3,6 @@ package com.tallerwebi.presentacion;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.asistente.GastoReal;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
-import com.tallerwebi.dominio.asistente.Veredicto;
 import com.tallerwebi.dominio.consejo.ServicioConsejos;
 import com.tallerwebi.dominio.excepcion.ConsejoNoEncontrado;
 import com.tallerwebi.dominio.excepcion.IndicadoresNoDisponibles;
@@ -31,8 +30,6 @@ public class ControladorAsistente {
   // Parámetro con el que el asistente avisa que la acción no se pudo hacer
   static final String AVISO_CONSEJO_INEXISTENTE = "consejo-inexistente";
   static final List<Integer> PERIODOS = List.of(3, 6, 12);
-  // Por debajo de medio punto se dice "lo mismo"
-  private static final double DIFERENCIA_MINIMA = 0.5;
 
   private final ServicioGastoReal servicioGastoReal;
   private final ServicioConsejos servicioConsejos;
@@ -70,11 +67,11 @@ public class ControladorAsistente {
       GastoReal gastoReal = servicioGastoReal.calcular(usuario, meses);
       model.put("gastoReal", gastoReal);
       model.put("meses", gastoReal.getMeses().stream().map(MesAsistente::new).toList());
-      model.put("veredictoTexto", textoDelVeredicto(gastoReal.getVeredicto()));
       if (gastoReal.getUltimoMesCerrado() != null) {
         model.put("ultimoMesCerrado", NombreDeMes.de(gastoReal.getUltimoMesCerrado()));
       }
-      model.put("consejos", servicioConsejos.obtenerPendientes(usuario));
+      // Los consejos (y el veredicto) salen del mismo análisis que muestra la pantalla
+      model.put("consejos", servicioConsejos.obtenerPendientes(usuario, gastoReal));
     } catch (IndicadoresNoDisponibles e) {
       // Sin IPC ni dólar no hay análisis posible: la vista avisa y no muestra el resto
       model.put("indicadoresNoDisponibles", true);
@@ -122,39 +119,5 @@ public class ControladorAsistente {
 
   private static String volverAlAsistente(Integer periodo) {
     return "redirect:/asistente?periodo=" + (periodo != null ? periodo : PERIODO_POR_DEFECTO);
-  }
-
-  // "Desde Mayo 2026 tus gastos subieron 25 %. La inflación fue 21 %: gastás 3,5 % más en serio."
-  static String textoDelVeredicto(Veredicto veredicto) {
-    if (veredicto == null) {
-      return null;
-    }
-    double real = veredicto.getVariacionReal();
-    String cierre;
-    if (Math.abs(real) < DIFERENCIA_MINIMA) {
-      cierre = "gastás lo mismo en serio.";
-    } else if (real > 0) {
-      cierre = "gastás " + porcentaje(real) + " % más en serio.";
-    } else {
-      cierre = "gastás " + porcentaje(-real) + " % menos en serio.";
-    }
-    double nominal = veredicto.getVariacionNominal();
-    String movimiento = nominal >= 0
-      ? "subieron " + porcentaje(nominal) + " %"
-      : "bajaron " + porcentaje(-nominal) + " %";
-    return (
-      "Desde " +
-      NombreDeMes.de(veredicto.getDesde()) +
-      " tus gastos " +
-      movimiento +
-      ". La inflación fue " +
-      porcentaje(veredicto.getInflacionAcumulada()) +
-      " %: " +
-      cierre
-    );
-  }
-
-  private static String porcentaje(double valor) {
-    return String.format(java.util.Locale.of("es", "AR"), "%.1f", valor);
   }
 }

@@ -11,6 +11,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import java.time.YearMonth;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * Un consejo del asistente para un usuario en un mes. Se persiste para recordar si el usuario
@@ -30,10 +32,13 @@ public class Consejo {
   // "AAAA-MM": el mes en que se generó
   private String mes;
 
+  // Como texto y no como ENUM de MySQL: así se pueden agregar tipos sin migrar la columna
   @Enumerated(EnumType.STRING)
+  @JdbcTypeCode(SqlTypes.VARCHAR)
   private TipoConsejo tipo;
 
   @Enumerated(EnumType.STRING)
+  @JdbcTypeCode(SqlTypes.VARCHAR)
   private EstadoConsejo estado = EstadoConsejo.PENDIENTE;
 
   // Categoría a la que refiere (null si es un consejo general)
@@ -147,5 +152,9 @@ public class Consejo {
 
   public boolean isAplicable() {
     return montoSugerido != null;
+  }
+
+  public boolean isVeredicto() {
+    return tipo.isVeredicto();
   }
 }

@@ -43,7 +43,7 @@ public class ServicioAsistenteClaudeTest {
         "Tu presupuesto quedó atrás",
         220000.0
       );
-    tendencia = consejo(2L, TipoConsejo.GASTO_REAL_EN_ALZA, null, "Gastás más en serio", null);
+    tendencia = consejo(2L, TipoConsejo.VEREDICTO_AMARILLO, null, "Gastás más en serio", null);
   }
 
   @Test

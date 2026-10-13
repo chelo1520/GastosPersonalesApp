@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -157,7 +158,7 @@ public class ServicioConsejosImplTest {
   }
 
   @Test
-  void debeAvisarCuandoElVeredictoDelPeriodoEstaEnRojo() {
+  void debeDarElVeredictoEnRojoConSubidaNominalInflacionYDiferenciaReal() {
     when(servicioGastoRealMock.calcular(any(), anyInt()))
       .thenReturn(
         gastoReal(new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0))
@@ -166,8 +167,32 @@ public class ServicioConsejosImplTest {
     List<Consejo> consejos = servicio.obtenerPendientes(usuario);
 
     assertThat(consejos, hasSize(1));
-    assertThat(consejos.get(0).getTipo(), equalTo(TipoConsejo.GASTO_REAL_EN_ALZA));
-    assertThat(consejos.get(0).getTexto(), containsString("18,2 %"));
+    Consejo veredicto = consejos.get(0);
+    assertThat(veredicto.getTipo(), equalTo(TipoConsejo.VEREDICTO_ROJO));
+    assertThat(veredicto.isVeredicto(), is(true));
+    assertThat(veredicto.isAplicable(), is(false));
+    assertThat(veredicto.getTexto(), containsString("Desde Mayo 2026 tus gastos subieron 30,0 %"));
+    assertThat(veredicto.getTexto(), containsString("La inflación fue 10,0 %"));
+    assertThat(veredicto.getTexto(), containsString("gastás 18,2 % más en serio."));
+  }
+
+  @Test
+  void debeDarElVeredictoEnVerdeDiciendoQueGastaMenosEnSerioCuandoLaInflacionSuperaLaSubida() {
+    when(servicioGastoRealMock.calcular(any(), anyInt()))
+      .thenReturn(
+        gastoReal(new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 10.0, 21.0))
+      );
+
+    List<Consejo> consejos = servicio.obtenerPendientes(usuario);
+
+    assertThat(consejos, hasSize(1));
+    assertThat(consejos.get(0).getTipo(), equalTo(TipoConsejo.VEREDICTO_VERDE));
+    assertThat(consejos.get(0).getTexto(), containsString("gastás 9,1 % menos en serio."));
+  }
+
+  @Test
+  void noDebeDarVeredictoCuandoNoHayDosMesesCerrados() {
+    assertThat(servicio.obtenerPendientes(usuario), hasSize(0));
   }
 
   @Test
@@ -209,7 +234,7 @@ public class ServicioConsejosImplTest {
   }
 
   @Test
-  void debeMostrarComoMuchoCuatroConsejosLosMasImportantesPrimero() {
+  void debeMostrarElVeredictoPrimeroYComoMuchoCuatroConsejosMasLosMasImportantesPrimero() {
     List<Presupuesto> presupuestos = new ArrayList<>();
     for (int i = 1; i <= 6; i++) {
       presupuestos.add(
@@ -227,8 +252,10 @@ public class ServicioConsejosImplTest {
 
     List<Consejo> consejos = servicio.obtenerPendientes(usuario);
 
-    assertThat(consejos, hasSize(4));
-    assertThat(consejos.get(0).getSeveridad(), equalTo(Severidad.ALERTA));
+    assertThat(consejos, hasSize(5));
+    assertThat(consejos.get(0).getTipo(), equalTo(TipoConsejo.VEREDICTO_ROJO));
+    assertThat(consejos.get(1).getSeveridad(), equalTo(Severidad.ALERTA));
+    assertThat(consejos.get(1).getTipo(), equalTo(TipoConsejo.CATEGORIA_SUBE_MAS_QUE_LA_INFLACION));
   }
 
   @Test
@@ -274,8 +301,8 @@ public class ServicioConsejosImplTest {
     Consejo consejo = new Consejo(
       usuario,
       OCTUBRE,
-      TipoConsejo.GASTO_REAL_EN_ALZA,
-      null,
+      TipoConsejo.CATEGORIA_SUBE_MAS_QUE_LA_INFLACION,
+      "Cine",
       "x",
       null
     );
@@ -288,7 +315,7 @@ public class ServicioConsejosImplTest {
   }
 
   @Test
-  void debeMostrarLaRedaccionDelAsistenteEnSuOrdenYGuardarlaCuandoLaIaResponde() {
+  void debeMostrarLaRedaccionDelAsistenteConElVeredictoSiemprePrimeroYGuardarlaCuandoLaIaResponde() {
     conPresupuestoFijo(alimentacion, 100000.0, YearMonth.of(2026, 7));
     when(servicioGastoRealMock.calcular(any(), anyInt()))
       .thenReturn(
@@ -308,9 +335,11 @@ public class ServicioConsejosImplTest {
 
     List<Consejo> consejos = servicio.obtenerPendientes(usuario);
 
+    // La IA devolvió [presupuesto, veredicto]; el veredicto igual se muestra arriba
     assertThat(consejos, hasSize(2));
-    assertThat(consejos.get(0).getTipo(), equalTo(TipoConsejo.GASTO_REAL_EN_ALZA));
-    assertThat(consejos.get(0).getTextoParaMostrar(), equalTo("Redactado: GASTO_REAL_EN_ALZA"));
+    assertThat(consejos.get(0).getTipo(), equalTo(TipoConsejo.VEREDICTO_ROJO));
+    assertThat(consejos.get(0).getTextoParaMostrar(), equalTo("Redactado: VEREDICTO_ROJO"));
+    assertThat(consejos.get(1).getTipo(), equalTo(TipoConsejo.PRESUPUESTO_DESACTUALIZADO));
     verify(repositorioMock, times(2)).modificar(any());
   }
 

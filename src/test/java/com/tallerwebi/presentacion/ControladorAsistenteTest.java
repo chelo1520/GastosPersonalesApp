@@ -1,7 +1,6 @@
 package com.tallerwebi.presentacion;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -22,7 +21,6 @@ import com.tallerwebi.dominio.excepcion.ConsejoNoEncontrado;
 import com.tallerwebi.dominio.excepcion.IndicadoresNoDisponibles;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import java.time.YearMonth;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -95,38 +93,20 @@ public class ControladorAsistenteTest {
   }
 
   @Test
-  public void debeRedactarElVeredictoConSubidaNominalInflacionYDiferenciaReal() {
-    Veredicto veredicto = new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 25.0, 21.0);
-
-    String texto = ControladorAsistente.textoDelVeredicto(veredicto);
-
-    assertThat(texto, containsString("Desde Mayo 2026 tus gastos subieron 25,0 %"));
-    assertThat(texto, containsString("La inflación fue 21,0 %"));
-    assertThat(texto, containsString("gastás 3,3 % más en serio."));
-  }
-
-  @Test
-  public void debeDecirQueGastaMenosEnSerioCuandoLaInflacionSuperaLaSubidaNominal() {
-    Veredicto veredicto = new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 10.0, 21.0);
-
-    String texto = ControladorAsistente.textoDelVeredicto(veredicto);
-
-    assertThat(texto, containsString("gastás 9,1 % menos en serio."));
-  }
-
-  @Test
-  public void debeDejarElVeredictoVacioCuandoNoHayVeredicto() {
+  public void debeDejarElGastoRealEnElModeloAunqueNoHayaVeredicto() {
     ModelAndView mav = controlador.mostrarAsistente(6, null, requestMock);
 
-    assertThat(mav.getModel().get("veredictoTexto"), nullValue());
     assertThat(mav.getModel().containsKey("gastoReal"), is(true));
   }
 
   @Test
-  public void debePedirLosConsejosPendientesCuandoMuestraElAsistente() {
-    controlador.mostrarAsistente(6, null, requestMock);
+  public void debePedirLosConsejosSobreElMismoAnalisisQueMuestraLaPantalla() {
+    GastoReal gastoReal = sinDatos();
+    when(servicioMock.calcular(usuario, 12)).thenReturn(gastoReal);
 
-    verify(servicioConsejosMock).obtenerPendientes(usuario);
+    controlador.mostrarAsistente(12, null, requestMock);
+
+    verify(servicioConsejosMock).obtenerPendientes(usuario, gastoReal);
   }
 
   @Test

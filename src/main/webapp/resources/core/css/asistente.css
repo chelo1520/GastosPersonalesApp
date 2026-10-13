@@ -40,6 +40,16 @@
 .app-consejo.is-warn { border-left-color: var(--res-orange); }
 .app-consejo.is-over { border-left-color: var(--res-red); }
 
+/* El veredicto es el consejo principal: más grande y sin acciones */
+.app-consejo-veredicto {
+  padding: 20px 24px;
+}
+
+.app-consejo-veredicto .app-consejo-cuerpo {
+  flex-direction: column;
+  gap: 8px;
+}
+
 .app-consejo-cuerpo {
   display: flex;
   align-items: flex-start;

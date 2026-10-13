@@ -11,13 +11,19 @@
   <section th:fragment="bloque(consejos, periodo)" class="app-consejos" aria-label="Consejos del asistente"
            th:unless="${#lists.isEmpty(consejos)}">
     <article class="app-resumen-card app-consejo" th:each="consejo : ${consejos}"
-             th:classappend="'is-' + ${consejo.severidad.estilo}" th:id="'consejo-' + ${consejo.id}">
+             th:classappend="'is-' + ${consejo.severidad.estilo} + (${consejo.veredicto} ? ' app-consejo-veredicto' : '')"
+             th:id="'consejo-' + ${consejo.id}">
       <div class="app-consejo-cuerpo">
-        <span class="app-estado" th:classappend="'is-' + ${consejo.severidad.estilo}"
+        <span class="app-asistente-chip" th:if="${consejo.veredicto}">Tu asistente</span>
+        <span class="app-estado" th:unless="${consejo.veredicto}" th:classappend="'is-' + ${consejo.severidad.estilo}"
               th:text="${consejo.severidad == T(com.tallerwebi.dominio.consejo.Severidad).ALERTA} ? 'Alerta' : (${consejo.severidad == T(com.tallerwebi.dominio.consejo.Severidad).ATENCION} ? 'Atención' : 'Info')">Atención</span>
-        <p class="app-consejo-texto" th:text="${consejo.textoParaMostrar}">Tu presupuesto de Alimentación quedó atrás de la inflación.</p>
+        <div>
+          <p class="app-consejo-texto" th:classappend="${consejo.veredicto} ? 'app-asistente-veredicto-texto'"
+             th:text="${consejo.textoParaMostrar}">Tu presupuesto de Alimentación quedó atrás de la inflación.</p>
+          <small class="app-asistente-nota" th:if="${consejo.veredicto}">Comparo el primer mes del período con el último cerrado; el mes en curso no cuenta.</small>
+        </div>
       </div>
-      <div class="app-consejo-acciones">
+      <div class="app-consejo-acciones" th:unless="${consejo.veredicto}">
         <form th:if="${consejo.aplicable}" method="post"
               th:action="@{/asistente/aplicar/{id}(id=${consejo.id}, periodo=${periodo})}"
               th:attr="onsubmit=|return confirm('¿Actualizar el presupuesto de ${consejo.categoria} a $ ${#numbers.formatDecimal(consejo.montoSugerido, 1, 'POINT', 0, 'COMMA')}?');|">

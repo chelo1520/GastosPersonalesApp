@@ -6,6 +6,7 @@ import com.tallerwebi.dominio.asistente.EstadoGastoReal;
 import com.tallerwebi.dominio.asistente.GastoReal;
 import com.tallerwebi.dominio.asistente.ServicioAsistente;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
+import com.tallerwebi.dominio.asistente.Veredicto;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.excepcion.ConsejoNoEncontrado;
 import com.tallerwebi.dominio.indicadores.ServicioIndicadores;
@@ -27,7 +28,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * ServicioConsejosImpl: tres reglas, todas deterministas y sin IA. HU-15 solo redacta.
+ * ServicioConsejosImpl: el veredicto del período más dos reglas, todo determinista y sin IA.
+ * HU-15 solo redacta.
  */
 @Service
 @Transactional
@@ -37,10 +39,10 @@ public class ServicioConsejosImpl implements ServicioConsejos {
   static final double UMBRAL_PRESUPUESTO_DESACTUALIZADO = 5.0;
   // Una categoría que sube más que la inflación por encima de esto, dos meses seguidos
   static final double UMBRAL_SUBA_REAL = 5.0;
-  // Como mucho se muestran estos consejos por mes, los más importantes primero
+  // Como mucho se muestran estos consejos por mes además del veredicto, los más importantes primero
   static final int MAXIMO_CONSEJOS = 4;
   private static final int MESES_HACIA_ATRAS = 24;
-  private static final int MESES_PARA_LA_TENDENCIA = 3;
+  private static final double DIFERENCIA_MINIMA = 0.5;
   private static final double REDONDEO_SUGERIDO = 1000.0;
   private static final Locale ARGENTINA = Locale.of("es", "AR");
 
@@ -93,22 +95,40 @@ public class ServicioConsejosImpl implements ServicioConsejos {
 
   @Override
   public List<Consejo> obtenerPendientes(Usuario usuario) {
+    return obtenerPendientes(
+      usuario,
+      servicioGastoReal.calcular(usuario, ServicioGastoReal.PERIODO_POR_DEFECTO)
+    );
+  }
+
+  @Override
+  public List<Consejo> obtenerPendientes(Usuario usuario, GastoReal gastoReal) {
     YearMonth mesActual = YearMonth.now(reloj);
     List<Consejo> guardados = repositorioConsejo.obtenerDelMes(usuario, mesActual);
 
     List<Consejo> calculados = new ArrayList<>();
+    Consejo veredicto = veredicto(usuario, mesActual, gastoReal);
+    if (veredicto != null) {
+      calculados.add(veredicto);
+    }
     calculados.addAll(presupuestosDesactualizados(usuario, mesActual));
     calculados.addAll(categoriasQueSubenMasQueLaInflacion(usuario, mesActual));
-    GastoReal gastoReal = servicioGastoReal.calcular(
-      usuario,
-      ServicioGastoReal.PERIODO_POR_DEFECTO
-    );
-    Consejo enAlza = gastoRealEnAlza(usuario, mesActual, gastoReal);
-    if (enAlza != null) {
-      calculados.add(enAlza);
-    }
 
-    // Un consejo ya guardado (por su tipo y categoría) conserva su estado; los nuevos se guardan
+    List<Consejo> pendientes = conservarEstado(calculados, guardados);
+    List<Consejo> paraMostrar = recortar(pendientes);
+
+    // La IA solo redacta y ordena; lo redactado se guarda para no volver a pedirlo
+    List<Consejo> redactados = servicioAsistente.redactar(paraMostrar, gastoReal);
+    for (Consejo consejo : redactados) {
+      if (consejo.getTextoRedactado() != null && consejo.getId() != null) {
+        repositorioConsejo.modificar(consejo);
+      }
+    }
+    return alFrenteElVeredicto(redactados);
+  }
+
+  // Un consejo ya guardado (por su tipo y categoría) conserva su estado; los nuevos se guardan
+  private List<Consejo> conservarEstado(List<Consejo> calculados, List<Consejo> guardados) {
     List<Consejo> pendientes = new ArrayList<>();
     for (Consejo calculado : calculados) {
       Consejo guardado = buscarIgual(guardados, calculado);
@@ -122,19 +142,36 @@ public class ServicioConsejosImpl implements ServicioConsejos {
         pendientes.add(guardado);
       }
     }
-    pendientes.sort(Comparator.comparing(Consejo::getSeveridad).reversed());
-    List<Consejo> paraMostrar = pendientes.size() > MAXIMO_CONSEJOS
-      ? new ArrayList<>(pendientes.subList(0, MAXIMO_CONSEJOS))
-      : pendientes;
+    return pendientes;
+  }
 
-    // La IA solo redacta y ordena; lo redactado se guarda para no volver a pedirlo
-    List<Consejo> redactados = servicioAsistente.redactar(paraMostrar, gastoReal);
-    for (Consejo consejo : redactados) {
-      if (consejo.getTextoRedactado() != null && consejo.getId() != null) {
-        repositorioConsejo.modificar(consejo);
+  // El veredicto siempre va y no cuenta para el tope; el resto por severidad, como mucho MAXIMO_CONSEJOS
+  private static List<Consejo> recortar(List<Consejo> pendientes) {
+    List<Consejo> paraMostrar = new ArrayList<>();
+    List<Consejo> otros = new ArrayList<>();
+    for (Consejo pendiente : pendientes) {
+      if (pendiente.isVeredicto()) {
+        paraMostrar.add(pendiente);
+      } else {
+        otros.add(pendiente);
       }
     }
-    return redactados;
+    otros.sort(Comparator.comparing(Consejo::getSeveridad).reversed());
+    paraMostrar.addAll(otros.size() > MAXIMO_CONSEJOS ? otros.subList(0, MAXIMO_CONSEJOS) : otros);
+    return paraMostrar;
+  }
+
+  // Aunque la IA reordene, el veredicto se muestra arriba de todo
+  private List<Consejo> alFrenteElVeredicto(List<Consejo> consejos) {
+    List<Consejo> ordenados = new ArrayList<>();
+    for (Consejo consejo : consejos) {
+      if (consejo.isVeredicto()) {
+        ordenados.add(0, consejo);
+      } else {
+        ordenados.add(consejo);
+      }
+    }
+    return ordenados;
   }
 
   @Override
@@ -296,21 +333,50 @@ public class ServicioConsejosImpl implements ServicioConsejos {
     return porCategoria;
   }
 
-  // Regla 3: el veredicto del período está en rojo
-  private Consejo gastoRealEnAlza(Usuario usuario, YearMonth mesActual, GastoReal gastoReal) {
-    if (
-      gastoReal.getVeredicto() == null ||
-      gastoReal.getVeredicto().getEstado() != EstadoGastoReal.ROJO
-    ) {
+  // El veredicto del período: cuánto subieron los gastos, cuánto la inflación y la diferencia real
+  private Consejo veredicto(Usuario usuario, YearMonth mesActual, GastoReal gastoReal) {
+    Veredicto veredicto = gastoReal.getVeredicto();
+    if (veredicto == null) {
       return null;
     }
+    double real = veredicto.getVariacionReal();
+    String cierre;
+    if (Math.abs(real) < DIFERENCIA_MINIMA) {
+      cierre = "gastás lo mismo en serio.";
+    } else if (real > 0) {
+      cierre = String.format(ARGENTINA, "gastás %.1f %% más en serio.", real);
+    } else {
+      cierre = String.format(ARGENTINA, "gastás %.1f %% menos en serio.", -real);
+    }
+    double nominal = veredicto.getVariacionNominal();
+    String movimiento = nominal >= 0
+      ? String.format(ARGENTINA, "subieron %.1f %%", nominal)
+      : String.format(ARGENTINA, "bajaron %.1f %%", -nominal);
     String texto = String.format(
       ARGENTINA,
-      "En los últimos %d meses tus gastos crecieron %.1f %% por encima de la inflación. No es solo que todo está más caro: estás consumiendo más.",
-      MESES_PARA_LA_TENDENCIA + MESES_PARA_LA_TENDENCIA,
-      gastoReal.getVeredicto().getVariacionReal()
+      "Desde %s tus gastos %s. La inflación fue %.1f %%: %s",
+      nombreDeMes(veredicto.getDesde()),
+      movimiento,
+      veredicto.getInflacionAcumulada(),
+      cierre
     );
-    return new Consejo(usuario, mesActual, TipoConsejo.GASTO_REAL_EN_ALZA, null, texto, null);
+    return new Consejo(
+      usuario,
+      mesActual,
+      tipoDelVeredicto(veredicto.getEstado()),
+      null,
+      texto,
+      null
+    );
+  }
+
+  private static TipoConsejo tipoDelVeredicto(EstadoGastoReal estado) {
+    if (estado == EstadoGastoReal.ROJO) {
+      return TipoConsejo.VEREDICTO_ROJO;
+    }
+    return estado == EstadoGastoReal.AMARILLO
+      ? TipoConsejo.VEREDICTO_AMARILLO
+      : TipoConsejo.VEREDICTO_VERDE;
   }
 
   private Consejo buscarIgual(List<Consejo> guardados, Consejo calculado) {

@@ -1,6 +1,7 @@
 package com.tallerwebi.dominio.consejo;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.asistente.GastoReal;
 import java.util.List;
 
 /**
@@ -8,8 +9,11 @@ import java.util.List;
  * los presupuestos y los indicadores
  */
 public interface ServicioConsejos {
-  // Genera (o reutiliza) los consejos del mes en curso y devuelve los que siguen pendientes
+  // Genera (o reutiliza) los consejos del mes en curso sobre el análisis del período por defecto
   List<Consejo> obtenerPendientes(Usuario usuario);
+
+  // Igual, pero sobre un análisis ya calculado: así el veredicto habla del período que se está viendo
+  List<Consejo> obtenerPendientes(Usuario usuario, GastoReal gastoReal);
 
   void descartar(Long id, Usuario usuario);
 

@@ -16,8 +16,8 @@
       periodo (3, 6 o 12), periodos
       gastoReal: meses, veredicto, ultimoMesCerrado, categorias, indicadoresActualizadosEn, indicadoresAlDia
       meses: lista de MesAsistente (etiqueta + datos: gastado, gastadoEnPesosDeHoy, gastadoUsd, ipc, ipcEstimado, enCurso)
-      veredictoTexto (String, puede faltar), ultimoMesCerrado (String)
-      consejos: lista de Consejo pendientes del mes (id, severidad, texto, categoria, montoSugerido, aplicable)
+      ultimoMesCerrado (String)
+      consejos: lista de Consejo pendientes del mes; el primero es el veredicto (id, severidad, textoParaMostrar, categoria, montoSugerido, aplicable, veredicto)
       indicadoresNoDisponibles (true cuando no hay IPC ni dólar)
   -->
   <main class="app-main app-resumen-main app-asistente-main">
@@ -43,16 +43,8 @@
       <!-- Consejos pendientes del mes (HU-14) -->
       <div th:replace="~{fragments/consejos :: bloque(${consejos}, ${periodo})}"></div>
 
-      <!-- Veredicto -->
-      <section class="app-resumen-card app-asistente-veredicto" th:if="${veredictoTexto != null}"
-               th:classappend="'is-' + ${gastoReal.veredicto.estado.estilo}">
-        <span class="app-asistente-chip">Tu asistente</span>
-        <p class="app-asistente-veredicto-texto" id="veredicto" th:text="${veredictoTexto}">
-          Desde Mayo 2026 tus gastos subieron 25 %. La inflación fue 21 %: gastás 3,5 % más en serio.
-        </p>
-        <small class="app-asistente-nota">Comparo el primer mes del período con el último cerrado; el mes en curso no cuenta.</small>
-      </section>
-      <section class="app-resumen-card app-asistente-veredicto" th:if="${veredictoTexto == null}">
+      <!-- El veredicto viene como primer consejo; si no hay dos meses cerrados, se explica -->
+      <section class="app-resumen-card app-asistente-veredicto" th:if="${gastoReal.veredicto == null}">
         <span class="app-asistente-chip">Tu asistente</span>
         <p class="app-asistente-veredicto-texto">Todavía no tengo dos meses cerrados con gastos para comparar. Elegí un período más largo o seguí cargando gastos.</p>
       </section>
