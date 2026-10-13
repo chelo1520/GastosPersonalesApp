@@ -2,17 +2,16 @@ package com.tallerwebi.infraestructura.asistente;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.sameInstance;
 
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.asistente.CategoriaGastoReal;
 import com.tallerwebi.dominio.asistente.GastoReal;
-import com.tallerwebi.dominio.asistente.RedaccionDeConsejos;
 import com.tallerwebi.dominio.asistente.Veredicto;
 import com.tallerwebi.dominio.consejo.Consejo;
 import com.tallerwebi.dominio.consejo.TipoConsejo;
@@ -22,13 +21,13 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Armado de los hechos y aplicación de la respuesta; no hay llamadas a la API. */
+/** Armado de los hechos y tratamiento de la respuesta; no hay llamadas a la API. */
 public class ServicioAsistenteClaudeTest {
 
   private ServicioAsistenteClaude sinClave;
   private Usuario usuario;
   private Consejo presupuesto;
-  private Consejo tendencia;
+  private Consejo veredicto;
 
   @BeforeEach
   public void init() {
@@ -43,22 +42,20 @@ public class ServicioAsistenteClaudeTest {
         "Tu presupuesto quedó atrás",
         220000.0
       );
-    tendencia = consejo(2L, TipoConsejo.VEREDICTO_AMARILLO, null, "Gastás más en serio", null);
+    veredicto = consejo(2L, TipoConsejo.VEREDICTO_AMARILLO, null, "Gastás más en serio", null);
   }
 
   @Test
-  void debeDevolverLosConsejosTalCualYNoEstarDisponibleCuandoNoHayClave() {
-    List<Consejo> consejos = List.of(presupuesto, tendencia);
-
-    List<Consejo> resultado = sinClave.redactar(consejos, null);
+  void noDebeSintetizarNiEstarDisponibleCuandoNoHayClave() {
+    String sintesis = sinClave.sintetizar(List.of(veredicto, presupuesto), null);
 
     assertThat(sinClave.disponible(), is(false));
-    assertThat(resultado, sameInstance(consejos));
-    assertThat(presupuesto.getTextoRedactado(), nullValue());
+    assertThat(sintesis, nullValue());
+    assertThat(veredicto.getTextoRedactado(), nullValue());
   }
 
   @Test
-  void debeMandarLosHechosDeCadaConsejoYElContextoSinDatosPersonales() {
+  void debeMandarLosHechosDeCadaConsejoConSuFamiliaYElContextoSinDatosPersonales() {
     GastoReal contexto = new GastoReal(
       List.of(),
       new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 9.4, 7.6),
@@ -68,7 +65,7 @@ public class ServicioAsistenteClaudeTest {
       true
     );
 
-    String hechos = sinClave.armarHechos(List.of(presupuesto, tendencia), contexto);
+    String hechos = sinClave.armarHechos(List.of(veredicto, presupuesto), contexto);
 
     assertThat(hechos, containsString("\"id\":1"));
     assertThat(hechos, containsString("\"montoSugerido\":220000.0"));
@@ -82,54 +79,20 @@ public class ServicioAsistenteClaudeTest {
   }
 
   @Test
-  void debeAplicarElTextoYElOrdenDelModeloYDejarAlFinalLoQueOmitio() {
-    Consejo extra = consejo(
-      3L,
-      TipoConsejo.CATEGORIA_SUBE_MAS_QUE_LA_INFLACION,
-      "Cine",
-      "Cine sube",
-      null
-    );
-    RedaccionDeConsejos redaccion = new RedaccionDeConsejos(
-      List.of(
-        new RedaccionDeConsejos.ConsejoRedactado(2L, "Ojo: estás gastando más en serio."),
-        new RedaccionDeConsejos.ConsejoRedactado(1L, " Subí Alimentación a $ 220.000. "),
-        new RedaccionDeConsejos.ConsejoRedactado(99L, "Un consejo inventado")
-      )
-    );
+  void debeRecortarLaSintesisEnElUltimoPuntoQueEntraEnLaColumna() {
+    String oracion = "Esta es una oración de la síntesis que ocupa lugar. ";
+    String larga = oracion.repeat(30).trim();
 
-    List<Consejo> resultado = sinClave.aplicarRedaccion(
-      List.of(presupuesto, tendencia, extra),
-      redaccion
-    );
+    String recortada = ServicioAsistenteClaude.recortarAlLargoDeLaColumna(larga);
 
-    assertThat(resultado, hasSize(3));
-    assertThat(resultado.get(0), sameInstance(tendencia));
-    assertThat(
-      resultado.get(0).getTextoParaMostrar(),
-      equalTo("Ojo: estás gastando más en serio.")
-    );
-    assertThat(resultado.get(1).getTextoParaMostrar(), equalTo("Subí Alimentación a $ 220.000."));
-    assertThat(resultado.get(1).getFirmaHechos(), equalTo(presupuesto.firmaDeLosHechos()));
-    // El omitido conserva el texto de las reglas
-    assertThat(resultado.get(2), sameInstance(extra));
-    assertThat(resultado.get(2).getTextoParaMostrar(), equalTo("Cine sube"));
+    assertThat(recortada.length(), lessThanOrEqualTo(ServicioAsistenteClaude.LARGO_MAXIMO));
+    assertThat(recortada, endsWith("."));
+    assertThat(ServicioAsistenteClaude.recortarAlLargoDeLaColumna("Corta."), equalTo("Corta."));
   }
 
   @Test
-  void debeIgnorarLasRedaccionesVaciasYConservarElTextoDeLasReglas() {
-    RedaccionDeConsejos redaccion = new RedaccionDeConsejos(
-      List.of(new RedaccionDeConsejos.ConsejoRedactado(1L, "   "))
-    );
-
-    List<Consejo> resultado = sinClave.aplicarRedaccion(List.of(presupuesto), redaccion);
-
-    assertThat(resultado.get(0).getTextoParaMostrar(), equalTo("Tu presupuesto quedó atrás"));
-  }
-
-  @Test
-  void debeVolverARedactarSoloCuandoCambianLosHechosDelConsejo() {
-    presupuesto.redactar("Redactado", presupuesto.firmaDeLosHechos());
+  void debeCambiarLaFirmaCuandoCambianLosHechosDelConsejo() {
+    presupuesto.redactar("Síntesis", presupuesto.firmaDeLosHechos());
     String firmaAnterior = presupuesto.getFirmaHechos();
 
     presupuesto.setMontoSugerido(230000.0);

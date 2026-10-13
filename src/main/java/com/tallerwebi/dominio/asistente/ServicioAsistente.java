@@ -4,12 +4,13 @@ import com.tallerwebi.dominio.consejo.Consejo;
 import java.util.List;
 
 /**
- * ServicioAsistente: redacta y prioriza los consejos ya calculados por las reglas.
- * No calcula nada: recibe hechos y devuelve los mismos consejos con mejor texto y orden.
- * Si no está disponible (sin clave, sin red, tope del día) devuelve la lista tal cual.
+ * ServicioAsistente: escribe la síntesis del período a partir de los consejos ya calculados por
+ * las reglas. No calcula nada: recibe hechos y devuelve un párrafo que los conecta.
+ * Si no está disponible (sin clave, sin red, tope del día) devuelve null y se muestra el veredicto
+ * de las reglas.
  */
 public interface ServicioAsistente {
-  List<Consejo> redactar(List<Consejo> consejos, GastoReal contexto);
+  String sintetizar(List<Consejo> consejos, GastoReal contexto);
 
   boolean disponible();
 }

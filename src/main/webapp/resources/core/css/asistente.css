@@ -228,3 +228,30 @@
     display: none;
   }
 }
+
+/* Mientras la IA escribe la síntesis: una línea chica con puntos que laten */
+.app-asistente-escribiendo {
+  display: block;
+  margin-top: 6px;
+  color: var(--res-muted);
+  font-size: 0.85rem;
+}
+
+.app-asistente-puntos::after {
+  content: "…";
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: app-puntos 1.2s steps(4, end) infinite;
+}
+
+@keyframes app-puntos {
+  0% { content: ""; }
+  25% { content: "."; }
+  50% { content: ".."; }
+  75% { content: "…"; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-asistente-puntos::after { animation: none; }
+}

@@ -37,9 +37,10 @@ public class ServicioConsejosImpl implements ServicioConsejos {
   static final double UMBRAL_PRESUPUESTO_DESACTUALIZADO = 5.0;
   // Una categoría que sube más que la inflación por encima de esto, dos meses seguidos
   static final double UMBRAL_SUBA_REAL = 5.0;
-  // Como mucho se muestran estas lecturas además del veredicto, y estas propuestas; las más importantes primero
+  // Como mucho se muestran estas lecturas además del veredicto, las más importantes primero
   static final int MAXIMO_LECTURAS = 3;
-  static final int MAXIMO_PROPUESTAS = 4;
+  // Y una sola propuesta por vez: el usuario la aplica o la descarta y recién entonces aparece la siguiente
+  static final int MAXIMO_PROPUESTAS = 1;
   private static final int MESES_HACIA_ATRAS = 24;
   private static final double REDONDEO_SUGERIDO = 1000.0;
   private static final Locale ARGENTINA = Locale.of("es", "AR");
@@ -112,14 +113,56 @@ public class ServicioConsejosImpl implements ServicioConsejos {
     List<Consejo> pendientes = conservarEstado(calculados, guardados);
     List<Consejo> paraMostrar = recortar(pendientes);
 
-    // La IA solo redacta y ordena; lo redactado se guarda para no volver a pedirlo
-    List<Consejo> redactados = servicioAsistente.redactar(paraMostrar, gastoReal);
-    for (Consejo consejo : redactados) {
-      if (consejo.getTextoRedactado() != null && consejo.getId() != null) {
-        repositorioConsejo.modificar(consejo);
+    // Si cambiaron los hechos, la síntesis guardada ya no vale: vuelve el texto de las reglas
+    Consejo veredicto = veredictoDe(paraMostrar);
+    if (
+      veredicto != null &&
+      veredicto.getTextoRedactado() != null &&
+      !firmaDelPeriodo(paraMostrar).equals(veredicto.getFirmaHechos())
+    ) {
+      veredicto.redactar(null, null);
+      repositorioConsejo.modificar(veredicto);
+    }
+    return paraMostrar;
+  }
+
+  // Una sola síntesis del período, escrita por la IA sobre estos hechos y guardada en el veredicto;
+  // se vuelve a pedir solo cuando cambian los hechos. Las demás tarjetas muestran el texto de las reglas
+  @Override
+  public String sintetizar(Usuario usuario, GastoReal gastoReal) {
+    List<Consejo> paraMostrar = obtenerPendientes(usuario, gastoReal);
+    Consejo veredicto = veredictoDe(paraMostrar);
+    if (veredicto == null) {
+      return null;
+    }
+    if (veredicto.getTextoRedactado() == null) {
+      String sintesis = servicioAsistente.sintetizar(paraMostrar, gastoReal);
+      if (sintesis != null && !sintesis.isBlank()) {
+        veredicto.redactar(sintesis.trim(), firmaDelPeriodo(paraMostrar));
+        repositorioConsejo.modificar(veredicto);
       }
     }
-    return ordenarPorFamilia(redactados);
+    return veredicto.getTextoRedactado();
+  }
+
+  @Override
+  public boolean faltaLaSintesis(List<Consejo> consejos) {
+    Consejo veredicto = veredictoDe(consejos);
+    return (
+      veredicto != null && veredicto.getTextoRedactado() == null && servicioAsistente.disponible()
+    );
+  }
+
+  private static Consejo veredictoDe(List<Consejo> consejos) {
+    return !consejos.isEmpty() && consejos.get(0).isVeredicto() ? consejos.get(0) : null;
+  }
+
+  private static String firmaDelPeriodo(List<Consejo> consejos) {
+    StringBuilder hechos = new StringBuilder();
+    for (Consejo consejo : consejos) {
+      hechos.append(consejo.firmaDeLosHechos()).append('|');
+    }
+    return Integer.toHexString(hechos.toString().hashCode());
   }
 
   // Un consejo ya guardado (por su tipo y categoría) conserva su estado; los nuevos se guardan
@@ -133,6 +176,10 @@ public class ServicioConsejosImpl implements ServicioConsejos {
       } else if (guardado.getEstado() == EstadoConsejo.PENDIENTE) {
         guardado.setTexto(calculado.getTexto());
         guardado.setMontoSugerido(calculado.getMontoSugerido());
+        if (!guardado.isVeredicto()) {
+          // Solo el veredicto lleva síntesis; una redacción vieja por tarjeta ya no se muestra
+          guardado.redactar(null, null);
+        }
         repositorioConsejo.modificar(guardado);
         pendientes.add(guardado);
       }
@@ -166,24 +213,6 @@ public class ServicioConsejosImpl implements ServicioConsejos {
   private static List<Consejo> losMasImportantes(List<Consejo> consejos, int maximo) {
     consejos.sort(Comparator.comparing(Consejo::getSeveridad).reversed());
     return consejos.size() > maximo ? new ArrayList<>(consejos.subList(0, maximo)) : consejos;
-  }
-
-  // Aunque la IA reordene, se muestra el veredicto, después las lecturas y al final las propuestas
-  private List<Consejo> ordenarPorFamilia(List<Consejo> consejos) {
-    List<Consejo> ordenados = new ArrayList<>();
-    for (Consejo consejo : consejos) {
-      if (consejo.isVeredicto()) {
-        ordenados.add(0, consejo);
-      } else if (consejo.isLectura()) {
-        ordenados.add(consejo);
-      }
-    }
-    for (Consejo consejo : consejos) {
-      if (consejo.isPropuesta()) {
-        ordenados.add(consejo);
-      }
-    }
-    return ordenados;
   }
 
   @Override

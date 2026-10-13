@@ -135,12 +135,12 @@ public class Consejo {
     this.firmaHechos = firmaHechos;
   }
 
-  // Lo que ve el usuario: la redacción del asistente si la hay, si no los hechos tal cual
+  // Lo que ve el usuario: en el veredicto, la síntesis del asistente si la hay; si no, los hechos tal cual
   public String getTextoParaMostrar() {
     return textoRedactado != null ? textoRedactado : texto;
   }
 
-  // Los hechos que importan para la redacción; si cambian, la redacción vieja ya no sirve
+  // Los hechos que importan para la síntesis; si cambian, la síntesis vieja ya no sirve
   public String firmaDeLosHechos() {
     return Integer.toHexString((texto + "|" + montoSugerido).hashCode());
   }

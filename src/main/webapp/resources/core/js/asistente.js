@@ -1,3 +1,22 @@
+// La síntesis del período la escribe la IA y tarda: la página se arma con las reglas
+// y acá se pide aparte. Si no llega, queda el veredicto de las reglas y se saca el aviso.
+(function () {
+  const aviso = document.querySelector("[data-sintesis-url]");
+  const parrafo = document.getElementById("veredicto-texto");
+  if (!aviso || !parrafo) {
+    return;
+  }
+  fetch(aviso.dataset.sintesisUrl, { headers: { Accept: "text/plain" } })
+    .then((respuesta) => (respuesta.ok && respuesta.status !== 204 ? respuesta.text() : ""))
+    .then((texto) => {
+      if (texto && texto.trim()) {
+        parrafo.textContent = texto.trim();
+      }
+    })
+    .catch(() => {})
+    .finally(() => aviso.remove());
+})();
+
 /* global Chart */
 (function () {
   const canvas = document.getElementById("grafico-gasto-real");

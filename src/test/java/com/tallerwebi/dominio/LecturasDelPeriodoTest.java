@@ -38,9 +38,13 @@ public class LecturasDelPeriodoTest {
   }
 
   @Test
-  void debeDarElVeredictoComoPrimeraLectura() {
+  void debeDarElVeredictoComoPrimeraLecturaIdentificadoPorSuPeriodo() {
+    List<MesGastoReal> seisMeses = new ArrayList<>();
+    for (int i = 0; i < 6; i++) {
+      seisMeses.add(mes(YearMonth.of(2026, 5 + i), 0.0, 0.0, 0.0, 0.0, i == 5));
+    }
     GastoReal gastoReal = gastoReal(
-      List.of(),
+      seisMeses,
       List.of(),
       new Veredicto(YearMonth.of(2026, 5), SEPTIEMBRE, 30.0, 10.0)
     );
@@ -50,6 +54,8 @@ public class LecturasDelPeriodoTest {
     assertThat(resultado, hasSize(1));
     assertThat(resultado.get(0).getTipo(), equalTo(TipoConsejo.VEREDICTO_ROJO));
     assertThat(resultado.get(0).getTexto(), containsString("gastás 18,2 % más en serio."));
+    // Así el veredicto de 6 meses y el de 12 no se pisan la síntesis
+    assertThat(resultado.get(0).getCategoria(), equalTo("6 meses"));
   }
 
   @Test

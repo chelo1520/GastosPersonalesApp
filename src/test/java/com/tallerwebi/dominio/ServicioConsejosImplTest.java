@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -78,8 +79,8 @@ public class ServicioConsejosImplTest {
     servicioResumenMock = mock(ServicioResumen.class);
     servicioGastoRealMock = mock(ServicioGastoReal.class);
     servicioAsistenteMock = mock(ServicioAsistente.class);
-    // Sin IA: el asistente devuelve los consejos tal cual
-    when(servicioAsistenteMock.redactar(any(), any())).thenAnswer(inv -> inv.getArgument(0));
+    // Sin IA: no hay síntesis y se muestra el texto de las reglas
+    when(servicioAsistenteMock.sintetizar(any(), any())).thenReturn(null);
     servicio =
       new ServicioConsejosImpl(
         repositorioMock,
@@ -238,7 +239,7 @@ public class ServicioConsejosImplTest {
   }
 
   @Test
-  void debeMostrarElVeredictoLasLecturasYComoMuchoCuatroPropuestasLasMasImportantesPrimero() {
+  void debeMostrarElVeredictoLasLecturasYUnaSolaPropuestaPorVez() {
     List<Presupuesto> presupuestos = new ArrayList<>();
     for (int i = 1; i <= 6; i++) {
       presupuestos.add(
@@ -256,14 +257,12 @@ public class ServicioConsejosImplTest {
 
     List<Consejo> consejos = servicio.obtenerPendientes(usuario);
 
-    // Veredicto, la lectura de Cine (alerta) y 4 de los 6 presupuestos
-    assertThat(consejos, hasSize(6));
+    // Veredicto, la lectura de Cine (alerta) y una sola propuesta de las 6 posibles
+    assertThat(consejos, hasSize(3));
     assertThat(consejos.get(0).getTipo(), equalTo(TipoConsejo.VEREDICTO_ROJO));
     assertThat(consejos.get(1).getSeveridad(), equalTo(Severidad.ALERTA));
     assertThat(consejos.get(1).getTipo(), equalTo(TipoConsejo.CATEGORIA_SUBE_MAS_QUE_LA_INFLACION));
-    for (int i = 2; i < 6; i++) {
-      assertThat(consejos.get(i).getTipo(), equalTo(TipoConsejo.PRESUPUESTO_DESACTUALIZADO));
-    }
+    assertThat(consejos.get(2).getTipo(), equalTo(TipoConsejo.PRESUPUESTO_DESACTUALIZADO));
   }
 
   @Test
@@ -374,32 +373,116 @@ public class ServicioConsejosImplTest {
   }
 
   @Test
-  void debeMostrarLaRedaccionDelAsistenteConElVeredictoSiemprePrimeroYGuardarlaCuandoLaIaResponde() {
+  void debeGuardarLaSintesisEnElVeredictoYDejarLasDemasTarjetasConElTextoDeLasReglas() {
     conPresupuestoFijo(alimentacion, 100000.0, YearMonth.of(2026, 7));
-    when(servicioGastoRealMock.calcular(any(), anyInt()))
-      .thenReturn(
-        gastoReal(new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0))
-      );
-    when(servicioAsistenteMock.redactar(any(), any()))
-      .thenAnswer(inv -> {
-        List<Consejo> recibidos = inv.getArgument(0);
-        List<Consejo> alReves = new ArrayList<>(recibidos);
-        java.util.Collections.reverse(alReves);
-        for (Consejo c : alReves) {
-          c.setId(c.getId() == null ? 1L : c.getId());
-          c.redactar("Redactado: " + c.getTipo(), c.firmaDeLosHechos());
-        }
-        return alReves;
-      });
+    GastoReal gastoReal = gastoReal(
+      new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0)
+    );
+    when(servicioAsistenteMock.sintetizar(any(), any()))
+      .thenReturn(" Tu período en una frase: gastás 18,2 % más en serio. ");
+    conRepositorioQueRecuerda();
 
-    List<Consejo> consejos = servicio.obtenerPendientes(usuario);
+    String sintesis = servicio.sintetizar(usuario, gastoReal);
+    List<Consejo> consejos = servicio.obtenerPendientes(usuario, gastoReal);
 
-    // La IA devolvió [presupuesto, veredicto]; el veredicto igual se muestra arriba
+    assertThat(sintesis, equalTo("Tu período en una frase: gastás 18,2 % más en serio."));
     assertThat(consejos, hasSize(2));
-    assertThat(consejos.get(0).getTipo(), equalTo(TipoConsejo.VEREDICTO_ROJO));
-    assertThat(consejos.get(0).getTextoParaMostrar(), equalTo("Redactado: VEREDICTO_ROJO"));
-    assertThat(consejos.get(1).getTipo(), equalTo(TipoConsejo.PRESUPUESTO_DESACTUALIZADO));
-    verify(repositorioMock, times(2)).modificar(any());
+    Consejo veredicto = consejos.get(0);
+    assertThat(veredicto.getTipo(), equalTo(TipoConsejo.VEREDICTO_ROJO));
+    assertThat(veredicto.getFirmaHechos(), not(nullValue()));
+    Consejo propuesta = consejos.get(1);
+    assertThat(propuesta.getTipo(), equalTo(TipoConsejo.PRESUPUESTO_DESACTUALIZADO));
+    assertThat(propuesta.getTextoParaMostrar(), equalTo(propuesta.getTexto()));
+  }
+
+  @Test
+  void noDebeVolverAPedirLaSintesisMientrasLosHechosDelPeriodoNoCambien() {
+    conPresupuestoFijo(alimentacion, 100000.0, YearMonth.of(2026, 7));
+    GastoReal gastoReal = gastoReal(
+      new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0)
+    );
+    when(servicioAsistenteMock.sintetizar(any(), any())).thenReturn("Síntesis del período.");
+    conRepositorioQueRecuerda();
+    servicio.sintetizar(usuario, gastoReal);
+
+    String segundaVez = servicio.sintetizar(usuario, gastoReal);
+    List<Consejo> consejos = servicio.obtenerPendientes(usuario, gastoReal);
+
+    assertThat(segundaVez, equalTo("Síntesis del período."));
+    assertThat(consejos.get(0).getTextoParaMostrar(), equalTo("Síntesis del período."));
+    assertThat(servicio.faltaLaSintesis(consejos), is(false));
+    verify(servicioAsistenteMock, times(1)).sintetizar(any(), any());
+  }
+
+  @Test
+  void debeDescartarLaSintesisGuardadaCuandoCambianLosHechosDelPeriodo() {
+    GastoReal gastoReal = gastoReal(
+      new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0)
+    );
+    Consejo guardado = new Consejo(
+      usuario,
+      OCTUBRE,
+      TipoConsejo.VEREDICTO_ROJO,
+      null,
+      "viejo",
+      null
+    );
+    guardado.redactar("Síntesis vieja.", "otra-firma");
+    when(repositorioMock.obtenerDelMes(any(), any())).thenReturn(List.of(guardado));
+
+    List<Consejo> consejos = servicio.obtenerPendientes(usuario, gastoReal);
+
+    assertThat(consejos.get(0).getTextoRedactado(), nullValue());
+    assertThat(consejos.get(0).getTextoParaMostrar(), containsString("Desde Mayo 2026"));
+    verify(servicioAsistenteMock, never()).sintetizar(any(), any());
+  }
+
+  @Test
+  void noDebeLlamarALaIaAlObtenerLosPendientesYDebeAvisarQueFaltaLaSintesisSiEstaDisponible() {
+    GastoReal gastoReal = gastoReal(
+      new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0)
+    );
+    when(servicioAsistenteMock.disponible()).thenReturn(true);
+
+    List<Consejo> consejos = servicio.obtenerPendientes(usuario, gastoReal);
+
+    assertThat(
+      consejos.get(0).getTextoParaMostrar(),
+      containsString("Desde Mayo 2026 tus gastos subieron 30,0 %")
+    );
+    assertThat(servicio.faltaLaSintesis(consejos), is(true));
+    verify(servicioAsistenteMock, never()).sintetizar(any(), any());
+  }
+
+  @Test
+  void noDebeFaltarLaSintesisCuandoLaIaNoEstaDisponibleNiCuandoNoHayVeredicto() {
+    when(servicioAsistenteMock.disponible()).thenReturn(false);
+    GastoReal conVeredicto = gastoReal(
+      new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0)
+    );
+
+    assertThat(
+      servicio.faltaLaSintesis(servicio.obtenerPendientes(usuario, conVeredicto)),
+      is(false)
+    );
+    when(servicioAsistenteMock.disponible()).thenReturn(true);
+    assertThat(
+      servicio.faltaLaSintesis(servicio.obtenerPendientes(usuario, gastoReal(null))),
+      is(false)
+    );
+    assertThat(servicio.sintetizar(usuario, gastoReal(null)), nullValue());
+  }
+
+  // Lo que se guarda se devuelve en la siguiente consulta, como haría la base
+  private void conRepositorioQueRecuerda() {
+    List<Consejo> guardados = new ArrayList<>();
+    doAnswer(inv -> {
+        guardados.add(inv.getArgument(0));
+        return null;
+      })
+      .when(repositorioMock)
+      .guardar(any());
+    when(repositorioMock.obtenerDelMes(any(), any())).thenReturn(guardados);
   }
 
   // El mismo monto desde el mes "desde" hasta octubre; antes de "desde", nada

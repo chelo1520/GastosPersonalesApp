@@ -57,8 +57,9 @@ Usuarios de demostración (contraseña `test`, como el usuario de prueba), que s
 `alto@gastitos.demo` (consumo alto) y `medio@gastitos.demo` (moderado) con presupuestos y gastos desde octubre
 de 2025 hasta el día de hoy, y `bajo@gastitos.demo` (muy bajo) solo desde septiembre de 2026. Ver `src/main/resources/demo.sql`.
 
-El asistente redacta sus consejos con Claude si existe la variable de entorno `ANTHROPIC_API_KEY`
-(en `.env`, nunca en el repo). Sin la variable, muestra los consejos con el texto de las reglas.
+El asistente escribe con Claude una síntesis del período (un párrafo que conecta sus conclusiones)
+si existe la variable de entorno `ANTHROPIC_API_KEY` (en `.env`, nunca en el repo). Sin la variable,
+muestra el veredicto y los consejos con el texto de las reglas.
 El modelo es `claude-haiku-5-5`; se cambia con `ASISTENTE_MODELO` (por ejemplo `claude-opus-5-5`).
 ## 2. Thymeleaf
 * [Documentación](https://www.thymeleaf.org/doc/tutorials/3.0/usingthymeleaf.html)

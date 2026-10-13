@@ -3,6 +3,7 @@ package com.tallerwebi.presentacion;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.asistente.GastoReal;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
+import com.tallerwebi.dominio.consejo.Consejo;
 import com.tallerwebi.dominio.consejo.ServicioConsejos;
 import com.tallerwebi.dominio.excepcion.ConsejoNoEncontrado;
 import com.tallerwebi.dominio.excepcion.IndicadoresNoDisponibles;
@@ -10,12 +11,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
@@ -71,13 +75,43 @@ public class ControladorAsistente {
         model.put("ultimoMesCerrado", NombreDeMes.de(gastoReal.getUltimoMesCerrado()));
       }
       // Los consejos (y el veredicto) salen del mismo análisis que muestra la pantalla
-      model.put("consejos", servicioConsejos.obtenerPendientes(usuario, gastoReal));
+      List<Consejo> consejos = servicioConsejos.obtenerPendientes(usuario, gastoReal);
+      model.put("consejos", consejos);
+      // La síntesis de la IA tarda: la vista la pide en segundo plano a /asistente/sintesis
+      model.put("sintesisPendiente", servicioConsejos.faltaLaSintesis(consejos));
     } catch (IndicadoresNoDisponibles e) {
       // Sin IPC ni dólar no hay análisis posible: la vista avisa y no muestra el resto
       model.put("indicadoresNoDisponibles", true);
     }
 
     return new ModelAndView("asistente", model);
+  }
+
+  // La síntesis del período como texto plano; 204 si no hay (sin clave, sin veredicto, sin red)
+  @RequestMapping(
+    path = "/asistente/sintesis",
+    method = RequestMethod.GET,
+    produces = "text/plain;charset=UTF-8"
+  )
+  @ResponseBody
+  public ResponseEntity<String> sintesis(
+    @RequestParam(value = PARAM_PERIODO, required = false) Integer periodo,
+    HttpServletRequest request
+  ) {
+    Usuario usuario = SesionUsuario.obtener(request);
+    if (usuario == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+    int meses = periodo != null && PERIODOS.contains(periodo) ? periodo : PERIODO_POR_DEFECTO;
+    try {
+      String sintesis = servicioConsejos.sintetizar(
+        usuario,
+        servicioGastoReal.calcular(usuario, meses)
+      );
+      return sintesis == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(sintesis);
+    } catch (IndicadoresNoDisponibles e) {
+      return ResponseEntity.noContent().build();
+    }
   }
 
   @RequestMapping(path = "/asistente/aplicar/{id}", method = RequestMethod.POST)

@@ -81,11 +81,14 @@ public class LecturasDelPeriodo {
       veredicto.getInflacionAcumulada(),
       cierre
     );
+    // El veredicto se guarda por período (3, 6 o 12 meses): cada uno tiene su propia síntesis.
+    // Va en "categoria" porque es lo que identifica al consejo junto con el tipo
+    String periodo = gastoReal.getMeses().size() + " meses";
     return new Consejo(
       usuario,
       mesActual,
       tipoDelVeredicto(veredicto.getEstado()),
-      null,
+      periodo,
       texto,
       null
     );

@@ -13,51 +13,51 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tallerwebi.dominio.asistente.CategoriaGastoReal;
 import com.tallerwebi.dominio.asistente.GastoReal;
-import com.tallerwebi.dominio.asistente.RedaccionDeConsejos;
 import com.tallerwebi.dominio.asistente.ServicioAsistente;
+import com.tallerwebi.dominio.asistente.SintesisDelPeriodo;
 import com.tallerwebi.dominio.consejo.Consejo;
 import java.time.Clock;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.springframework.stereotype.Component;
 
 /**
- * Redacción de consejos con Claude. Recibe hechos ya calculados y devuelve texto;
- * nunca inventa cifras. Sin ANTHROPIC_API_KEY, con error o pasado el tope diario,
- * devuelve los consejos tal cual (la redacción de las reglas es el fallback).
+ * Síntesis del período con Claude: recibe las conclusiones ya calculadas por las reglas y devuelve
+ * un solo párrafo que las conecta; nunca inventa cifras. Sin ANTHROPIC_API_KEY, con error o pasado
+ * el tope diario, devuelve null y se muestra el veredicto de las reglas.
  */
 @Component
 public class ServicioAsistenteClaude implements ServicioAsistente {
 
   static final String VARIABLE_CLAVE = "ANTHROPIC_API_KEY";
-  // Modelo por defecto: la tarea es reescribir cuatro oraciones con números dados, Haiku alcanza y es
+  // Modelo por defecto: la tarea es un párrafo con números dados, Haiku alcanza y es
   // 40 veces más barato que Opus. Se cambia con la variable de entorno ASISTENTE_MODELO
   static final String MODELO_POR_DEFECTO = "claude-haiku-5-5";
   static final String VARIABLE_MODELO = "ASISTENTE_MODELO";
   // Las consultas se cachean por usuario y mes; esto es solo una red de seguridad de costo
   static final int MAXIMO_LLAMADAS_POR_DIA = 200;
+  // Holgado: con 800 el JSON de la síntesis llegó cortado
   private static final long MAX_TOKENS = 2000L;
+  // Largo de la columna donde se guarda la síntesis (Consejo.textoRedactado)
+  static final int LARGO_MAXIMO = 1000;
   private static final int MAXIMO_CATEGORIAS_DE_CONTEXTO = 5;
 
   static final String INSTRUCCIONES =
-    "Sos el asistente financiero de Gastitos, una app argentina de gastos personales. " +
-    "Recibís en JSON un contexto y una lista de consejos ya calculados por reglas; cada consejo trae " +
-    "un id, su familia, su severidad y un texto con los hechos (montos, porcentajes, meses). Hay dos " +
-    "familias: LECTURA es una conclusión sobre lo que pasó en el período, PROPUESTA es una acción " +
-    "concreta con un monto. Tu trabajo es reescribir cada consejo en español rioplatense, con voseo, " +
-    "en tono cercano y directo, de una o dos oraciones, y devolverlos ordenados del más importante " +
-    "al menos importante dentro de cada familia. Reglas: usá solo los números y hechos que recibís, " +
-    "sin inventar ni redondear distinto; conservá todos los números del texto original; no agregues " +
-    "consejos, recomendaciones ni conclusiones propias: si algo no está en los hechos, no lo digas; " +
-    "no omitas ningún consejo; si un consejo propone un monto, mencionalo tal cual; no uses emojis " +
-    "ni signos de exclamación; no repitas el nombre de la app. El consejo de tipo VEREDICTO_* es el " +
-    "resumen del período y va siempre primero: decile al usuario cuánto subieron sus gastos, cuánto " +
-    "la inflación y cuánto cambió en serio, con esos tres números. Respondé únicamente con el JSON pedido.";
+    "Sos el asistente financiero de Gastitos, una app argentina de gastos personales. Recibís en " +
+    "JSON el contexto de un período (variación de los gastos, inflación, categorías del último mes " +
+    "cerrado) y una lista de conclusiones ya calculadas por reglas, cada una con su familia " +
+    "(LECTURA: qué pasó; PROPUESTA: qué se propone hacer), su severidad y un texto con los hechos. " +
+    "Escribí un solo párrafo, de tres a cinco oraciones, en español rioplatense con voseo, en tono " +
+    "cercano y directo, que le cuente al usuario cómo le fue en el período conectando esas " +
+    "conclusiones: empezá por el veredicto (cuánto subieron sus gastos, cuánto la inflación y cuánto " +
+    "cambió en serio, con esos tres números), seguí por lo más importante de las lecturas y, si hay " +
+    "propuestas, cerrá con lo que se propone hacer y su monto. Reglas: usá solo los hechos y números " +
+    "que recibís, sin inventar, redondear distinto ni agregar recomendaciones o conclusiones propias; " +
+    "no hace falta repetir todos los números, elegí los que hacen al relato; sin emojis, sin signos de " +
+    "exclamación, sin títulos ni listas; no repitas el nombre de la app. Respondé únicamente con el " +
+    "JSON pedido.";
 
   private static final Logger LOG = Logger.getLogger(ServicioAsistenteClaude.class.getName());
 
@@ -89,33 +89,32 @@ public class ServicioAsistenteClaude implements ServicioAsistente {
   }
 
   @Override
-  public List<Consejo> redactar(List<Consejo> consejos, GastoReal contexto) {
-    if (!conClave || !hayAlgoParaRedactar(consejos) || !hayCupoHoy()) {
-      return consejos;
+  public String sintetizar(List<Consejo> consejos, GastoReal contexto) {
+    if (!conClave || consejos.isEmpty() || !hayCupoHoy()) {
+      return null;
     }
     try {
-      RedaccionDeConsejos redaccion = consultar(armarHechos(consejos, contexto));
-      return redaccion == null ? consejos : aplicarRedaccion(consejos, redaccion);
-    } catch (RuntimeException e) {
-      // Sin red, clave inválida, respuesta rara: se muestran los consejos de las reglas
-      if (LOG.isLoggable(Level.WARNING)) {
-        LOG.log(Level.WARNING, "No se pudo redactar con Claude: {0}", e.getMessage());
+      SintesisDelPeriodo sintesis = consultar(armarHechos(consejos, contexto));
+      if (sintesis == null || sintesis.texto() == null || sintesis.texto().isBlank()) {
+        return null;
       }
-      return consejos;
+      return recortarAlLargoDeLaColumna(sintesis.texto().trim());
+    } catch (RuntimeException e) {
+      // Sin red, clave inválida, respuesta rara: se muestra el veredicto de las reglas
+      if (LOG.isLoggable(Level.WARNING)) {
+        LOG.log(Level.WARNING, "No se pudo pedir la síntesis a Claude: {0}", e.getMessage());
+      }
+      return null;
     }
   }
 
-  // Solo se consulta si algún consejo no tiene redacción o sus hechos cambiaron
-  private boolean hayAlgoParaRedactar(List<Consejo> consejos) {
-    for (Consejo consejo : consejos) {
-      if (
-        consejo.getTextoRedactado() == null ||
-        !consejo.firmaDeLosHechos().equals(consejo.getFirmaHechos())
-      ) {
-        return true;
-      }
+  // Si el modelo se extiende de más, se corta en el último punto que entra en la columna
+  static String recortarAlLargoDeLaColumna(String texto) {
+    if (texto.length() <= LARGO_MAXIMO) {
+      return texto;
     }
-    return false;
+    int ultimoPunto = texto.lastIndexOf('.', LARGO_MAXIMO - 1);
+    return ultimoPunto > 0 ? texto.substring(0, ultimoPunto + 1) : texto.substring(0, LARGO_MAXIMO);
   }
 
   // Lo que ve el modelo: hechos agregados, sin email ni gastos individuales
@@ -182,35 +181,12 @@ public class ServicioAsistenteClaude implements ServicioAsistente {
     }
   }
 
-  // Aplica la redacción: texto nuevo y orden del modelo; lo que el modelo omitió va al final sin cambios
-  List<Consejo> aplicarRedaccion(List<Consejo> consejos, RedaccionDeConsejos redaccion) {
-    Map<Long, Consejo> porId = new LinkedHashMap<>();
-    for (Consejo consejo : consejos) {
-      porId.put(consejo.getId(), consejo);
-    }
-    List<Consejo> ordenados = new ArrayList<>();
-    if (redaccion.consejos() != null) {
-      for (RedaccionDeConsejos.ConsejoRedactado redactado : redaccion.consejos()) {
-        Consejo consejo = porId.get(redactado.id());
-        if (consejo == null || redactado.texto() == null || redactado.texto().isBlank()) {
-          // Id desconocido o texto vacío: ese consejo queda con el texto de las reglas
-          continue;
-        }
-        porId.remove(redactado.id());
-        consejo.redactar(redactado.texto().trim(), consejo.firmaDeLosHechos());
-        ordenados.add(consejo);
-      }
-    }
-    ordenados.addAll(porId.values());
-    return ordenados;
-  }
-
-  private RedaccionDeConsejos consultar(String hechos) {
-    StructuredMessageCreateParams<RedaccionDeConsejos> params = MessageCreateParams
+  private SintesisDelPeriodo consultar(String hechos) {
+    StructuredMessageCreateParams<SintesisDelPeriodo> params = MessageCreateParams
       .builder()
       .model(modelo)
       .maxTokens(MAX_TOKENS)
-      .outputConfig(RedaccionDeConsejos.class)
+      .outputConfig(SintesisDelPeriodo.class)
       // Las instrucciones no cambian: se cachean para pagar menos en cada consulta
       .systemOfTextBlockParams(
         List.of(

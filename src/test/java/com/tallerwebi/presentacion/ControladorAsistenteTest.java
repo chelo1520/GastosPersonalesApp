@@ -24,6 +24,8 @@ import jakarta.servlet.http.HttpSession;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.ModelAndView;
 
 public class ControladorAsistenteTest {
@@ -145,6 +147,52 @@ public class ControladorAsistenteTest {
 
     assertThat(mav.getViewName(), equalTo("redirect:/login"));
     verify(servicioConsejosMock, never()).aplicar(any(), any());
+  }
+
+  @Test
+  public void debePonerEnElModeloSiFaltaLaSintesisParaQueLaVistaLaPidaAparte() {
+    when(servicioConsejosMock.faltaLaSintesis(any())).thenReturn(true);
+
+    ModelAndView mav = controlador.mostrarAsistente(6, null, requestMock);
+
+    assertThat(mav.getModel().get("sintesisPendiente"), equalTo(true));
+  }
+
+  @Test
+  public void debeDevolverLaSintesisComoTextoPlanoSobreElPeriodoPedido() {
+    GastoReal gastoReal = sinDatos();
+    when(servicioMock.calcular(usuario, 12)).thenReturn(gastoReal);
+    when(servicioConsejosMock.sintetizar(usuario, gastoReal)).thenReturn("Tu año en una frase.");
+
+    ResponseEntity<String> respuesta = controlador.sintesis(12, requestMock);
+
+    assertThat(respuesta.getStatusCode(), equalTo(HttpStatus.OK));
+    assertThat(respuesta.getBody(), equalTo("Tu año en una frase."));
+  }
+
+  @Test
+  public void debeResponderSinContenidoCuandoNoHaySintesisNiCuandoFaltanLosIndicadores() {
+    assertThat(
+      controlador.sintesis(6, requestMock).getStatusCode(),
+      equalTo(HttpStatus.NO_CONTENT)
+    );
+
+    when(servicioMock.calcular(any(), anyInt())).thenThrow(new IndicadoresNoDisponibles("sin red"));
+    assertThat(
+      controlador.sintesis(6, requestMock).getStatusCode(),
+      equalTo(HttpStatus.NO_CONTENT)
+    );
+  }
+
+  @Test
+  public void debeResponderNoAutorizadoALaSintesisSinSesion() {
+    when(sessionMock.getAttribute("USUARIO")).thenReturn(null);
+
+    assertThat(
+      controlador.sintesis(6, requestMock).getStatusCode(),
+      equalTo(HttpStatus.UNAUTHORIZED)
+    );
+    verify(servicioConsejosMock, never()).sintetizar(any(), any());
   }
 
   private GastoReal sinDatos() {

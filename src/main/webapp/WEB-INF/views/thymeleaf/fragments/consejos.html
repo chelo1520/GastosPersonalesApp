@@ -23,7 +23,11 @@
                   th:text="${consejo.severidad == T(com.tallerwebi.dominio.consejo.Severidad).ALERTA} ? 'Alerta' : (${consejo.severidad == T(com.tallerwebi.dominio.consejo.Severidad).ATENCION} ? 'Atención' : 'Info')">Info</span>
             <div>
               <p class="app-consejo-texto" th:classappend="${consejo.veredicto} ? 'app-asistente-veredicto-texto'"
+                 th:id="${consejo.veredicto} ? 'veredicto-texto' : null"
                  th:text="${consejo.textoParaMostrar}">Septiembre costó 2,1 % menos que agosto en pesos de hoy.</p>
+              <!-- La síntesis de la IA tarda: se muestra el veredicto de las reglas y asistente.js la pide aparte -->
+              <small class="app-asistente-escribiendo" th:if="${consejo.veredicto and sintesisPendiente}"
+                     th:attr="data-sintesis-url=@{/asistente/sintesis(periodo=${periodo})}" role="status">Tu asistente está escribiendo la síntesis del período<span class="app-asistente-puntos" aria-hidden="true"></span></small>
               <small class="app-asistente-nota" th:if="${consejo.veredicto}">Comparo el primer mes del período con el último cerrado; el mes en curso no cuenta.</small>
             </div>
           </div>
