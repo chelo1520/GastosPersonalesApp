@@ -53,6 +53,9 @@ docker run --env-file .env --name tallerwebi-mysql -d -p 3306:3306 mysql
 $ mvn clean jetty:run
 # http://localhost:8080/gastitos
 ```
+Usuarios de demostración (contraseña `test`, como el usuario de prueba), con presupuestos de todo 2026 y gastos hasta el día de hoy,
+que se recargan en cada arranque: `alto@gastitos.demo` (consumo alto), `medio@gastitos.demo` (moderado)
+y `bajo@gastitos.demo` (muy bajo). Ver `src/main/resources/demo.sql`.
 ## 2. Thymeleaf
 * [Documentación](https://www.thymeleaf.org/doc/tutorials/3.0/usingthymeleaf.html)
 
