@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,11 +17,16 @@ import com.tallerwebi.dominio.presupuesto.Presupuesto;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import com.tallerwebi.dominio.resumen.EstadoPresupuesto;
 import com.tallerwebi.dominio.resumen.ResumenCategoria;
+import com.tallerwebi.dominio.resumen.ResumenDeMes;
 import com.tallerwebi.dominio.resumen.ResumenMensual;
 import com.tallerwebi.dominio.resumen.ServicioResumen;
 import com.tallerwebi.dominio.resumen.ServicioResumenImpl;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +34,7 @@ import org.junit.jupiter.api.Test;
 public class ServicioResumenImplTest {
 
   private static final YearMonth SEPTIEMBRE = YearMonth.of(2026, 9);
+  private static final YearMonth OCTUBRE = YearMonth.of(2026, 10);
 
   private RepositorioGasto repositorioGastoMock;
   private ServicioPresupuesto servicioPresupuestoMock;
@@ -280,6 +288,95 @@ public class ServicioResumenImplTest {
 
   private Presupuesto presupuesto(Categoria categoria, Double monto) {
     return new Presupuesto(usuario, categoria, SEPTIEMBRE, monto);
+  }
+
+  @Test
+  void debeIncluirLosGastosHormigaYLaAlertaDeAcumuladoCuandoElMesEsElActual() {
+    // Hoy: 15 de septiembre. 4 deliveries de 8.000 = 32.000, el 5,8 % del presupuesto
+    servicioResumen =
+      new ServicioResumenImpl(repositorioGastoMock, servicioPresupuestoMock, reloj("2026-09-15"));
+    conPresupuestos(presupuesto(categoria("Vivienda"), 550000.0));
+    when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE)).thenReturn(deliveries());
+
+    ResumenMensual resumen = servicioResumen.obtenerResumen(usuario, SEPTIEMBRE);
+
+    assertEquals(32000.0, resumen.getHormiga().getTotal());
+    assertEquals(1, resumen.getAlertas().size());
+  }
+
+  @Test
+  void noDebeDarAlertasCuandoElMesYaCerro() {
+    servicioResumen =
+      new ServicioResumenImpl(repositorioGastoMock, servicioPresupuestoMock, reloj("2026-10-15"));
+    conPresupuestos(presupuesto(categoria("Vivienda"), 550000.0));
+    when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE)).thenReturn(deliveries());
+
+    ResumenMensual resumen = servicioResumen.obtenerResumen(usuario, SEPTIEMBRE);
+
+    assertEquals(32000.0, resumen.getHormiga().getTotal());
+    assertTrue(resumen.getAlertas().isEmpty());
+  }
+
+  @Test
+  void debeArmarElHistorialDe6MesesConLosMesesSinGastosEnCeroYSoloOctubreEnCurso() {
+    servicioResumen =
+      new ServicioResumenImpl(repositorioGastoMock, servicioPresupuestoMock, reloj("2026-10-15"));
+    // Mismo presupuesto los 6 meses: 550.000, así "chico" es hasta 11.000
+    when(servicioPresupuestoMock.totalDelMes(eq(usuario), any(YearMonth.class)))
+      .thenReturn(550000.0);
+    Gasto alquilerJunio = new Gasto(250000.0, LocalDate.of(2026, 6, 1), "Alquiler");
+    List<Gasto> gastos = new ArrayList<>(deliveries());
+    gastos.add(alquilerJunio);
+    when(
+      repositorioGastoMock.obtenerGastosEntreFechas(
+        usuario,
+        LocalDate.of(2026, 5, 1),
+        LocalDate.of(2026, 10, 31)
+      )
+    )
+      .thenReturn(gastos);
+
+    List<ResumenDeMes> historial = servicioResumen.obtenerHistorial(usuario, OCTUBRE, 6);
+
+    assertEquals(
+      List.of(
+        YearMonth.of(2026, 5),
+        YearMonth.of(2026, 6),
+        YearMonth.of(2026, 7),
+        YearMonth.of(2026, 8),
+        YearMonth.of(2026, 9),
+        OCTUBRE
+      ),
+      historial.stream().map(ResumenDeMes::getMes).toList()
+    );
+    // Junio: solo el alquiler, nada hormiga
+    assertEquals(250000.0, historial.get(1).getGastado());
+    assertEquals(0.0, historial.get(1).getHormiga());
+    // Septiembre: los 4 deliveries de 8.000 son hormiga
+    assertEquals(32000.0, historial.get(4).getGastado());
+    assertEquals(32000.0, historial.get(4).getHormiga());
+    assertEquals(0.0, historial.get(4).getResto());
+    // Julio sin gastos
+    assertEquals(0.0, historial.get(2).getGastado());
+    assertEquals(550000.0, historial.get(2).getPresupuesto());
+    assertTrue(historial.get(5).isEnCurso());
+    assertFalse(historial.get(4).isEnCurso());
+  }
+
+  private Clock reloj(String fecha) {
+    return Clock.fixed(Instant.parse(fecha + "T12:00:00Z"), ZoneId.of("UTC"));
+  }
+
+  private List<Gasto> deliveries() {
+    Categoria delivery = categoria("Delivery");
+    delivery.setEsencial(false);
+    List<Gasto> gastos = new ArrayList<>();
+    for (int i = 0; i < 4; i++) {
+      Gasto gasto = gasto(8000.0, "Delivery");
+      gasto.setCategoria(delivery);
+      gastos.add(gasto);
+    }
+    return gastos;
   }
 
   private Gasto gasto(Double importe, String descripcion) {

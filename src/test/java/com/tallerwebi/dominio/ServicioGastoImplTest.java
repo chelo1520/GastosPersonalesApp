@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
@@ -16,10 +17,14 @@ import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
 import com.tallerwebi.dominio.gasto.GastoServicioImpl;
 import com.tallerwebi.dominio.gasto.RepositorioGasto;
+import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -33,16 +38,22 @@ public class ServicioGastoImplTest {
 
   private RepositorioGasto repositorioGastoMock;
   private RepositorioUsuario repositorioUsuarioMock;
+  private ServicioPresupuesto servicioPresupuestoMock;
 
   @BeforeEach
   public void init() {
     this.repositorioGastoMock = mock(RepositorioGasto.class);
     this.repositorioUsuarioMock = mock(RepositorioUsuario.class);
+    this.servicioPresupuestoMock = mock(ServicioPresupuesto.class);
   }
 
   @Test
   void debeGuardarElGastoAsociadoAlUsuarioCuandoElImporteEsPositivo() {
-    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
     Usuario usuario = new Usuario();
     usuario.setEmail("marce@gmail.com");
     usuario.setPassword("123");
@@ -56,8 +67,48 @@ public class ServicioGastoImplTest {
   }
 
   @Test
+  void debeBuscarLosGastosDeLos7DiasHastaLaFechaDelGastoParaLaAlertaDeRepeticion() {
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
+    Usuario usuario = new Usuario();
+    Categoria cafe = new Categoria();
+    cafe.setId(7L);
+    cafe.setNombre("Café y snacks");
+    cafe.setEsencial(false);
+    List<Gasto> semana = new ArrayList<>();
+    for (int dia = 3; dia <= 6; dia++) {
+      Gasto cafecito = new Gasto(2500.0, LocalDate.of(2026, 10, dia), "Café");
+      cafecito.setCategoria(cafe);
+      semana.add(cafecito);
+    }
+    Gasto nuevo = semana.get(3);
+    when(
+      repositorioGastoMock.obtenerGastosEntreFechas(
+        usuario,
+        LocalDate.of(2026, 9, 30),
+        LocalDate.of(2026, 10, 6)
+      )
+    )
+      .thenReturn(semana);
+
+    // Presupuesto de octubre: 550.000, así "chico" es hasta 11.000
+    when(servicioPresupuestoMock.totalDelMes(usuario, YearMonth.of(2026, 10))).thenReturn(550000.0);
+
+    Alerta alerta = gastoServicio.alertaDeRepeticion(nuevo, usuario);
+
+    assertEquals("Es tu 4.º gasto en Café y snacks esta semana ($10.000)", alerta.getMensaje());
+  }
+
+  @Test
   void debeLanzarGastoInvalidoSinGuardarCuandoElImporteEsNegativo() {
-    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
     Usuario usuario = new Usuario();
     usuario.setEmail("marce@gmail.com");
     usuario.setPassword("123");
@@ -70,7 +121,11 @@ public class ServicioGastoImplTest {
 
   @Test
   void debeLanzarGastoInvalidoSinGuardarCuandoLaFechaEsDelMesAnterior() {
-    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
     Gasto gasto = new Gasto(1000.00, LocalDate.of(2026, 9, 30), "Supermercado");
 
     GastoInvalidoExeption error = assertThrows(
@@ -87,7 +142,11 @@ public class ServicioGastoImplTest {
 
   @Test
   void debeLanzarGastoInvalidoSinGuardarCuandoLaFechaEsDelMesSiguiente() {
-    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
     Gasto gasto = new Gasto(1000.00, LocalDate.of(2026, 11, 1), "Supermercado");
 
     assertThrows(
@@ -99,7 +158,11 @@ public class ServicioGastoImplTest {
 
   @Test
   void debeGuardarElGastoCuandoLaFechaEsElPrimerOElUltimoDiaDelMesActual() {
-    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
     Gasto primerDia = new Gasto(1000.00, LocalDate.of(2026, 10, 1), "Alquiler");
     Gasto ultimoDia = new Gasto(1000.00, LocalDate.of(2026, 10, 31), "Expensas");
 
@@ -112,7 +175,11 @@ public class ServicioGastoImplTest {
 
   @Test
   void debeLanzarGastoInvalidoSinGuardarCuandoLaFechaEsNula() {
-    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
     Gasto gasto = new Gasto(1000.00, null, "Supermercado");
 
     assertThrows(
@@ -124,7 +191,11 @@ public class ServicioGastoImplTest {
 
   @Test
   void debeActualizarImporteFechaYDescripcionCuandoSeModificaUnGastoPropioConDatosValidos() {
-    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
     Usuario usuario = usuarioConId(1L);
     Gasto gastoGuardado = gastoDe(usuario);
     when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoGuardado);
@@ -145,7 +216,11 @@ public class ServicioGastoImplTest {
 
   @Test
   void debeLanzarGastoInvalidoSinModificarCuandoElNuevoImporteEsCero() {
-    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
     Usuario usuario = usuarioConId(1L);
     Gasto gastoGuardado = gastoDe(usuario);
     when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoGuardado);
@@ -164,7 +239,11 @@ public class ServicioGastoImplTest {
 
   @Test
   void debeLanzarGastoInvalidoSinModificarCuandoLaNuevaFechaEstaFueraDelMesActual() {
-    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
     Usuario usuario = usuarioConId(1L);
     when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoDe(usuario));
 
@@ -179,7 +258,11 @@ public class ServicioGastoImplTest {
 
   @Test
   void debeLanzarGastoNoEncontradoSinModificarCuandoElGastoNoExiste() {
-    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
     when(repositorioGastoMock.buscarPorId(99L)).thenReturn(null);
 
     Gasto datos = new Gasto(2500.00, LocalDate.of(2026, 10, 20), "Farmacia");
@@ -193,7 +276,11 @@ public class ServicioGastoImplTest {
 
   @Test
   void debeLanzarGastoNoEncontradoSinModificarCuandoElGastoEsDeOtroUsuario() {
-    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
     when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoDe(usuarioConId(2L)));
 
     Gasto datos = new Gasto(2500.00, LocalDate.of(2026, 10, 20), "Farmacia");
@@ -207,7 +294,11 @@ public class ServicioGastoImplTest {
 
   @Test
   void debeEliminarElGastoCuandoPerteneceAlUsuario() {
-    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
     Usuario usuario = usuarioConId(1L);
     Gasto gastoGuardado = gastoDe(usuario);
     when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoGuardado);
@@ -219,7 +310,11 @@ public class ServicioGastoImplTest {
 
   @Test
   void debeLanzarGastoNoEncontradoSinEliminarCuandoElGastoNoExiste() {
-    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
     when(repositorioGastoMock.buscarPorId(99L)).thenReturn(null);
 
     assertThrows(GastoNoEncontrado.class, () -> gastoServicio.eliminarGasto(99L, usuarioConId(1L)));
@@ -228,7 +323,11 @@ public class ServicioGastoImplTest {
 
   @Test
   void debeLanzarGastoNoEncontradoSinEliminarCuandoElGastoEsDeOtroUsuario() {
-    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
     when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoDe(usuarioConId(2L)));
 
     assertThrows(GastoNoEncontrado.class, () -> gastoServicio.eliminarGasto(10L, usuarioConId(1L)));
@@ -237,7 +336,11 @@ public class ServicioGastoImplTest {
 
   @Test
   void debeDevolverElGastoCuandoPerteneceAlUsuario() {
-    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
     Usuario usuario = usuarioConId(1L);
     Gasto gastoGuardado = gastoDe(usuario);
     when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoGuardado);
@@ -247,7 +350,11 @@ public class ServicioGastoImplTest {
 
   @Test
   void debeLanzarGastoNoEncontradoAlObtenerUnGastoDeOtroUsuario() {
-    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
     when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoDe(usuarioConId(2L)));
 
     assertThrows(GastoNoEncontrado.class, () -> gastoServicio.obtenerGasto(10L, usuarioConId(1L)));
@@ -255,7 +362,11 @@ public class ServicioGastoImplTest {
 
   @Test
   void debePermitirDesdeEl1HastaEl31DeOctubreCuandoHoyEs6DeOctubre() {
-    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
 
     assertEquals(LocalDate.of(2026, 10, 1), gastoServicio.obtenerFechaMinimaPermitida());
     assertEquals(LocalDate.of(2026, 10, 31), gastoServicio.obtenerFechaMaximaPermitida());

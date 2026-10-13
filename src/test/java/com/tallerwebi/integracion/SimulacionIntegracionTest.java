@@ -27,6 +27,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 /**
  * Integra ControladorGasto, GastoServicioImpl y RepositorioGastoImpl contra la base en memoria.
@@ -48,11 +49,14 @@ public class SimulacionIntegracionTest {
   @BeforeEach
   public void init() {
     RepositorioGastoImpl repositorioGasto = new RepositorioGastoImpl(sessionFactory);
+    ServicioPresupuestoImpl servicioPresupuesto = new ServicioPresupuestoImpl(
+      new RepositorioPresupuestoImpl(sessionFactory)
+    );
     controladorGasto =
       new ControladorGasto(
-        new GastoServicioImpl(repositorioGasto),
+        new GastoServicioImpl(repositorioGasto, servicioPresupuesto),
         new CategoriaRepositorioImpl(sessionFactory),
-        new ServicioPresupuestoImpl(new RepositorioPresupuestoImpl(sessionFactory))
+        servicioPresupuesto
       );
 
     usuario = guardarUsuario("lourdes@gmail.com");
@@ -108,7 +112,11 @@ public class SimulacionIntegracionTest {
     sessionFactory.getCurrentSession().save(categoria);
     gasto.setCategoria(categoria);
 
-    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request);
+    ModelAndView resultado = controladorGasto.registrarGasto(
+      gasto,
+      request,
+      new RedirectAttributesModelMap()
+    );
     List<Gasto> gastos = gastosDeLaSimulacion();
 
     assertEquals("registrar-gasto", resultado.getViewName());

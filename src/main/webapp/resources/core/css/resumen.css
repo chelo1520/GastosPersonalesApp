@@ -131,6 +131,46 @@
   font-size: 0.8rem;
 }
 
+/* Historial de gastos por mes */
+.app-resumen-historial {
+  margin-top: 24px;
+}
+
+.app-resumen-historial-canvas {
+  position: relative;
+  height: 280px;
+}
+
+/* Gastos hormiga */
+.app-resumen-hormiga {
+  margin-top: 24px;
+}
+
+.app-resumen-hormiga-cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.app-resumen-hormiga-lista li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--res-border);
+}
+
+.app-resumen-hormiga-acciones {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-resumen-hormiga-lista li:last-child {
+  border-bottom: 0;
+}
+
 /* Gráfico + tabla */
 .app-resumen-detalle {
   display: grid;
@@ -245,7 +285,8 @@
     font-size: 2rem;
   }
 
-  .app-resumen-detalle {
+  .app-resumen-detalle,
+  .app-resumen-hormiga-cuerpo {
     grid-template-columns: 1fr;
   }
 }

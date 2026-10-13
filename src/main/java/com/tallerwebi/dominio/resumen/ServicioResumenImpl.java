@@ -1,10 +1,13 @@
 package com.tallerwebi.dominio.resumen;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.alerta.Alerta;
+import com.tallerwebi.dominio.alerta.CalculadoraAlertas;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.RepositorioGasto;
 import com.tallerwebi.dominio.presupuesto.Presupuesto;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
+import java.time.Clock;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -26,14 +29,27 @@ public class ServicioResumenImpl implements ServicioResumen {
 
   private RepositorioGasto repositorioGasto;
   private ServicioPresupuesto servicioPresupuesto;
+  private Clock reloj;
+  private final CalculadoraGastosHormiga calculadoraHormiga = new CalculadoraGastosHormiga();
+  private final CalculadoraAlertas calculadoraAlertas = new CalculadoraAlertas();
 
   @Autowired
   public ServicioResumenImpl(
     RepositorioGasto repositorioGasto,
     ServicioPresupuesto servicioPresupuesto
   ) {
+    this(repositorioGasto, servicioPresupuesto, Clock.systemDefaultZone());
+  }
+
+  // Permite fijar "hoy" en los tests
+  public ServicioResumenImpl(
+    RepositorioGasto repositorioGasto,
+    ServicioPresupuesto servicioPresupuesto,
+    Clock reloj
+  ) {
     this.repositorioGasto = repositorioGasto;
     this.servicioPresupuesto = servicioPresupuesto;
+    this.reloj = reloj;
   }
 
   @Override
@@ -82,13 +98,69 @@ public class ServicioResumenImpl implements ServicioResumen {
     // De la que más se gastó a la que menos, como se lee el gráfico de torta
     categorias.sort(Comparator.comparing(ResumenCategoria::getGastado).reversed());
 
+    ResumenHormiga hormiga = calculadoraHormiga.calcular(gastos, presupuesto);
+
     return new ResumenMensual(
       gastado,
       presupuesto,
       presupuesto - gastado,
       porcentajeUsado(gastado, presupuesto),
-      categorias
+      categorias,
+      hormiga,
+      alertasDelMes(hormiga, mes)
     );
+  }
+
+  // Las alertas hablan de lo que "llevás": solo aplican al mes en curso
+  private List<Alerta> alertasDelMes(ResumenHormiga hormiga, YearMonth mes) {
+    if (!mes.equals(YearMonth.now(reloj))) {
+      return List.of();
+    }
+    return calculadoraAlertas.alertasDelMes(hormiga);
+  }
+
+  @Override
+  public List<ResumenDeMes> obtenerHistorial(Usuario usuario, YearMonth hasta, int cantidadMeses) {
+    YearMonth desde = hasta.minusMonths(cantidadMeses - 1L);
+    // Una sola consulta para todos los meses; después se reparte por mes
+    Map<YearMonth, List<Gasto>> gastosPorMes = new LinkedHashMap<>();
+    for (YearMonth mes = desde; !mes.isAfter(hasta); mes = mes.plusMonths(1)) {
+      gastosPorMes.put(mes, new ArrayList<>());
+    }
+    for (Gasto gasto : repositorioGasto.obtenerGastosEntreFechas(
+      usuario,
+      desde.atDay(1),
+      hasta.atEndOfMonth()
+    )) {
+      List<Gasto> delMes = gastosPorMes.get(YearMonth.from(gasto.getFecha()));
+      if (delMes != null) {
+        delMes.add(gasto);
+      }
+    }
+
+    YearMonth mesActual = YearMonth.now(reloj);
+    List<ResumenDeMes> historial = new ArrayList<>();
+    for (Map.Entry<YearMonth, List<Gasto>> mes : gastosPorMes.entrySet()) {
+      double presupuesto = presupuestoDe(usuario, mes.getKey());
+      double gastado = mes.getValue().stream().mapToDouble(Gasto::getImporte).sum();
+      // "Chico" es el 2 % del presupuesto de ese mes, no del actual
+      double hormiga = calculadoraHormiga.calcular(mes.getValue(), presupuesto).getTotal();
+      historial.add(
+        new ResumenDeMes(
+          mes.getKey(),
+          gastado,
+          hormiga,
+          presupuesto,
+          mes.getKey().equals(mesActual)
+        )
+      );
+    }
+    return historial;
+  }
+
+  // El presupuesto de cada mes del historial: la suma de lo definido por categoría ese mes
+  private double presupuestoDe(Usuario usuario, YearMonth mes) {
+    return servicioPresupuesto.totalDelMes(usuario, mes);
   }
 
   private double porcentaje(double parte, double total) {

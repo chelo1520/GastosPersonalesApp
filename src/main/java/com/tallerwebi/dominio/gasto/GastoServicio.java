@@ -1,6 +1,7 @@
 package com.tallerwebi.dominio.gasto;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.alerta.Alerta;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
@@ -10,6 +11,9 @@ import java.util.List;
  */
 public interface GastoServicio {
   void registrarGasto(Gasto gasto, Usuario usuario);
+
+  // Alerta de repetición para un gasto recién registrado, o null si no corresponde
+  Alerta alertaDeRepeticion(Gasto gasto, Usuario usuario);
 
   Gasto obtenerGasto(Long id, Usuario usuario);
 

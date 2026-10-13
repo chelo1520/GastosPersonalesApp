@@ -17,6 +17,12 @@
       <a class="btn btn-primary app-registrar-link" th:href="@{/registrar-gasto}">+ Registrar gasto</a>
     </div>
 
+    <!-- Alerta de repetición: llega una sola vez, después de registrar un gasto -->
+    <div class="app-alerta is-amarilla" role="status" th:if="${alertaRepeticion != null}">
+      <span th:text="${alertaRepeticion.mensaje}">Es tu 4.º gasto en Café y snacks esta semana ($10.000)</span>
+      <form th:replace="~{fragments/hormiga :: boton(${alertaRepeticion.categoriaId}, null, false, '/mostrar-gastos')}"></form>
+    </div>
+
     <section class="app-total-card" aria-label="Total de gastos">
       <span>Total de gastos</span>
       <strong>$ <span th:text="${#numbers.formatDecimal(total, 1, 'POINT', 2, 'COMMA')}">0,00</span></strong>
@@ -35,6 +41,7 @@
             <tr>
               <th scope="col">Fecha</th>
               <th scope="col">Descripción</th>
+              <th scope="col">Categoría</th>
               <th scope="col" class="text-end">Importe</th>
               <th scope="col"><span class="visually-hidden">Acciones</span></th>
             </tr>
@@ -46,11 +53,16 @@
                   th:text="${#temporals.format(gasto.fecha, 'dd/MM/yyyy')}">30/09/2026</time>
               </td>
               <td th:text="${gasto.descripcion}">Compra semanal</td>
+              <td th:text="${gasto.categoria?.nombre}">Alimentación</td>
               <td class="app-gasto-importe text-end">
                 $ <span th:text="${#numbers.formatDecimal(gasto.importe, 1, 'POINT', 2, 'COMMA')}">46.200,00</span>
               </td>
               <td class="text-end">
                 <div class="app-gasto-acciones">
+                  <!-- Las categorías fijas (vivienda, salud...) son siempre esenciales: no llevan botón -->
+                  <th:block th:if="${gasto.categoria != null and !gasto.categoria.fija}">
+                    <form th:replace="~{fragments/hormiga :: boton(${gasto.categoria.id}, ${gasto.categoria.nombre}, ${gasto.categoria.esencial}, '/mostrar-gastos')}"></form>
+                  </th:block>
                   <a class="btn btn-sm btn-outline-secondary app-gasto-editar"
                     th:href="@{/modificar-gasto/{id}(id=${gasto.id})}">Editar</a>
                   <form class="app-gasto-eliminar-form" method="post"
@@ -71,11 +83,17 @@
             th:text="${#temporals.format(gasto.fecha, 'dd/MM/yyyy')}">30/09/2026</time>
           <div class="app-gasto-mobile-detalle">
             <span class="app-gasto-mobile-descripcion" th:text="${gasto.descripcion}">Compra semanal</span>
+            <span class="app-gasto-mobile-categoria" th:if="${gasto.categoria != null}"
+                  th:text="${gasto.categoria.nombre}">Alimentación</span>
             <strong class="app-gasto-importe">
               $ <span th:text="${#numbers.formatDecimal(gasto.importe, 1, 'POINT', 2, 'COMMA')}">46.200,00</span>
             </strong>
           </div>
           <div class="app-gasto-acciones">
+            <!-- Las categorías fijas (vivienda, salud...) son siempre esenciales: no llevan botón -->
+            <th:block th:if="${gasto.categoria != null and !gasto.categoria.fija}">
+              <form th:replace="~{fragments/hormiga :: boton(${gasto.categoria.id}, ${gasto.categoria.nombre}, ${gasto.categoria.esencial}, '/mostrar-gastos')}"></form>
+            </th:block>
             <a class="btn btn-sm btn-outline-secondary app-gasto-editar"
               th:href="@{/modificar-gasto/{id}(id=${gasto.id})}">Editar</a>
             <form class="app-gasto-eliminar-form" method="post"

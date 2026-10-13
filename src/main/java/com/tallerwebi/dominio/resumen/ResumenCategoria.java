@@ -8,6 +8,8 @@ public final class ResumenCategoria {
   private final Double porcentajeTotal;
   private final Double presupuesto;
   private final EstadoPresupuesto estado;
+  // Para el botón "No es hormiga" de la tarjeta de gastos hormiga; null en el resto
+  private final Long categoriaId;
 
   // Sin presupuesto definido para la categoría
   public ResumenCategoria(String nombre, Double gastado, Double porcentajeTotal) {
@@ -20,10 +22,21 @@ public final class ResumenCategoria {
     Double porcentajeTotal,
     Double presupuesto
   ) {
+    this(nombre, gastado, porcentajeTotal, presupuesto, null);
+  }
+
+  public ResumenCategoria(
+    String nombre,
+    Double gastado,
+    Double porcentajeTotal,
+    Double presupuesto,
+    Long categoriaId
+  ) {
     this.nombre = nombre;
     this.gastado = gastado;
     this.porcentajeTotal = porcentajeTotal;
     this.presupuesto = presupuesto;
+    this.categoriaId = categoriaId;
     this.estado = EstadoPresupuesto.de(getPorcentajeUsado());
   }
 
@@ -64,5 +77,9 @@ public final class ResumenCategoria {
 
   public boolean isTienePresupuesto() {
     return presupuesto != null && presupuesto > 0;
+  }
+
+  public Long getCategoriaId() {
+    return categoriaId;
   }
 }

@@ -1,6 +1,7 @@
 package com.tallerwebi.integracion;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
@@ -72,6 +73,10 @@ public class ResumenVistaTest {
       .andExpect(status().isOk())
       .andExpect(view().name("resumen"))
       .andExpect(content().string(containsString("Septiembre 2026")))
+      // Historial: de abril a septiembre, con lo de septiembre en la última fila
+      .andExpect(content().string(containsString("id=\"tabla-historial\"")))
+      .andExpect(content().string(containsString("data-etiqueta=\"Abr 2026\"")))
+      .andExpect(content().string(containsString("data-resto=\"259800.0\"")))
       .andExpect(content().string(containsString("$ 259.800")))
       // Presupuesto del mes = suma de los presupuestos por categoría: quedan 200 disponibles
       .andExpect(content().string(containsString("$ 260.000")))
@@ -87,6 +92,84 @@ public class ResumenVistaTest {
   }
 
   @Test
+  public void debeRenderizarLosGastosHormigaDelMesYSusCategorias() throws Exception {
+    Usuario usuario = new Usuario();
+    Categoria cafe = categoria("Café y snacks");
+    cafe.setEsencial(false);
+    Categoria salud = categoria("Salud");
+    persistir(usuario, cafe, salud);
+    // Presupuesto del mes: 550.000, así "chico" es hasta 11.000
+    persistir(new Presupuesto(usuario, salud, YearMonth.of(2025, 8), 550000.0));
+    // 4 cafés de 2.500 son hormiga; 4 gastos chicos de Salud no, porque es esencial
+    for (int dia = 1; dia <= 4; dia++) {
+      persistir(gasto(2500.0, LocalDate.of(2025, 8, dia), cafe, usuario));
+      persistir(gasto(1000.0, LocalDate.of(2025, 8, dia), salud, usuario));
+    }
+
+    mockMvc
+      .perform(get("/home").param("mes", "2025-08").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("Gastos hormiga")))
+      .andExpect(content().string(containsString("$ 10.000")))
+      .andExpect(content().string(containsString("1,8</span> % del presupuesto")))
+      .andExpect(content().string(containsString("Café y snacks")))
+      // Agosto de 2025 ya cerró: no hay alertas
+      .andExpect(content().string(not(containsString("app-alerta"))));
+  }
+
+  @Test
+  public void debeMostrarLaAlertaDeAcumuladoYElBotonNoEsHormigaEnElMesEnCurso() throws Exception {
+    LocalDate hoy = LocalDate.now();
+    Usuario usuario = new Usuario();
+    Categoria delivery = categoria("Delivery");
+    delivery.setEsencial(false);
+    Categoria vivienda = categoria("Vivienda");
+    persistir(usuario, delivery, vivienda);
+    persistir(new Presupuesto(usuario, vivienda, YearMonth.from(hoy), 550000.0));
+    // 4 pedidos de 8.000 = 32.000, el 5,8 % del presupuesto: alerta amarilla
+    for (int i = 0; i < 4; i++) {
+      persistir(gasto(8000.0, hoy, delivery, usuario));
+    }
+
+    mockMvc
+      .perform(get("/home").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("app-alerta")))
+      .andExpect(
+        content()
+          .string(containsString("Llevás $32.000 en gastos hormiga, el 6% de tu presupuesto"))
+      )
+      .andExpect(
+        content().string(containsString("/categorias/" + delivery.getId() + "/no-es-hormiga"))
+      );
+  }
+
+  @Test
+  public void debePedirDefinirElPresupuestoParaCalcularLosGastosHormigaCuandoElMesNoTiene()
+    throws Exception {
+    Usuario usuario = new Usuario();
+    Categoria cafe = categoria("Café y snacks");
+    cafe.setEsencial(false);
+    persistir(usuario, cafe);
+    for (int dia = 1; dia <= 4; dia++) {
+      persistir(gasto(2500.0, LocalDate.of(2025, 8, dia), cafe, usuario));
+    }
+
+    mockMvc
+      .perform(get("/home").param("mes", "2025-08").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("Definí el presupuesto del mes")))
+      .andExpect(content().string(not(containsString("No hay gastos hormiga este mes."))));
+  }
+
+  private Gasto gasto(Double importe, LocalDate fecha, Categoria categoria, Usuario usuario) {
+    Gasto gasto = new Gasto(importe, fecha, "Gasto de prueba");
+    gasto.setCategoria(categoria);
+    gasto.setUsuario(usuario);
+    return gasto;
+  }
+
+  @Test
   public void debeMostrarElAvisoDeMesSinGastosCuandoElMesNoTieneGastos() throws Exception {
     Usuario usuario = new Usuario();
     persistir(usuario);
@@ -95,7 +178,8 @@ public class ResumenVistaTest {
       .perform(get("/home").param("mes", "2026-01").sessionAttr("USUARIO", usuario))
       .andExpect(status().isOk())
       .andExpect(content().string(containsString("Enero 2026")))
-      .andExpect(content().string(containsString("Todavía no hay gastos este mes.")));
+      .andExpect(content().string(containsString("Todavía no hay gastos este mes.")))
+      .andExpect(content().string(containsString("Definí el presupuesto del mes")));
   }
 
   @Test

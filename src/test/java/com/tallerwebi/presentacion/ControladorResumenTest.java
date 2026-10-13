@@ -8,6 +8,8 @@ import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.resumen.ResumenCategoria;
+import com.tallerwebi.dominio.resumen.ResumenDeMes;
+import com.tallerwebi.dominio.resumen.ResumenHormiga;
 import com.tallerwebi.dominio.resumen.ResumenMensual;
 import com.tallerwebi.dominio.resumen.ServicioResumen;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,7 +52,8 @@ public class ControladorResumenTest {
     List<ResumenCategoria> categorias = List.of(
       new ResumenCategoria("Sin categoría", 45000.0, 100.0)
     );
-    resumen = new ResumenMensual(45000.0, 0.0, -45000.0, 100.0, categorias);
+    ResumenHormiga hormiga = new ResumenHormiga(0.0, 0.0, List.of());
+    resumen = new ResumenMensual(45000.0, 0.0, -45000.0, 100.0, categorias, hormiga, List.of());
   }
 
   @Test
@@ -78,7 +81,7 @@ public class ControladorResumenTest {
   }
 
   @Test
-  public void debePasarALaVistaLosTotalesYCategoriasQueCalculaElServicio() {
+  public void debePasarALaVistaLosTotalesCategoriasYGastosHormigaQueCalculaElServicio() {
     when(servicioResumen.obtenerResumen(usuario, YearMonth.of(2026, 10))).thenReturn(resumen);
 
     ModelAndView resultado = controladorResumen.mostrarResumen(null, request);
@@ -88,6 +91,37 @@ public class ControladorResumenTest {
     assertEquals(-45000.0, resultado.getModel().get("disponible"));
     assertEquals(100.0, resultado.getModel().get("porcentajeUsado"));
     assertEquals(resumen.getCategorias(), resultado.getModel().get("categorias"));
+    assertEquals(resumen.getHormiga(), resultado.getModel().get("hormiga"));
+    assertEquals(resumen.getAlertas(), resultado.getModel().get("alertas"));
+  }
+
+  @Test
+  public void debePasarALaVistaElHistorialDe6MesesHastaElMesMostradoConSuNombreCorto() {
+    when(servicioResumen.obtenerResumen(usuario, YearMonth.of(2026, 9))).thenReturn(resumen);
+    ResumenDeMes agosto = new ResumenDeMes(
+      YearMonth.of(2026, 8),
+      500000.0,
+      30000.0,
+      550000.0,
+      false
+    );
+    ResumenDeMes septiembre = new ResumenDeMes(
+      YearMonth.of(2026, 9),
+      45000.0,
+      0.0,
+      550000.0,
+      false
+    );
+    when(servicioResumen.obtenerHistorial(usuario, YearMonth.of(2026, 9), 6))
+      .thenReturn(List.of(agosto, septiembre));
+
+    ModelAndView resultado = controladorResumen.mostrarResumen("2026-09", request);
+
+    @SuppressWarnings("unchecked")
+    List<MesDelHistorial> historial = (List<MesDelHistorial>) resultado.getModel().get("historial");
+    assertEquals(2, historial.size());
+    assertEquals("Ago 2026", historial.get(0).getEtiqueta());
+    assertEquals(agosto, historial.get(0).getResumen());
   }
 
   @Test

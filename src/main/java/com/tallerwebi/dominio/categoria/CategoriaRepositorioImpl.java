@@ -29,4 +29,10 @@ public class CategoriaRepositorioImpl implements CategoriaRepositorio {
   public Categoria buscarPorId(Long id) {
     return id == null ? null : sessionFactory.getCurrentSession().get(Categoria.class, id);
   }
+
+  @Override
+  @Transactional
+  public void modificar(Categoria categoria) {
+    sessionFactory.getCurrentSession().update(categoria);
+  }
 }
