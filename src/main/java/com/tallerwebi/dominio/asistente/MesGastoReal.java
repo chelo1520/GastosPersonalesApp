@@ -2,7 +2,10 @@ package com.tallerwebi.dominio.asistente;
 
 import java.time.YearMonth;
 
-/** Un mes del período: lo gastado, en pesos de hoy y en dólares, con el IPC que lo ajusta. */
+/**
+ * Un mes del período: lo gastado, en pesos de hoy y en dólares, con el IPC que lo ajusta;
+ * más la parte hormiga y el presupuesto, para las lecturas del asistente.
+ */
 public final class MesGastoReal {
 
   private final YearMonth mes;
@@ -12,6 +15,8 @@ public final class MesGastoReal {
   private final boolean ipcEstimado;
   private final Double dolarCierre;
   private final boolean enCurso;
+  private final Double hormiga;
+  private final Double presupuesto;
 
   public MesGastoReal(
     YearMonth mes,
@@ -20,7 +25,9 @@ public final class MesGastoReal {
     Double ipc,
     boolean ipcEstimado,
     Double dolarCierre,
-    boolean enCurso
+    boolean enCurso,
+    Double hormiga,
+    Double presupuesto
   ) {
     this.mes = mes;
     this.gastado = gastado;
@@ -29,6 +36,8 @@ public final class MesGastoReal {
     this.ipcEstimado = ipcEstimado;
     this.dolarCierre = dolarCierre;
     this.enCurso = enCurso;
+    this.hormiga = hormiga;
+    this.presupuesto = presupuesto;
   }
 
   public YearMonth getMes() {
@@ -61,5 +70,13 @@ public final class MesGastoReal {
 
   public boolean isEnCurso() {
     return enCurso;
+  }
+
+  public Double getHormiga() {
+    return hormiga;
+  }
+
+  public Double getPresupuesto() {
+    return presupuesto;
   }
 }

@@ -2,17 +2,14 @@ package com.tallerwebi.dominio.consejo;
 
 import com.tallerwebi.dominio.Usuario;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import java.time.YearMonth;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 /**
  * Un consejo del asistente para un usuario en un mes. Se persiste para recordar si el usuario
@@ -32,13 +29,11 @@ public class Consejo {
   // "AAAA-MM": el mes en que se generó
   private String mes;
 
-  // Como texto y no como ENUM de MySQL: así se pueden agregar tipos sin migrar la columna
-  @Enumerated(EnumType.STRING)
-  @JdbcTypeCode(SqlTypes.VARCHAR)
+  // Como texto plano, sin ENUM ni CHECK de MySQL: así se pueden agregar tipos sin migrar la columna
+  @Convert(converter = ConvertidorDeTipoConsejo.class)
   private TipoConsejo tipo;
 
-  @Enumerated(EnumType.STRING)
-  @JdbcTypeCode(SqlTypes.VARCHAR)
+  @Convert(converter = ConvertidorDeEstadoConsejo.class)
   private EstadoConsejo estado = EstadoConsejo.PENDIENTE;
 
   // Categoría a la que refiere (null si es un consejo general)
@@ -156,5 +151,13 @@ public class Consejo {
 
   public boolean isVeredicto() {
     return tipo.isVeredicto();
+  }
+
+  public boolean isLectura() {
+    return tipo.getFamilia() == Familia.LECTURA;
+  }
+
+  public boolean isPropuesta() {
+    return tipo.getFamilia() == Familia.PROPUESTA;
   }
 }

@@ -109,7 +109,9 @@ public class ServicioGastoRealImpl implements ServicioGastoReal {
           ipc.getPorcentaje(),
           ipc.isEstimada(),
           dolar,
-          enCurso
+          enCurso,
+          mes.getHormiga(),
+          mes.getPresupuesto()
         )
       );
       // El IPC de este mes es lo que separa sus pesos de los del mes anterior

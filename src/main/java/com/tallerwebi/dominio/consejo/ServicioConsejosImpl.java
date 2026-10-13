@@ -2,11 +2,9 @@ package com.tallerwebi.dominio.consejo;
 
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.asistente.CategoriaGastoReal;
-import com.tallerwebi.dominio.asistente.EstadoGastoReal;
 import com.tallerwebi.dominio.asistente.GastoReal;
 import com.tallerwebi.dominio.asistente.ServicioAsistente;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
-import com.tallerwebi.dominio.asistente.Veredicto;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.excepcion.ConsejoNoEncontrado;
 import com.tallerwebi.dominio.indicadores.ServicioIndicadores;
@@ -28,8 +26,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * ServicioConsejosImpl: el veredicto del período más dos reglas, todo determinista y sin IA.
- * HU-15 solo redacta.
+ * ServicioConsejosImpl: las lecturas del período (HU-16) más las reglas con acción, todo
+ * determinista y sin IA. HU-15 solo redacta.
  */
 @Service
 @Transactional
@@ -39,10 +37,10 @@ public class ServicioConsejosImpl implements ServicioConsejos {
   static final double UMBRAL_PRESUPUESTO_DESACTUALIZADO = 5.0;
   // Una categoría que sube más que la inflación por encima de esto, dos meses seguidos
   static final double UMBRAL_SUBA_REAL = 5.0;
-  // Como mucho se muestran estos consejos por mes además del veredicto, los más importantes primero
-  static final int MAXIMO_CONSEJOS = 4;
+  // Como mucho se muestran estas lecturas además del veredicto, y estas propuestas; las más importantes primero
+  static final int MAXIMO_LECTURAS = 3;
+  static final int MAXIMO_PROPUESTAS = 4;
   private static final int MESES_HACIA_ATRAS = 24;
-  private static final double DIFERENCIA_MINIMA = 0.5;
   private static final double REDONDEO_SUGERIDO = 1000.0;
   private static final Locale ARGENTINA = Locale.of("es", "AR");
 
@@ -53,6 +51,7 @@ public class ServicioConsejosImpl implements ServicioConsejos {
   private final ServicioGastoReal servicioGastoReal;
   private final ServicioAsistente servicioAsistente;
   private final Clock reloj;
+  private final LecturasDelPeriodo lecturas = new LecturasDelPeriodo();
 
   @Autowired
   public ServicioConsejosImpl(
@@ -106,13 +105,9 @@ public class ServicioConsejosImpl implements ServicioConsejos {
     YearMonth mesActual = YearMonth.now(reloj);
     List<Consejo> guardados = repositorioConsejo.obtenerDelMes(usuario, mesActual);
 
-    List<Consejo> calculados = new ArrayList<>();
-    Consejo veredicto = veredicto(usuario, mesActual, gastoReal);
-    if (veredicto != null) {
-      calculados.add(veredicto);
-    }
-    calculados.addAll(presupuestosDesactualizados(usuario, mesActual));
+    List<Consejo> calculados = new ArrayList<>(lecturas.calcular(usuario, mesActual, gastoReal));
     calculados.addAll(categoriasQueSubenMasQueLaInflacion(usuario, mesActual));
+    calculados.addAll(presupuestosDesactualizados(usuario, mesActual));
 
     List<Consejo> pendientes = conservarEstado(calculados, guardados);
     List<Consejo> paraMostrar = recortar(pendientes);
@@ -124,7 +119,7 @@ public class ServicioConsejosImpl implements ServicioConsejos {
         repositorioConsejo.modificar(consejo);
       }
     }
-    return alFrenteElVeredicto(redactados);
+    return ordenarPorFamilia(redactados);
   }
 
   // Un consejo ya guardado (por su tipo y categoría) conserva su estado; los nuevos se guardan
@@ -145,29 +140,46 @@ public class ServicioConsejosImpl implements ServicioConsejos {
     return pendientes;
   }
 
-  // El veredicto siempre va y no cuenta para el tope; el resto por severidad, como mucho MAXIMO_CONSEJOS
+  // El veredicto siempre va y no cuenta para el tope; después las lecturas y por último las propuestas
   private static List<Consejo> recortar(List<Consejo> pendientes) {
-    List<Consejo> paraMostrar = new ArrayList<>();
-    List<Consejo> otros = new ArrayList<>();
+    Consejo veredicto = null;
+    List<Consejo> lecturas = new ArrayList<>();
+    List<Consejo> propuestas = new ArrayList<>();
     for (Consejo pendiente : pendientes) {
       if (pendiente.isVeredicto()) {
-        paraMostrar.add(pendiente);
+        veredicto = pendiente;
+      } else if (pendiente.isLectura()) {
+        lecturas.add(pendiente);
       } else {
-        otros.add(pendiente);
+        propuestas.add(pendiente);
       }
     }
-    otros.sort(Comparator.comparing(Consejo::getSeveridad).reversed());
-    paraMostrar.addAll(otros.size() > MAXIMO_CONSEJOS ? otros.subList(0, MAXIMO_CONSEJOS) : otros);
+    List<Consejo> paraMostrar = new ArrayList<>();
+    if (veredicto != null) {
+      paraMostrar.add(veredicto);
+    }
+    paraMostrar.addAll(losMasImportantes(lecturas, MAXIMO_LECTURAS));
+    paraMostrar.addAll(losMasImportantes(propuestas, MAXIMO_PROPUESTAS));
     return paraMostrar;
   }
 
-  // Aunque la IA reordene, el veredicto se muestra arriba de todo
-  private List<Consejo> alFrenteElVeredicto(List<Consejo> consejos) {
+  private static List<Consejo> losMasImportantes(List<Consejo> consejos, int maximo) {
+    consejos.sort(Comparator.comparing(Consejo::getSeveridad).reversed());
+    return consejos.size() > maximo ? new ArrayList<>(consejos.subList(0, maximo)) : consejos;
+  }
+
+  // Aunque la IA reordene, se muestra el veredicto, después las lecturas y al final las propuestas
+  private List<Consejo> ordenarPorFamilia(List<Consejo> consejos) {
     List<Consejo> ordenados = new ArrayList<>();
     for (Consejo consejo : consejos) {
       if (consejo.isVeredicto()) {
         ordenados.add(0, consejo);
-      } else {
+      } else if (consejo.isLectura()) {
+        ordenados.add(consejo);
+      }
+    }
+    for (Consejo consejo : consejos) {
+      if (consejo.isPropuesta()) {
         ordenados.add(consejo);
       }
     }
@@ -331,52 +343,6 @@ public class ServicioConsejosImpl implements ServicioConsejos {
       }
     }
     return porCategoria;
-  }
-
-  // El veredicto del período: cuánto subieron los gastos, cuánto la inflación y la diferencia real
-  private Consejo veredicto(Usuario usuario, YearMonth mesActual, GastoReal gastoReal) {
-    Veredicto veredicto = gastoReal.getVeredicto();
-    if (veredicto == null) {
-      return null;
-    }
-    double real = veredicto.getVariacionReal();
-    String cierre;
-    if (Math.abs(real) < DIFERENCIA_MINIMA) {
-      cierre = "gastás lo mismo en serio.";
-    } else if (real > 0) {
-      cierre = String.format(ARGENTINA, "gastás %.1f %% más en serio.", real);
-    } else {
-      cierre = String.format(ARGENTINA, "gastás %.1f %% menos en serio.", -real);
-    }
-    double nominal = veredicto.getVariacionNominal();
-    String movimiento = nominal >= 0
-      ? String.format(ARGENTINA, "subieron %.1f %%", nominal)
-      : String.format(ARGENTINA, "bajaron %.1f %%", -nominal);
-    String texto = String.format(
-      ARGENTINA,
-      "Desde %s tus gastos %s. La inflación fue %.1f %%: %s",
-      nombreDeMes(veredicto.getDesde()),
-      movimiento,
-      veredicto.getInflacionAcumulada(),
-      cierre
-    );
-    return new Consejo(
-      usuario,
-      mesActual,
-      tipoDelVeredicto(veredicto.getEstado()),
-      null,
-      texto,
-      null
-    );
-  }
-
-  private static TipoConsejo tipoDelVeredicto(EstadoGastoReal estado) {
-    if (estado == EstadoGastoReal.ROJO) {
-      return TipoConsejo.VEREDICTO_ROJO;
-    }
-    return estado == EstadoGastoReal.AMARILLO
-      ? TipoConsejo.VEREDICTO_AMARILLO
-      : TipoConsejo.VEREDICTO_VERDE;
   }
 
   private Consejo buscarIgual(List<Consejo> guardados, Consejo calculado) {

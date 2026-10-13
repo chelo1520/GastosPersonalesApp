@@ -4,8 +4,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -17,7 +19,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.tallerwebi.dominio.asistente.CategoriaGastoReal;
 import com.tallerwebi.dominio.asistente.GastoReal;
+import com.tallerwebi.dominio.asistente.MesGastoReal;
 import com.tallerwebi.dominio.asistente.ServicioAsistente;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
 import com.tallerwebi.dominio.asistente.Veredicto;
@@ -234,7 +238,7 @@ public class ServicioConsejosImplTest {
   }
 
   @Test
-  void debeMostrarElVeredictoPrimeroYComoMuchoCuatroConsejosMasLosMasImportantesPrimero() {
+  void debeMostrarElVeredictoLasLecturasYComoMuchoCuatroPropuestasLasMasImportantesPrimero() {
     List<Presupuesto> presupuestos = new ArrayList<>();
     for (int i = 1; i <= 6; i++) {
       presupuestos.add(
@@ -252,10 +256,65 @@ public class ServicioConsejosImplTest {
 
     List<Consejo> consejos = servicio.obtenerPendientes(usuario);
 
-    assertThat(consejos, hasSize(5));
+    // Veredicto, la lectura de Cine (alerta) y 4 de los 6 presupuestos
+    assertThat(consejos, hasSize(6));
     assertThat(consejos.get(0).getTipo(), equalTo(TipoConsejo.VEREDICTO_ROJO));
     assertThat(consejos.get(1).getSeveridad(), equalTo(Severidad.ALERTA));
     assertThat(consejos.get(1).getTipo(), equalTo(TipoConsejo.CATEGORIA_SUBE_MAS_QUE_LA_INFLACION));
+    for (int i = 2; i < 6; i++) {
+      assertThat(consejos.get(i).getTipo(), equalTo(TipoConsejo.PRESUPUESTO_DESACTUALIZADO));
+    }
+  }
+
+  @Test
+  void debeMostrarComoMuchoTresLecturasAdemasDelVeredictoLasMasImportantesPrimero() {
+    // Cinco lecturas posibles: balance, mayor baja, mayor suba, hábitos y hormiga alta
+    List<MesGastoReal> meses = new ArrayList<>();
+    for (int i = 0; i < 4; i++) {
+      meses.add(
+        new MesGastoReal(
+          YearMonth.of(2026, 6 + i),
+          760000.0,
+          800000.0 - 10000.0 * i,
+          2.0,
+          false,
+          1500.0,
+          false,
+          60000.0,
+          840000.0
+        )
+      );
+    }
+    List<CategoriaGastoReal> categorias = List.of(
+      new CategoriaGastoReal("Vivienda", 331700.0, 325000.0, 1.7),
+      new CategoriaGastoReal("Alimentación", 200000.0, 195000.0, 1.7),
+      new CategoriaGastoReal("Transporte", 46800.0, 45700.0, 1.7),
+      new CategoriaGastoReal("Servicios", 70200.0, 89000.0, 1.7),
+      new CategoriaGastoReal("Entretenimiento", 80000.0, 60000.0, 1.7)
+    );
+    when(servicioGastoRealMock.calcular(any(), anyInt()))
+      .thenReturn(
+        new GastoReal(
+          meses,
+          new Veredicto(YearMonth.of(2026, 6), YearMonth.of(2026, 9), 30.0, 10.0),
+          YearMonth.of(2026, 9),
+          categorias,
+          null,
+          true
+        )
+      );
+
+    List<Consejo> consejos = servicio.obtenerPendientes(usuario);
+
+    assertThat(consejos, hasSize(4));
+    assertThat(consejos.get(0).getTipo(), equalTo(TipoConsejo.VEREDICTO_ROJO));
+    // Las dos de atención (hormiga y mayor suba) entran seguro; hábitos queda afuera
+    assertThat(consejos.get(1).getSeveridad(), equalTo(Severidad.ATENCION));
+    assertThat(consejos.get(2).getSeveridad(), equalTo(Severidad.ATENCION));
+    assertThat(
+      consejos.stream().map(Consejo::getTipo).toList(),
+      not(hasItem(TipoConsejo.HABITOS_CON_LA_INFLACION))
+    );
   }
 
   @Test

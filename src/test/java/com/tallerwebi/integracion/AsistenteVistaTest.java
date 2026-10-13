@@ -78,6 +78,7 @@ public class AsistenteVistaTest {
       .andExpect(status().isOk())
       .andExpect(view().name("asistente"))
       .andExpect(content().string(containsString("Tu asistente")))
+      .andExpect(content().string(containsString("Lo que veo")))
       .andExpect(content().string(containsString("tus gastos subieron 20,0 %")))
       .andExpect(content().string(containsString("Alimentación")))
       .andExpect(content().string(containsString("Consumís más")))

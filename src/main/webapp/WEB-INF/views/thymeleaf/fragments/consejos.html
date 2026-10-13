@@ -4,37 +4,59 @@
 <body>
 
   <!--
-    Bloque "Tu asistente": consejos pendientes del mes con sus acciones.
+    Bloque "Tu asistente", en dos familias: lo que el asistente ve (lecturas, sin acciones)
+    y lo que propone hacer (propuestas, con sus botones).
     Espera: consejos (lista de Consejo), periodo (para volver a la misma vista).
     Se reutiliza en cualquier pantalla con th:replace="~{fragments/consejos :: bloque(${consejos}, ${periodo})}"
   -->
-  <section th:fragment="bloque(consejos, periodo)" class="app-consejos" aria-label="Consejos del asistente"
-           th:unless="${#lists.isEmpty(consejos)}">
-    <article class="app-resumen-card app-consejo" th:each="consejo : ${consejos}"
-             th:classappend="'is-' + ${consejo.severidad.estilo} + (${consejo.veredicto} ? ' app-consejo-veredicto' : '')"
-             th:id="'consejo-' + ${consejo.id}">
-      <div class="app-consejo-cuerpo">
-        <span class="app-asistente-chip" th:if="${consejo.veredicto}">Tu asistente</span>
-        <span class="app-estado" th:unless="${consejo.veredicto}" th:classappend="'is-' + ${consejo.severidad.estilo}"
-              th:text="${consejo.severidad == T(com.tallerwebi.dominio.consejo.Severidad).ALERTA} ? 'Alerta' : (${consejo.severidad == T(com.tallerwebi.dominio.consejo.Severidad).ATENCION} ? 'Atención' : 'Info')">Atención</span>
-        <div>
-          <p class="app-consejo-texto" th:classappend="${consejo.veredicto} ? 'app-asistente-veredicto-texto'"
-             th:text="${consejo.textoParaMostrar}">Tu presupuesto de Alimentación quedó atrás de la inflación.</p>
-          <small class="app-asistente-nota" th:if="${consejo.veredicto}">Comparo el primer mes del período con el último cerrado; el mes en curso no cuenta.</small>
-        </div>
-      </div>
-      <div class="app-consejo-acciones" th:unless="${consejo.veredicto}">
-        <form th:if="${consejo.aplicable}" method="post"
-              th:action="@{/asistente/aplicar/{id}(id=${consejo.id}, periodo=${periodo})}"
-              th:attr="onsubmit=|return confirm('¿Actualizar el presupuesto de ${consejo.categoria} a $ ${#numbers.formatDecimal(consejo.montoSugerido, 1, 'POINT', 0, 'COMMA')}?');|">
-          <button type="submit" class="btn btn-primary btn-sm app-consejo-aplicar">Actualizar presupuesto</button>
-        </form>
-        <form method="post" th:action="@{/asistente/descartar/{id}(id=${consejo.id}, periodo=${periodo})}">
-          <button type="submit" class="btn btn-outline-secondary btn-sm app-consejo-descartar">Descartar</button>
-        </form>
-      </div>
-    </article>
-  </section>
+  <div th:fragment="bloque(consejos, periodo)" class="app-consejos" th:unless="${#lists.isEmpty(consejos)}">
+
+    <th:block th:with="lecturas=${consejos.?[lectura]}">
+      <section class="app-consejos-familia" aria-label="Lo que veo" th:unless="${#lists.isEmpty(lecturas)}">
+        <h2 class="app-consejos-titulo">Lo que veo</h2>
+        <article class="app-resumen-card app-consejo" th:each="consejo : ${lecturas}"
+                 th:classappend="'is-' + ${consejo.severidad.estilo} + (${consejo.veredicto} ? ' app-consejo-veredicto' : '')"
+                 th:id="'consejo-' + ${consejo.id}">
+          <div class="app-consejo-cuerpo">
+            <span class="app-asistente-chip" th:if="${consejo.veredicto}">Tu asistente</span>
+            <span class="app-estado" th:unless="${consejo.veredicto}" th:classappend="'is-' + ${consejo.severidad.estilo}"
+                  th:text="${consejo.severidad == T(com.tallerwebi.dominio.consejo.Severidad).ALERTA} ? 'Alerta' : (${consejo.severidad == T(com.tallerwebi.dominio.consejo.Severidad).ATENCION} ? 'Atención' : 'Info')">Info</span>
+            <div>
+              <p class="app-consejo-texto" th:classappend="${consejo.veredicto} ? 'app-asistente-veredicto-texto'"
+                 th:text="${consejo.textoParaMostrar}">Septiembre costó 2,1 % menos que agosto en pesos de hoy.</p>
+              <small class="app-asistente-nota" th:if="${consejo.veredicto}">Comparo el primer mes del período con el último cerrado; el mes en curso no cuenta.</small>
+            </div>
+          </div>
+        </article>
+      </section>
+    </th:block>
+
+    <th:block th:with="propuestas=${consejos.?[propuesta]}">
+      <section class="app-consejos-familia" aria-label="Lo que te propongo" th:unless="${#lists.isEmpty(propuestas)}">
+        <h2 class="app-consejos-titulo">Lo que te propongo</h2>
+        <article class="app-resumen-card app-consejo" th:each="consejo : ${propuestas}"
+                 th:classappend="'is-' + ${consejo.severidad.estilo}"
+                 th:id="'consejo-' + ${consejo.id}">
+          <div class="app-consejo-cuerpo">
+            <span class="app-estado" th:classappend="'is-' + ${consejo.severidad.estilo}"
+                  th:text="${consejo.severidad == T(com.tallerwebi.dominio.consejo.Severidad).ALERTA} ? 'Alerta' : (${consejo.severidad == T(com.tallerwebi.dominio.consejo.Severidad).ATENCION} ? 'Atención' : 'Info')">Atención</span>
+            <p class="app-consejo-texto" th:text="${consejo.textoParaMostrar}">Tu presupuesto de Alimentación quedó atrás de la inflación.</p>
+          </div>
+          <div class="app-consejo-acciones">
+            <form th:if="${consejo.aplicable}" method="post"
+                  th:action="@{/asistente/aplicar/{id}(id=${consejo.id}, periodo=${periodo})}"
+                  th:attr="onsubmit=|return confirm('¿Actualizar el presupuesto de ${consejo.categoria} a $ ${#numbers.formatDecimal(consejo.montoSugerido, 1, 'POINT', 0, 'COMMA')}?');|">
+              <button type="submit" class="btn btn-primary btn-sm app-consejo-aplicar">Actualizar presupuesto</button>
+            </form>
+            <form method="post" th:action="@{/asistente/descartar/{id}(id=${consejo.id}, periodo=${periodo})}">
+              <button type="submit" class="btn btn-outline-secondary btn-sm app-consejo-descartar">Descartar</button>
+            </form>
+          </div>
+        </article>
+      </section>
+    </th:block>
+
+  </div>
 
 </body>
 

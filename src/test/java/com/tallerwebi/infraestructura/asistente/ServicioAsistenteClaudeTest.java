@@ -72,6 +72,8 @@ public class ServicioAsistenteClaudeTest {
 
     assertThat(hechos, containsString("\"id\":1"));
     assertThat(hechos, containsString("\"montoSugerido\":220000.0"));
+    assertThat(hechos, containsString("\"familia\":\"PROPUESTA\""));
+    assertThat(hechos, containsString("\"familia\":\"LECTURA\""));
     assertThat(hechos, containsString("\"hechos\":\"Tu presupuesto quedó atrás\""));
     assertThat(hechos, containsString("\"variacionGastosPorcentaje\":9.4"));
     assertThat(hechos, containsString("\"nombre\":\"Servicios\""));
