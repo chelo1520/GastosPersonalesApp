@@ -20,6 +20,59 @@
   color: #fff;
 }
 
+/* Consejos: una tarjeta por consejo, con el color de la severidad a la izquierda */
+.app-consejos {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.app-consejo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  border-left: 6px solid var(--res-track);
+}
+
+.app-consejo.is-ok { border-left-color: var(--res-green); }
+.app-consejo.is-warn { border-left-color: var(--res-orange); }
+.app-consejo.is-over { border-left-color: var(--res-red); }
+
+.app-consejo-cuerpo {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.app-consejo-cuerpo .app-estado {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.app-consejo-texto {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.app-consejo-acciones {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+@media (max-width: 575.98px) {
+  .app-consejo {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .app-consejo-acciones {
+    justify-content: flex-end;
+  }
+}
+
 /* Veredicto: borde izquierdo con el color del semáforo */
 .app-asistente-veredicto {
   margin-bottom: 24px;

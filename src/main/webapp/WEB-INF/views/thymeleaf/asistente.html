@@ -17,6 +17,7 @@
       gastoReal: meses, veredicto, ultimoMesCerrado, categorias, indicadoresActualizadosEn, indicadoresAlDia
       meses: lista de MesAsistente (etiqueta + datos: gastado, gastadoEnPesosDeHoy, gastadoUsd, ipc, ipcEstimado, enCurso)
       veredictoTexto (String, puede faltar), ultimoMesCerrado (String)
+      consejos: lista de Consejo pendientes del mes (id, severidad, texto, categoria, montoSugerido, aplicable)
       indicadoresNoDisponibles (true cuando no hay IPC ni dólar)
   -->
   <main class="app-main app-resumen-main app-asistente-main">
@@ -29,6 +30,8 @@
       </nav>
     </div>
 
+    <div th:if="${aviso != null}" class="alert alert-secondary" role="status" th:text="${aviso}">Ese consejo ya no está disponible.</div>
+
     <!-- Sin indicadores no hay análisis -->
     <section th:if="${indicadoresNoDisponibles}" class="app-resumen-card app-asistente-aviso" role="alert">
       <strong>No pude consultar la inflación ni el dólar.</strong>
@@ -36,6 +39,9 @@
     </section>
 
     <th:block th:unless="${indicadoresNoDisponibles}">
+
+      <!-- Consejos pendientes del mes (HU-14) -->
+      <div th:replace="~{fragments/consejos :: bloque(${consejos}, ${periodo})}"></div>
 
       <!-- Veredicto -->
       <section class="app-resumen-card app-asistente-veredicto" th:if="${veredictoTexto != null}"

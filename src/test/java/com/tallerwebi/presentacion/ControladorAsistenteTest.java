@@ -7,6 +7,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -16,6 +17,8 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.asistente.GastoReal;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
 import com.tallerwebi.dominio.asistente.Veredicto;
+import com.tallerwebi.dominio.consejo.ServicioConsejos;
+import com.tallerwebi.dominio.excepcion.ConsejoNoEncontrado;
 import com.tallerwebi.dominio.excepcion.IndicadoresNoDisponibles;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -28,6 +31,7 @@ import org.springframework.web.servlet.ModelAndView;
 public class ControladorAsistenteTest {
 
   private ServicioGastoReal servicioMock;
+  private ServicioConsejos servicioConsejosMock;
   private HttpServletRequest requestMock;
   private HttpSession sessionMock;
   private Usuario usuario;
@@ -36,20 +40,21 @@ public class ControladorAsistenteTest {
   @BeforeEach
   public void init() {
     servicioMock = mock(ServicioGastoReal.class);
+    servicioConsejosMock = mock(ServicioConsejos.class);
     requestMock = mock(HttpServletRequest.class);
     sessionMock = mock(HttpSession.class);
     usuario = new Usuario();
     when(requestMock.getSession(false)).thenReturn(sessionMock);
     when(sessionMock.getAttribute("USUARIO")).thenReturn(usuario);
     when(servicioMock.calcular(any(), anyInt())).thenReturn(sinDatos());
-    controlador = new ControladorAsistente(servicioMock);
+    controlador = new ControladorAsistente(servicioMock, servicioConsejosMock);
   }
 
   @Test
   public void debeRedirigirAlLoginSinCalcularNadaCuandoNoHayUsuarioEnSesion() {
     when(sessionMock.getAttribute("USUARIO")).thenReturn(null);
 
-    ModelAndView mav = controlador.mostrarAsistente(6, requestMock);
+    ModelAndView mav = controlador.mostrarAsistente(6, null, requestMock);
 
     assertThat(mav.getViewName(), equalTo("redirect:/login"));
     verify(servicioMock, never()).calcular(any(), anyInt());
@@ -57,7 +62,7 @@ public class ControladorAsistenteTest {
 
   @Test
   public void debeUsarSeisMesesCuandoNoSePideUnPeriodo() {
-    ModelAndView mav = controlador.mostrarAsistente(null, requestMock);
+    ModelAndView mav = controlador.mostrarAsistente(null, null, requestMock);
 
     assertThat(mav.getViewName(), equalTo("asistente"));
     assertThat(mav.getModel().get("periodo"), equalTo(6));
@@ -66,14 +71,14 @@ public class ControladorAsistenteTest {
 
   @Test
   public void debeUsarElPeriodoPedidoCuandoEsUnoDeLosPermitidos() {
-    controlador.mostrarAsistente(12, requestMock);
+    controlador.mostrarAsistente(12, null, requestMock);
 
     verify(servicioMock).calcular(usuario, 12);
   }
 
   @Test
   public void debeCaerEnSeisMesesCuandoElPeriodoPedidoNoEstaPermitido() {
-    controlador.mostrarAsistente(7, requestMock);
+    controlador.mostrarAsistente(7, null, requestMock);
 
     verify(servicioMock).calcular(usuario, 6);
   }
@@ -82,7 +87,7 @@ public class ControladorAsistenteTest {
   public void debeAvisarSinRomperCuandoLosIndicadoresNoEstanDisponibles() {
     when(servicioMock.calcular(any(), anyInt())).thenThrow(new IndicadoresNoDisponibles("sin red"));
 
-    ModelAndView mav = controlador.mostrarAsistente(6, requestMock);
+    ModelAndView mav = controlador.mostrarAsistente(6, null, requestMock);
 
     assertThat(mav.getViewName(), equalTo("asistente"));
     assertThat(mav.getModel().get("indicadoresNoDisponibles"), equalTo(true));
@@ -111,10 +116,55 @@ public class ControladorAsistenteTest {
 
   @Test
   public void debeDejarElVeredictoVacioCuandoNoHayVeredicto() {
-    ModelAndView mav = controlador.mostrarAsistente(6, requestMock);
+    ModelAndView mav = controlador.mostrarAsistente(6, null, requestMock);
 
     assertThat(mav.getModel().get("veredictoTexto"), nullValue());
     assertThat(mav.getModel().containsKey("gastoReal"), is(true));
+  }
+
+  @Test
+  public void debePedirLosConsejosPendientesCuandoMuestraElAsistente() {
+    controlador.mostrarAsistente(6, null, requestMock);
+
+    verify(servicioConsejosMock).obtenerPendientes(usuario);
+  }
+
+  @Test
+  public void debeAplicarElConsejoYVolverAlAsistenteConElMismoPeriodo() {
+    ModelAndView mav = controlador.aplicarConsejo(7L, 12, requestMock);
+
+    verify(servicioConsejosMock).aplicar(7L, usuario);
+    assertThat(mav.getViewName(), equalTo("redirect:/asistente?periodo=12"));
+  }
+
+  @Test
+  public void debeDescartarElConsejoYVolverAlAsistente() {
+    ModelAndView mav = controlador.descartarConsejo(7L, null, requestMock);
+
+    verify(servicioConsejosMock).descartar(7L, usuario);
+    assertThat(mav.getViewName(), equalTo("redirect:/asistente?periodo=6"));
+  }
+
+  @Test
+  public void debeVolverAlAsistenteSinRomperCuandoElConsejoAAplicarNoExiste() {
+    doThrow(new ConsejoNoEncontrado()).when(servicioConsejosMock).aplicar(99L, usuario);
+
+    ModelAndView mav = controlador.aplicarConsejo(99L, 6, requestMock);
+
+    assertThat(
+      mav.getViewName(),
+      equalTo("redirect:/asistente?periodo=6&aviso=consejo-inexistente")
+    );
+  }
+
+  @Test
+  public void debeRedirigirAlLoginSinAplicarNadaCuandoSeEnviaLaAccionSinSesion() {
+    when(requestMock.getSession(false)).thenReturn(null);
+
+    ModelAndView mav = controlador.aplicarConsejo(7L, 6, requestMock);
+
+    assertThat(mav.getViewName(), equalTo("redirect:/login"));
+    verify(servicioConsejosMock, never()).aplicar(any(), any());
   }
 
   private GastoReal sinDatos() {

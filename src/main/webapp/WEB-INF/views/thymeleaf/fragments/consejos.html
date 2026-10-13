@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+  <!--
+    Bloque "Tu asistente": consejos pendientes del mes con sus acciones.
+    Espera: consejos (lista de Consejo), periodo (para volver a la misma vista).
+    Se reutiliza en cualquier pantalla con th:replace="~{fragments/consejos :: bloque(${consejos}, ${periodo})}"
+  -->
+  <section th:fragment="bloque(consejos, periodo)" class="app-consejos" aria-label="Consejos del asistente"
+           th:unless="${#lists.isEmpty(consejos)}">
+    <article class="app-resumen-card app-consejo" th:each="consejo : ${consejos}"
+             th:classappend="'is-' + ${consejo.severidad.estilo}" th:id="'consejo-' + ${consejo.id}">
+      <div class="app-consejo-cuerpo">
+        <span class="app-estado" th:classappend="'is-' + ${consejo.severidad.estilo}"
+              th:text="${consejo.severidad == T(com.tallerwebi.dominio.consejo.Severidad).ALERTA} ? 'Alerta' : (${consejo.severidad == T(com.tallerwebi.dominio.consejo.Severidad).ATENCION} ? 'Atención' : 'Info')">Atención</span>
+        <p class="app-consejo-texto" th:text="${consejo.texto}">Tu presupuesto de Alimentación quedó atrás de la inflación.</p>
+      </div>
+      <div class="app-consejo-acciones">
+        <form th:if="${consejo.aplicable}" method="post"
+              th:action="@{/asistente/aplicar/{id}(id=${consejo.id}, periodo=${periodo})}"
+              th:attr="onsubmit=|return confirm('¿Actualizar el presupuesto de ${consejo.categoria} a $ ${#numbers.formatDecimal(consejo.montoSugerido, 1, 'POINT', 0, 'COMMA')}?');|">
+          <button type="submit" class="btn btn-primary btn-sm app-consejo-aplicar">Actualizar presupuesto</button>
+        </form>
+        <form method="post" th:action="@{/asistente/descartar/{id}(id=${consejo.id}, periodo=${periodo})}">
+          <button type="submit" class="btn btn-outline-secondary btn-sm app-consejo-descartar">Descartar</button>
+        </form>
+      </div>
+    </article>
+  </section>
+
+</body>
+
+</html>
