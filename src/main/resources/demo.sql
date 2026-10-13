@@ -1,8 +1,8 @@
 -- Usuarios de demostración: alto, medio y bajo consumo, con todo el año 2026 cargado.
 -- Se ejecuta en cada arranque, después de data.sql. Borra y vuelve a cargar SOLO los datos
--- de estos tres usuarios: presupuestos de los 12 meses y gastos hasta el día de hoy (los de
--- fechas futuras se descartan, así el mes actual siempre se ve en curso). Lo que se cargue a
--- mano con estos usuarios se pierde al reiniciar.
+-- de estos tres usuarios: presupuestos de los 12 meses y gastos de enero hasta hoy. Los del
+-- mes actual se reparten entre el día 1 y hoy (el mes ya se ve cargado) y los meses futuros
+-- se descartan. Lo que se cargue a mano con estos usuarios se pierde al reiniciar.
 -- Generado con herramientas/generar_demo_sql.py del repo de coordinación; no editar a mano.
 -- Contraseña de los tres: test (la misma que el usuario de prueba de data.sql)
 
@@ -1070,5 +1070,10 @@ INSERT INTO Gasto(fecha, importe, descripcion, usuario_id, categoria_id) VALUES
   ('2026-12-09', 7400, 'Uber', @bajo, @cat_trans),
   ('2026-12-14', 6100, 'Cine', @bajo, @cat_entre);
 
--- El mes actual se muestra en curso: no quedan gastos con fecha posterior a hoy
+-- Mes actual: los gastos se reparten entre el día 1 y hoy, así el mes ya se ve cargado
+-- (el día d del mes se reescala de [1, último día] a [1, hoy]; el total del mes no cambia)
+UPDATE Gasto SET fecha = DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL FLOOR((DAY(fecha) - 1) * (DAY(CURDATE()) - 1) / (DAY(LAST_DAY(CURDATE())) - 1)) DAY)
+  WHERE usuario_id IN (SELECT id FROM Usuario WHERE email IN ('alto@gastitos.demo', 'medio@gastitos.demo', 'bajo@gastitos.demo')) AND DATE_FORMAT(fecha, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m');
+
+-- Meses futuros: se descartan
 DELETE FROM Gasto WHERE usuario_id IN (SELECT id FROM Usuario WHERE email IN ('alto@gastitos.demo', 'medio@gastitos.demo', 'bajo@gastitos.demo')) AND fecha > CURDATE();
