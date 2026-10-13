@@ -9,6 +9,8 @@ import com.tallerwebi.dominio.categoria.CategoriaRepositorioImpl;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicioImpl;
 import com.tallerwebi.dominio.gasto.RepositorioGastoImpl;
+import com.tallerwebi.dominio.presupuesto.RepositorioPresupuestoImpl;
+import com.tallerwebi.dominio.presupuesto.ServicioPresupuestoImpl;
 import com.tallerwebi.infraestructura.config.HibernateInfraestructuraTestConfig;
 import com.tallerwebi.presentacion.ControladorGasto;
 import java.time.LocalDate;
@@ -49,7 +51,8 @@ public class SimulacionIntegracionTest {
     controladorGasto =
       new ControladorGasto(
         new GastoServicioImpl(repositorioGasto),
-        new CategoriaRepositorioImpl(sessionFactory)
+        new CategoriaRepositorioImpl(sessionFactory),
+        new ServicioPresupuestoImpl(new RepositorioPresupuestoImpl(sessionFactory))
       );
 
     usuario = guardarUsuario("lourdes@gmail.com");

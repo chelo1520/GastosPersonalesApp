@@ -15,4 +15,7 @@ public interface ServicioPresupuesto {
   Presupuesto buscar(Usuario usuario, Categoria categoria, YearMonth mes);
 
   List<Presupuesto> obtenerDelMes(Usuario usuario, YearMonth mes);
+
+  // Suma de los presupuestos por categoría del mes; 0 si no hay ninguno definido
+  Double totalDelMes(Usuario usuario, YearMonth mes);
 }

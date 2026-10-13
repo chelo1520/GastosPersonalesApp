@@ -10,10 +10,12 @@ public class ReiniciarDB {
   private static final String EMAIL_USUARIO_DE_PRUEBA = "test@unlam.edu.ar";
 
   public static void limpiarBaseDeDatos() {
-    // Primero los gastos: tienen una FK a Usuario y bloquearían el borrado de usuarios
+    // Primero gastos y presupuestos: tienen FK a Usuario y bloquearían el borrado de usuarios
     String sqlCommands =
       "DELETE FROM Gasto;\n" +
       "ALTER TABLE Gasto AUTO_INCREMENT = 1;\n" +
+      "DELETE FROM Presupuesto;\n" +
+      "ALTER TABLE Presupuesto AUTO_INCREMENT = 1;\n" +
       "DELETE FROM Usuario;\n" +
       "ALTER TABLE Usuario AUTO_INCREMENT = 1;\n" +
       "INSERT INTO Usuario(id, email, password, rol, activo) VALUES(null, '" +

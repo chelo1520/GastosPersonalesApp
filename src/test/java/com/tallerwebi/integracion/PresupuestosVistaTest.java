@@ -10,8 +10,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.categoria.Categoria;
+import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.integracion.config.HibernateTestConfig;
 import com.tallerwebi.integracion.config.SpringWebTestConfig;
+import java.time.LocalDate;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -95,7 +97,35 @@ public class PresupuestosVistaTest {
     mockMvc
       .perform(get("/presupuestos").param("mes", "2026-10").sessionAttr("USUARIO", usuario))
       .andExpect(status().isOk())
-      .andExpect(content().string(containsString("130.000")));
+      .andExpect(content().string(containsString("130.000")))
+      .andExpect(content().string(containsString("$ 130.000")));
+  }
+
+  @Test
+  public void debeMostrarGastadoDisponibleYElChipDeEstadoCuandoLaCategoriaTienePresupuestoYGastos()
+    throws Exception {
+    Gasto compra = new Gasto(118400.0, LocalDate.of(2026, 10, 5), "Compra del mes");
+    compra.setUsuario(usuario);
+    compra.setCategoria(alimentacion);
+    sessionFactory.getCurrentSession().persist(compra);
+
+    mockMvc
+      .perform(
+        post("/presupuestos")
+          .sessionAttr("USUARIO", usuario)
+          .param("categoriaId", alimentacion.getId().toString())
+          .param("monto", "130000")
+          .param("mes", "2026-10")
+      )
+      .andExpect(status().is3xxRedirection());
+
+    mockMvc
+      .perform(get("/presupuestos").param("mes", "2026-10").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("118.400")))
+      .andExpect(content().string(containsString("11.600")))
+      .andExpect(content().string(containsString("app-estado is-warn")))
+      .andExpect(content().string(containsString("91 %")));
   }
 
   @Test

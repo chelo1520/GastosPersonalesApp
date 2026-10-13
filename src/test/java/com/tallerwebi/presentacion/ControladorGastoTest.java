@@ -10,6 +10,7 @@ import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
+import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
@@ -25,6 +26,7 @@ public class ControladorGastoTest {
 
   private GastoServicio gastoServicio;
   private CategoriaRepositorio categoriaRepositorio;
+  private ServicioPresupuesto servicioPresupuesto;
   private ControladorGasto controladorGasto;
 
   private Usuario usuario;
@@ -37,8 +39,10 @@ public class ControladorGastoTest {
   public void init() {
     gastoServicio = mock(GastoServicio.class);
     categoriaRepositorio = mock(CategoriaRepositorio.class);
+    servicioPresupuesto = mock(ServicioPresupuesto.class);
 
-    controladorGasto = new ControladorGasto(gastoServicio, categoriaRepositorio);
+    controladorGasto =
+      new ControladorGasto(gastoServicio, categoriaRepositorio, servicioPresupuesto);
     categoria = new Categoria();
     categoria.setId(1L);
     categoria.setNombre("Alimentación");
@@ -281,5 +285,27 @@ public class ControladorGastoTest {
     );
 
     verifyNoInteractions(gastoServicio);
+  }
+
+  @Test
+  public void debeUsarElPresupuestoDelMesSimuladoCuandoEstaDefinido() {
+    YearMonth mesActual = YearMonth.now();
+    when(servicioPresupuesto.totalDelMes(usuario, mesActual.plusMonths(1))).thenReturn(480000.0);
+    when(servicioPresupuesto.totalDelMes(usuario, mesActual)).thenReturn(400000.0);
+
+    ModelAndView mav = controladorGasto.mostrarSimulacion(request);
+
+    assertEquals(480000.0, mav.getModel().get("presupuesto"));
+  }
+
+  @Test
+  public void debeUsarElPresupuestoDelMesActualCuandoElMesSimuladoNoTieneNingunoDefinido() {
+    YearMonth mesActual = YearMonth.now();
+    when(servicioPresupuesto.totalDelMes(usuario, mesActual.plusMonths(1))).thenReturn(0.0);
+    when(servicioPresupuesto.totalDelMes(usuario, mesActual)).thenReturn(400000.0);
+
+    ModelAndView mav = controladorGasto.mostrarSimulacion(request);
+
+    assertEquals(400000.0, mav.getModel().get("presupuesto"));
   }
 }

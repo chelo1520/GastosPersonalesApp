@@ -14,7 +14,7 @@
   <!--
     Modelo esperado:
       mesActual (String, ej. "Octubre 2026"), mes / mesAnterior / mesSiguiente (String, ej. "2026-10")
-      filas: lista con categoria, monto (null si no está definido), definido
+      filas: lista de ResumenCategoria (nombre, presupuesto, gastado, disponible, porcentajeUsado, estado, tienePresupuesto)
       totalPresupuestado (número), categorias (para el desplegable), datosPresupuesto (formulario), error (opcional)
   -->
   <main class="app-main app-resumen-main">
@@ -45,15 +45,39 @@
             <tr>
               <th scope="col">Categoría</th>
               <th scope="col" class="text-end">Presupuesto</th>
+              <th scope="col" class="text-end">Gastado</th>
+              <th scope="col" class="text-end">Disponible</th>
+              <th scope="col" class="app-presupuestos-uso-col">Uso</th>
             </tr>
           </thead>
           <tbody>
-            <tr th:each="fila : ${filas}" th:classappend="${!fila.definido} ? 'app-presupuesto-sin-definir'">
-              <td th:text="${fila.categoria}">Alimentación</td>
+            <tr th:each="fila : ${filas}" th:classappend="${!fila.tienePresupuesto} ? 'app-presupuesto-sin-definir'">
+              <td th:text="${fila.nombre}">Alimentación</td>
               <td class="text-end">
-                <span class="app-resumen-num" th:if="${fila.definido}"
-                      th:text="${#numbers.formatDecimal(fila.monto, 1, 'POINT', 0, 'COMMA')}">130.000</span>
-                <span th:unless="${fila.definido}">Sin presupuesto</span>
+                <span class="app-resumen-num" th:if="${fila.tienePresupuesto}"
+                      th:text="${#numbers.formatDecimal(fila.presupuesto, 1, 'POINT', 0, 'COMMA')}">130.000</span>
+                <span th:unless="${fila.tienePresupuesto}">Sin presupuesto</span>
+              </td>
+              <td class="app-resumen-num text-end"
+                  th:text="${#numbers.formatDecimal(fila.gastado, 1, 'POINT', 0, 'COMMA')}">118.400</td>
+              <td class="text-end">
+                <span class="app-resumen-num" th:if="${fila.tienePresupuesto}"
+                      th:classappend="${fila.disponible < 0} ? 'is-neg'"
+                      th:text="${#numbers.formatDecimal(fila.disponible, 1, 'POINT', 0, 'COMMA')}">11.600</span>
+                <span th:unless="${fila.tienePresupuesto}">—</span>
+              </td>
+              <td class="app-presupuestos-uso-col">
+                <div class="app-presupuestos-uso" th:if="${fila.tienePresupuesto}">
+                  <div class="app-resumen-barra" th:classappend="'is-' + ${fila.estado.estilo}"
+                       role="progressbar" aria-label="Presupuesto usado" aria-valuemin="0" aria-valuemax="100"
+                       th:attr="aria-valuenow=${fila.porcentajeUsado > 100 ? 100 : fila.porcentajeUsado}">
+                    <div class="app-resumen-barra-fill"
+                         th:style="'width:' + ${#numbers.formatInteger(fila.porcentajeUsado > 100 ? 100 : fila.porcentajeUsado, 1)} + '%'"></div>
+                  </div>
+                  <span class="app-estado" th:classappend="'is-' + ${fila.estado.estilo}"
+                        th:text="${#numbers.formatInteger(fila.porcentajeUsado, 1)} + ' %'">91 %</span>
+                </div>
+                <span th:unless="${fila.tienePresupuesto}">—</span>
               </td>
             </tr>
           </tbody>

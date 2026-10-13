@@ -1,16 +1,30 @@
 package com.tallerwebi.dominio.resumen;
 
-/** Gastos mensuales agrupados por categoría. */
-public class ResumenCategoria {
+/** Gastos mensuales de una categoría contra su presupuesto. */
+public final class ResumenCategoria {
 
   private final String nombre;
   private final Double gastado;
   private final Double porcentajeTotal;
+  private final Double presupuesto;
+  private final EstadoPresupuesto estado;
 
+  // Sin presupuesto definido para la categoría
   public ResumenCategoria(String nombre, Double gastado, Double porcentajeTotal) {
+    this(nombre, gastado, porcentajeTotal, null);
+  }
+
+  public ResumenCategoria(
+    String nombre,
+    Double gastado,
+    Double porcentajeTotal,
+    Double presupuesto
+  ) {
     this.nombre = nombre;
     this.gastado = gastado;
     this.porcentajeTotal = porcentajeTotal;
+    this.presupuesto = presupuesto;
+    this.estado = EstadoPresupuesto.de(getPorcentajeUsado());
   }
 
   public String getNombre() {
@@ -23,5 +37,32 @@ public class ResumenCategoria {
 
   public Double getPorcentajeTotal() {
     return porcentajeTotal;
+  }
+
+  // null cuando la categoría no tiene presupuesto en el mes; lo mismo disponible y porcentajeUsado
+  public Double getPresupuesto() {
+    return presupuesto;
+  }
+
+  public Double getDisponible() {
+    if (!isTienePresupuesto()) {
+      return null;
+    }
+    return presupuesto - gastado;
+  }
+
+  public Double getPorcentajeUsado() {
+    if (!isTienePresupuesto()) {
+      return null;
+    }
+    return (gastado / presupuesto) * 100;
+  }
+
+  public EstadoPresupuesto getEstado() {
+    return estado;
+  }
+
+  public boolean isTienePresupuesto() {
+    return presupuesto != null && presupuesto > 0;
   }
 }

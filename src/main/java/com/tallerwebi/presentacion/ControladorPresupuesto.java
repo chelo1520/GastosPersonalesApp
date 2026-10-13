@@ -4,8 +4,10 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.categoria.CategoriaRepositorio;
 import com.tallerwebi.dominio.excepcion.PresupuestoInvalido;
-import com.tallerwebi.dominio.presupuesto.Presupuesto;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
+import com.tallerwebi.dominio.resumen.ResumenCategoria;
+import com.tallerwebi.dominio.resumen.ResumenMensual;
+import com.tallerwebi.dominio.resumen.ServicioResumen;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Clock;
 import java.time.YearMonth;
@@ -30,24 +32,28 @@ import org.springframework.web.servlet.ModelAndView;
 public class ControladorPresupuesto {
 
   private ServicioPresupuesto servicioPresupuesto;
+  private ServicioResumen servicioResumen;
   private CategoriaRepositorio categoriaRepositorio;
   private Clock reloj;
 
   @Autowired
   public ControladorPresupuesto(
     ServicioPresupuesto servicioPresupuesto,
+    ServicioResumen servicioResumen,
     CategoriaRepositorio categoriaRepositorio
   ) {
-    this(servicioPresupuesto, categoriaRepositorio, Clock.systemDefaultZone());
+    this(servicioPresupuesto, servicioResumen, categoriaRepositorio, Clock.systemDefaultZone());
   }
 
   // Permite fijar "hoy" en los tests
   public ControladorPresupuesto(
     ServicioPresupuesto servicioPresupuesto,
+    ServicioResumen servicioResumen,
     CategoriaRepositorio categoriaRepositorio,
     Clock reloj
   ) {
     this.servicioPresupuesto = servicioPresupuesto;
+    this.servicioResumen = servicioResumen;
     this.categoriaRepositorio = categoriaRepositorio;
     this.reloj = reloj;
   }
@@ -96,22 +102,21 @@ public class ControladorPresupuesto {
     String error
   ) {
     List<Categoria> categorias = categoriaRepositorio.obtenerTodas();
-    List<Presupuesto> presupuestos = servicioPresupuesto.obtenerDelMes(usuario, mes);
+    ResumenMensual resumen = servicioResumen.obtenerResumen(usuario, mes);
 
-    // Todas las categorías, con su monto si el usuario lo definió para ese mes
-    Map<Long, Double> montoPorCategoria = new HashMap<>();
-    double total = 0.0;
-    for (Presupuesto presupuesto : presupuestos) {
-      montoPorCategoria.put(presupuesto.getCategoria().getId(), presupuesto.getMonto());
-      total += presupuesto.getMonto();
+    // Todas las categorías en el orden del maestro, con lo gastado y el presupuesto del mes;
+    // al final, los gastos sin categoría si los hubiera
+    Map<String, ResumenCategoria> porNombre = new HashMap<>();
+    for (ResumenCategoria categoria : resumen.getCategorias()) {
+      porNombre.put(categoria.getNombre(), categoria);
     }
 
-    List<FilaPresupuesto> filas = new ArrayList<>();
+    List<ResumenCategoria> filas = new ArrayList<>();
     for (Categoria categoria : categorias) {
-      filas.add(
-        new FilaPresupuesto(categoria.getNombre(), montoPorCategoria.get(categoria.getId()))
-      );
+      ResumenCategoria fila = porNombre.remove(categoria.getNombre());
+      filas.add(fila != null ? fila : new ResumenCategoria(categoria.getNombre(), 0.0, 0.0));
     }
+    filas.addAll(porNombre.values());
 
     datos.setMes(mes.toString());
 
@@ -121,7 +126,7 @@ public class ControladorPresupuesto {
     model.put("mesAnterior", mes.minusMonths(1).toString());
     model.put("mesSiguiente", mes.plusMonths(1).toString());
     model.put("filas", filas);
-    model.put("totalPresupuestado", total);
+    model.put("totalPresupuestado", resumen.getPresupuesto());
     model.put("categorias", categorias);
     model.put("datosPresupuesto", datos);
     if (error != null) {
