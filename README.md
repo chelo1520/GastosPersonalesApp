@@ -59,7 +59,7 @@ y `bajo@gastitos.demo` (muy bajo). Ver `src/main/resources/demo.sql`.
 
 El asistente redacta sus consejos con Claude si existe la variable de entorno `ANTHROPIC_API_KEY`
 (en `.env`, nunca en el repo). Sin la variable, muestra los consejos con el texto de las reglas.
-El modelo es `claude-opus-5-5`; se cambia con `ASISTENTE_MODELO`.
+El modelo es `claude-haiku-5-5`; se cambia con `ASISTENTE_MODELO` (por ejemplo `claude-opus-5-5`).
 ## 2. Thymeleaf
 * [Documentación](https://www.thymeleaf.org/doc/tutorials/3.0/usingthymeleaf.html)
 

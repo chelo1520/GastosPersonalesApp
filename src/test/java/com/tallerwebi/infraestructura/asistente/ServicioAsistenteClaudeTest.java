@@ -136,12 +136,11 @@ public class ServicioAsistenteClaudeTest {
   }
 
   @Test
-  void debeUsarOpus55SalvoQueSeIndiqueOtroModelo() {
-    assertThat(sinClave.modeloEnUso(), equalTo("claude-opus-5-5"));
+  void debeUsarHaiku55SalvoQueSeIndiqueOtroModelo() {
+    assertThat(sinClave.modeloEnUso(), equalTo("claude-haiku-5-5"));
     assertThat(
-      new ServicioAsistenteClaude(null, "claude-haiku-5-5", Clock.systemDefaultZone())
-        .modeloEnUso(),
-      equalTo("claude-haiku-5-5")
+      new ServicioAsistenteClaude(null, "claude-opus-5-5", Clock.systemDefaultZone()).modeloEnUso(),
+      equalTo("claude-opus-5-5")
     );
   }
 
