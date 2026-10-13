@@ -16,6 +16,25 @@ public class ResumenMensual {
   private final ResumenHormiga hormiga;
   private final List<Alerta> alertas;
 
+  // Sin gastos hormiga ni alertas
+  public ResumenMensual(
+    Double gastado,
+    Double presupuesto,
+    Double disponible,
+    Double porcentajeUsado,
+    List<ResumenCategoria> categorias
+  ) {
+    this(
+      gastado,
+      presupuesto,
+      disponible,
+      porcentajeUsado,
+      categorias,
+      new ResumenHormiga(0.0, 0.0, List.of()),
+      List.of()
+    );
+  }
+
   public ResumenMensual(
     Double gastado,
     Double presupuesto,

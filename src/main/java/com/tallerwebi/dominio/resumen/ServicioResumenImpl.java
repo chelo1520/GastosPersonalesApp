@@ -5,8 +5,8 @@ import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.alerta.CalculadoraAlertas;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.RepositorioGasto;
-import com.tallerwebi.dominio.presupuesto.PresupuestoMensual;
-import jakarta.transaction.Transactional;
+import com.tallerwebi.dominio.presupuesto.Presupuesto;
+import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import java.time.Clock;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -16,9 +16,10 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
- * ServicioResumenImpl
+ * ServicioResumenImpl: cruza los gastos del mes con los presupuestos por categoría
  */
 @Service
 @Transactional
@@ -27,18 +28,27 @@ public class ServicioResumenImpl implements ServicioResumen {
   static final String SIN_CATEGORIA = "Sin categoría";
 
   private RepositorioGasto repositorioGasto;
+  private ServicioPresupuesto servicioPresupuesto;
   private Clock reloj;
   private final CalculadoraGastosHormiga calculadoraHormiga = new CalculadoraGastosHormiga();
   private final CalculadoraAlertas calculadoraAlertas = new CalculadoraAlertas();
 
   @Autowired
-  public ServicioResumenImpl(RepositorioGasto repositorioGasto) {
-    this(repositorioGasto, Clock.systemDefaultZone());
+  public ServicioResumenImpl(
+    RepositorioGasto repositorioGasto,
+    ServicioPresupuesto servicioPresupuesto
+  ) {
+    this(repositorioGasto, servicioPresupuesto, Clock.systemDefaultZone());
   }
 
   // Permite fijar "hoy" en los tests
-  public ServicioResumenImpl(RepositorioGasto repositorioGasto, Clock reloj) {
+  public ServicioResumenImpl(
+    RepositorioGasto repositorioGasto,
+    ServicioPresupuesto servicioPresupuesto,
+    Clock reloj
+  ) {
     this.repositorioGasto = repositorioGasto;
+    this.servicioPresupuesto = servicioPresupuesto;
     this.reloj = reloj;
   }
 
@@ -59,11 +69,14 @@ public class ServicioResumenImpl implements ServicioResumen {
       gastadoPorCategoria.merge(nombreCategoria, gasto.getImporte(), Double::sum);
     }
 
-    double presupuesto = presupuestoDe(mes);
+    // El presupuesto del mes es la suma de lo definido por categoría
+    double presupuesto = 0.0;
+    Map<String, Double> presupuestoPorCategoria = new LinkedHashMap<>();
+    for (Presupuesto definido : servicioPresupuesto.obtenerDelMes(usuario, mes)) {
+      presupuesto += definido.getMonto();
+      presupuestoPorCategoria.put(definido.getCategoria().getNombre(), definido.getMonto());
+    }
 
-    // De la que más se gastó a la que menos, como se lee el gráfico de torta.
-    // No hay presupuesto por categoría: como hoy todos los gastos van a una sola,
-    // esa categoría se compara contra el presupuesto del mes
     List<ResumenCategoria> categorias = new ArrayList<>();
     for (Map.Entry<String, Double> categoria : gastadoPorCategoria.entrySet()) {
       double gastadoCategoria = categoria.getValue();
@@ -71,17 +84,21 @@ public class ServicioResumenImpl implements ServicioResumen {
         new ResumenCategoria(
           categoria.getKey(),
           gastadoCategoria,
-          porcentaje(gastadoCategoria, gastado)
+          porcentaje(gastadoCategoria, gastado),
+          presupuestoPorCategoria.get(categoria.getKey())
         )
       );
     }
+    // Las categorías con presupuesto pero sin gastos también se muestran (gastado 0)
+    for (Map.Entry<String, Double> definido : presupuestoPorCategoria.entrySet()) {
+      if (!gastadoPorCategoria.containsKey(definido.getKey())) {
+        categorias.add(new ResumenCategoria(definido.getKey(), 0.0, 0.0, definido.getValue()));
+      }
+    }
+    // De la que más se gastó a la que menos, como se lee el gráfico de torta
     categorias.sort(Comparator.comparing(ResumenCategoria::getGastado).reversed());
 
     ResumenHormiga hormiga = calculadoraHormiga.calcular(gastos, presupuesto);
-    // Las alertas hablan de lo que "llevás": solo aplican al mes en curso
-    List<Alerta> alertas = mes.equals(YearMonth.now(reloj))
-      ? calculadoraAlertas.alertasDelMes(hormiga)
-      : List.of();
 
     return new ResumenMensual(
       gastado,
@@ -90,8 +107,16 @@ public class ServicioResumenImpl implements ServicioResumen {
       porcentajeUsado(gastado, presupuesto),
       categorias,
       hormiga,
-      alertas
+      alertasDelMes(hormiga, mes)
     );
+  }
+
+  // Las alertas hablan de lo que "llevás": solo aplican al mes en curso
+  private List<Alerta> alertasDelMes(ResumenHormiga hormiga, YearMonth mes) {
+    if (!mes.equals(YearMonth.now(reloj))) {
+      return List.of();
+    }
+    return calculadoraAlertas.alertasDelMes(hormiga);
   }
 
   @Override
@@ -116,7 +141,7 @@ public class ServicioResumenImpl implements ServicioResumen {
     YearMonth mesActual = YearMonth.now(reloj);
     List<ResumenDeMes> historial = new ArrayList<>();
     for (Map.Entry<YearMonth, List<Gasto>> mes : gastosPorMes.entrySet()) {
-      double presupuesto = presupuestoDe(mes.getKey());
+      double presupuesto = presupuestoDe(usuario, mes.getKey());
       double gastado = mes.getValue().stream().mapToDouble(Gasto::getImporte).sum();
       // "Chico" es el 2 % del presupuesto de ese mes, no del actual
       double hormiga = calculadoraHormiga.calcular(mes.getValue(), presupuesto).getTotal();
@@ -133,12 +158,9 @@ public class ServicioResumenImpl implements ServicioResumen {
     return historial;
   }
 
-  // Único lugar de donde sale el presupuesto de un mes: cuando exista la entidad Presupuesto,
-  // se busca acá y el historial, el resumen y los gastos hormiga lo toman solos. Hasta entonces el
-  // mes no se usa: es el mismo presupuesto para todos
-  @SuppressWarnings("PMD.UnusedFormalParameter")
-  private double presupuestoDe(YearMonth mes) {
-    return PresupuestoMensual.MONTO;
+  // El presupuesto de cada mes del historial: la suma de lo definido por categoría ese mes
+  private double presupuestoDe(Usuario usuario, YearMonth mes) {
+    return servicioPresupuesto.totalDelMes(usuario, mes);
   }
 
   private double porcentaje(double parte, double total) {

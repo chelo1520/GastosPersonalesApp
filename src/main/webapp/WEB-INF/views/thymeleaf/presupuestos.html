@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head('Presupuestos')}"></head>
+
+<body>
+
+  <link rel="stylesheet" th:href="@{/css/resumen.css}" />
+  <link rel="stylesheet" th:href="@{/css/presupuestos.css}" />
+
+  <header th:replace="~{fragments/layout :: navbar('presupuestos')}"></header>
+  <header th:replace="~{fragments/layout :: header-mobile('Presupuestos')}"></header>
+
+  <!--
+    Modelo esperado:
+      mesActual (String, ej. "Octubre 2026"), mes / mesAnterior / mesSiguiente (String, ej. "2026-10")
+      filas: lista de ResumenCategoria (nombre, presupuesto, gastado, disponible, porcentajeUsado, estado, tienePresupuesto)
+      totalPresupuestado (número), categorias (para el desplegable), datosPresupuesto (formulario), error (opcional)
+  -->
+  <main class="app-main app-resumen-main">
+
+    <!-- Encabezado -->
+    <div class="app-resumen-titulo">
+      <div class="app-resumen-mes">
+        <a class="app-mes-btn" th:href="@{/presupuestos(mes=${mesAnterior})}" aria-label="Mes anterior">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
+        </a>
+        <h1 class="h3 fw-bold mb-0">Presupuestos · <span th:text="${mesActual}">Octubre 2026</span></h1>
+        <a class="app-mes-btn" th:href="@{/presupuestos(mes=${mesSiguiente})}" aria-label="Mes siguiente">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+        </a>
+      </div>
+      <p class="app-presupuestos-total mb-0">
+        Total presupuestado
+        <strong id="total-presupuestado"
+                th:text="'$ ' + ${#numbers.formatDecimal(totalPresupuestado, 1, 'POINT', 0, 'COMMA')}">$ 400.000</strong>
+      </p>
+    </div>
+
+    <!-- Tabla por categoría -->
+    <section class="app-resumen-card app-presupuestos-tabla-card" aria-label="Presupuestos del mes">
+      <div class="table-responsive">
+        <table class="table app-resumen-tabla mb-0" id="tabla-presupuestos">
+          <thead>
+            <tr>
+              <th scope="col">Categoría</th>
+              <th scope="col" class="text-end">Presupuesto</th>
+              <th scope="col" class="text-end">Gastado</th>
+              <th scope="col" class="text-end">Disponible</th>
+              <th scope="col" class="app-presupuestos-uso-col">Uso</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="fila : ${filas}" th:classappend="${!fila.tienePresupuesto} ? 'app-presupuesto-sin-definir'">
+              <td th:text="${fila.nombre}">Alimentación</td>
+              <td class="text-end">
+                <span class="app-resumen-num" th:if="${fila.tienePresupuesto}"
+                      th:text="${#numbers.formatDecimal(fila.presupuesto, 1, 'POINT', 0, 'COMMA')}">130.000</span>
+                <span th:unless="${fila.tienePresupuesto}">Sin presupuesto</span>
+              </td>
+              <td class="app-resumen-num text-end"
+                  th:text="${#numbers.formatDecimal(fila.gastado, 1, 'POINT', 0, 'COMMA')}">118.400</td>
+              <td class="text-end">
+                <span class="app-resumen-num" th:if="${fila.tienePresupuesto}"
+                      th:classappend="${fila.disponible < 0} ? 'is-neg'"
+                      th:text="${#numbers.formatDecimal(fila.disponible, 1, 'POINT', 0, 'COMMA')}">11.600</span>
+                <span th:unless="${fila.tienePresupuesto}">—</span>
+              </td>
+              <td class="app-presupuestos-uso-col">
+                <div class="app-presupuestos-uso" th:if="${fila.tienePresupuesto}">
+                  <div class="app-resumen-barra" th:classappend="'is-' + ${fila.estado.estilo}"
+                       role="progressbar" aria-label="Presupuesto usado" aria-valuemin="0" aria-valuemax="100"
+                       th:attr="aria-valuenow=${fila.porcentajeUsado > 100 ? 100 : fila.porcentajeUsado}">
+                    <div class="app-resumen-barra-fill"
+                         th:style="'width:' + ${#numbers.formatInteger(fila.porcentajeUsado > 100 ? 100 : fila.porcentajeUsado, 1)} + '%'"></div>
+                  </div>
+                  <span class="app-estado" th:classappend="'is-' + ${fila.estado.estilo}"
+                        th:text="${#numbers.formatInteger(fila.porcentajeUsado, 1)} + ' %'">91 %</span>
+                </div>
+                <span th:unless="${fila.tienePresupuesto}">—</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Definir presupuesto -->
+    <section class="app-resumen-card app-presupuestos-form" aria-label="Definir presupuesto">
+      <div th:if="${error != null}" class="alert alert-danger" role="alert" th:text="${error}">
+        El monto debe ser mayor a cero.
+      </div>
+
+      <form th:action="@{/presupuestos}" th:object="${datosPresupuesto}" method="post" class="app-presupuestos-form-row">
+        <input type="hidden" th:field="*{mes}">
+
+        <span class="app-presupuestos-form-titulo">Definir presupuesto</span>
+
+        <div class="app-presupuestos-campo">
+          <label for="categoriaId" class="form-label">Categoría</label>
+          <select id="categoriaId" th:field="*{categoriaId}" class="form-select" required>
+            <option value="">Seleccioná una categoría</option>
+            <option th:each="categoria : ${categorias}" th:value="${categoria.id}"
+                    th:text="${categoria.nombre}">Alimentación</option>
+          </select>
+        </div>
+
+        <div class="app-presupuestos-campo">
+          <label for="monto" class="form-label">Monto mensual</label>
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            <input id="monto" th:field="*{monto}" type="number" step="0.01" min="0.01" inputmode="decimal"
+                   class="form-control app-importe" th:classappend="${error != null} ? 'is-invalid'" required>
+          </div>
+        </div>
+
+        <button id="btn-guardar-presupuesto" type="submit" class="btn btn-primary">Guardar</button>
+
+        <small class="app-presupuestos-ayuda">Uno por categoría y mes. Si ya existe, se reemplaza el monto.</small>
+      </form>
+    </section>
+  </main>
+
+  <nav class="app-mobile-nav d-md-none" aria-label="Navegación principal">
+    <a th:href="@{/home}" aria-label="Resumen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7M5 10v10h14V10"></path></svg>
+      <span>Resumen</span>
+    </a>
+    <a th:href="@{/mostrar-gastos}" aria-label="Gastos">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>
+      <span>Gastos</span>
+    </a>
+    <a class="app-mobile-nav-add" th:href="@{/registrar-gasto}" aria-label="Registrar gasto">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+    </a>
+    <a class="active" th:href="@{/presupuestos}" aria-current="page" aria-label="Presupuestos">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle></svg>
+      <span>Presup.</span>
+    </a>
+    <span class="app-mobile-nav-disabled" aria-disabled="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="19" cy="12" r="1.5"></circle></svg>
+      <span>Más</span>
+    </span>
+  </nav>
+
+  <script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+
+</html>

@@ -57,10 +57,10 @@
         <a class="app-mobile-nav-add" th:href="@{/registrar-gasto}" aria-label="Registrar gasto">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
         </a>
-        <span class="app-mobile-nav-disabled" aria-disabled="true">
+        <a th:href="@{/presupuestos}" aria-label="Presupuestos">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle></svg>
             <span>Presup.</span>
-        </span>
+        </a>
         <a class="active" th:href="@{/perfil}" aria-current="page" aria-label="Perfil">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.6-3.5 3.1-5.5 7-5.5s6.4 2 7 5.5"></path></svg>
             <span>Perfil</span>

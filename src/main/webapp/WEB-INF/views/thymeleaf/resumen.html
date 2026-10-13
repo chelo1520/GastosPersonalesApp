@@ -12,9 +12,9 @@
 
   <!--
     Modelo esperado:
-      mesActual (String, ej. "Octubre 2026"), mesAnterior / mesSiguiente (String, ej. "2026-09")
+      mesActual (String, ej. "Octubre 2026"), mesMostrado / mesAnterior / mesSiguiente (String, ej. "2026-09")
       gastado, presupuesto, disponible (números), porcentajeUsado (número, ej. 80)
-      categorias: lista con nombre, gastado, porcentajeTotal, disponible, porcentajeUsado
+      categorias: lista de ResumenCategoria (nombre, gastado, porcentajeTotal, presupuesto, disponible, porcentajeUsado, estado)
       hormiga: total, porcentajePresupuesto, categorias (nombre, gastado, categoriaId)
       alertas: lista con nivel (AMARILLA / ROJA) y mensaje
       historial: lista con etiqueta (ej. "Oct 2026") y resumen (gastado, hormiga, resto, presupuesto, enCurso)
@@ -98,6 +98,8 @@
                 <th scope="col">Categoría</th>
                 <th scope="col" class="text-end">Gastado</th>
                 <th scope="col" class="text-end">% del total</th>
+                <th scope="col" class="text-end">Disponible</th>
+                <th scope="col">Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -115,6 +117,18 @@
                     th:text="${#numbers.formatDecimal(cat.gastado, 1, 'POINT', 0, 'COMMA')}">118.400</td>
                 <td class="app-resumen-num text-end"
                     th:text="${#numbers.formatDecimal(cat.porcentajeTotal, 1, 'POINT', 1, 'COMMA')} + ' %'">37,0 %</td>
+                <td class="text-end">
+                  <span class="app-resumen-num" th:if="${cat.tienePresupuesto}"
+                        th:classappend="${cat.disponible < 0} ? 'is-neg'"
+                        th:text="${#numbers.formatDecimal(cat.disponible, 1, 'POINT', 0, 'COMMA')}">11.600</span>
+                  <span class="app-resumen-sin-presupuesto" th:unless="${cat.tienePresupuesto}">Sin presupuesto</span>
+                </td>
+                <td>
+                  <span class="app-estado" th:if="${cat.tienePresupuesto}"
+                        th:classappend="'is-' + ${cat.estado.estilo}"
+                        th:text="${#numbers.formatInteger(cat.porcentajeUsado, 1)} + ' %'">91 %</span>
+                  <span th:unless="${cat.tienePresupuesto}">—</span>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -164,9 +178,14 @@
     <section class="app-resumen-card app-resumen-hormiga" id="gastos-hormiga" aria-label="Gastos hormiga del mes">
       <h2 class="app-resumen-card-titulo">Gastos hormiga</h2>
 
-      <p class="app-gastos-vacio mb-0" th:if="${hormiga.total == 0}">No hay gastos hormiga este mes.</p>
+      <!-- "Chico" es el 2 % del presupuesto: sin presupuesto en el mes no hay con qué medirlo -->
+      <p class="app-gastos-vacio mb-0" th:if="${presupuesto <= 0}">
+        Definí el presupuesto del mes para ver tus gastos hormiga.
+        <a th:href="@{/presupuestos(mes=${mesMostrado})}">Ir a presupuestos</a>
+      </p>
+      <p class="app-gastos-vacio mb-0" th:if="${presupuesto > 0 and hormiga.total == 0}">No hay gastos hormiga este mes.</p>
 
-      <div th:unless="${hormiga.total == 0}" class="app-resumen-hormiga-cuerpo">
+      <div th:if="${presupuesto > 0 and hormiga.total > 0}" class="app-resumen-hormiga-cuerpo">
         <div>
           <strong class="app-resumen-monto"
                   th:text="'$ ' + ${#numbers.formatDecimal(hormiga.total, 1, 'POINT', 0, 'COMMA')}">$ 44.400</strong>
@@ -204,10 +223,10 @@
     <a class="app-mobile-nav-add" th:href="@{/registrar-gasto}" aria-label="Registrar gasto">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
     </a>
-    <span class="app-mobile-nav-disabled" aria-disabled="true">
+    <a th:href="@{/presupuestos}" aria-label="Presupuestos">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle></svg>
       <span>Presup.</span>
-    </span>
+    </a>
     <span class="app-mobile-nav-disabled" aria-disabled="true">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="19" cy="12" r="1.5"></circle></svg>
       <span>Más</span>

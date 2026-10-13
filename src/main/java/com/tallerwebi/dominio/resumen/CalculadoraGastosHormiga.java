@@ -44,6 +44,7 @@ public class CalculadoraGastosHormiga {
           categoria.getNombre(),
           totalCategoria,
           porcentaje(totalCategoria, total),
+          null,
           categoria.getId()
         )
       );

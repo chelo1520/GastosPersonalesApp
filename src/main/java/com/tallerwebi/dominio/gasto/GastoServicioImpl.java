@@ -5,7 +5,7 @@ import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.alerta.CalculadoraAlertas;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
-import com.tallerwebi.dominio.presupuesto.PresupuestoMensual;
+import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -26,17 +26,26 @@ public class GastoServicioImpl implements GastoServicio {
   private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
   private RepositorioGasto repositorioGasto;
+  private ServicioPresupuesto servicioPresupuesto;
   private Clock reloj;
   private final CalculadoraAlertas calculadoraAlertas = new CalculadoraAlertas();
 
   @Autowired
-  public GastoServicioImpl(RepositorioGasto repositorioGasto) {
-    this(repositorioGasto, Clock.systemDefaultZone());
+  public GastoServicioImpl(
+    RepositorioGasto repositorioGasto,
+    ServicioPresupuesto servicioPresupuesto
+  ) {
+    this(repositorioGasto, servicioPresupuesto, Clock.systemDefaultZone());
   }
 
   // Permite fijar "hoy" en los tests
-  public GastoServicioImpl(RepositorioGasto repositorioGasto, Clock reloj) {
+  public GastoServicioImpl(
+    RepositorioGasto repositorioGasto,
+    ServicioPresupuesto servicioPresupuesto,
+    Clock reloj
+  ) {
     this.repositorioGasto = repositorioGasto;
+    this.servicioPresupuesto = servicioPresupuesto;
     this.reloj = reloj;
   }
 
@@ -57,7 +66,9 @@ public class GastoServicioImpl implements GastoServicio {
       desde,
       gasto.getFecha()
     );
-    return calculadoraAlertas.alertaDeRepeticion(gasto, gastosDeLaSemana, PresupuestoMensual.MONTO);
+    // "Chico" se mide contra el presupuesto del mes del gasto (la suma de sus categorías)
+    double presupuesto = servicioPresupuesto.totalDelMes(usuario, YearMonth.from(gasto.getFecha()));
+    return calculadoraAlertas.alertaDeRepeticion(gasto, gastosDeLaSemana, presupuesto);
   }
 
   @Override

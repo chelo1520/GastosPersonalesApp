@@ -264,6 +264,16 @@
 .app-estado.is-warn { background: #fdf0e3; color: #a8470a; }
 .app-estado.is-over { background: var(--res-red); color: #fff; }
 
+.app-resumen-sin-presupuesto {
+  color: var(--res-muted);
+  font-size: 0.85rem;
+}
+
+/* Barra por categoría: el color sigue al estado */
+.app-resumen-barra.is-ok .app-resumen-barra-fill {
+  background: var(--res-green);
+}
+
 /* Tablet */
 @media (max-width: 991.98px) {
   .app-resumen-stats {

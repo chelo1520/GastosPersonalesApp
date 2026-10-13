@@ -14,9 +14,11 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.gasto.Gasto;
+import com.tallerwebi.dominio.presupuesto.Presupuesto;
 import com.tallerwebi.integracion.config.HibernateTestConfig;
 import com.tallerwebi.integracion.config.SpringWebTestConfig;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -141,6 +143,10 @@ public class MostrarGastosVistaTest {
     cafe.setEsencial(false);
     sessionFactory.getCurrentSession().persist(usuario);
     sessionFactory.getCurrentSession().persist(cafe);
+    // Presupuesto del mes: 550.000, así "chico" es hasta 11.000
+    sessionFactory
+      .getCurrentSession()
+      .persist(new Presupuesto(usuario, cafe, YearMonth.from(hoy), 550000.0));
     for (int i = 1; i <= 3; i++) {
       Gasto cafecito = new Gasto(2500.0, hoy, "Café " + i);
       cafecito.setUsuario(usuario);

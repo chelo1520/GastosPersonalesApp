@@ -18,6 +18,8 @@ public class DatabaseInitializationConfig {
   public DataSourceInitializer dataSourceInitializer() {
     ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
     populator.addScript(new ClassPathResource("data.sql"));
+    // Usuarios de demostración; va después de data.sql porque usa las categorías
+    populator.addScript(new ClassPathResource("demo.sql"));
 
     DataSourceInitializer initializer = new DataSourceInitializer();
     initializer.setDataSource(dataSource);

@@ -59,6 +59,7 @@ public class ControladorResumen {
     model.put("mesActual", NombreDeMes.de(mesMostrado));
     model.put("mesAnterior", mesMostrado.minusMonths(1).toString());
     model.put("mesSiguiente", mesMostrado.plusMonths(1).toString());
+    model.put("mesMostrado", mesMostrado.toString());
     model.put("gastado", resumen.getGastado());
     model.put("presupuesto", resumen.getPresupuesto());
     model.put("disponible", resumen.getDisponible());

@@ -275,3 +275,35 @@ WHERE NOT EXISTS (
     AND g.fecha BETWEEN DATE_SUB(DATE_SUB(CURDATE(), INTERVAL (DAYOFMONTH(CURDATE()) - 1) DAY), INTERVAL d.meses MONTH)
                     AND LAST_DAY(DATE_SUB(CURDATE(), INTERVAL d.meses MONTH))
 );
+
+-- Presupuestos por categoría del usuario de prueba para el mes en curso y los 5 anteriores. Suben
+-- un poco cada mes (de 540.000 a 604.800 en total), así el gráfico de historial muestra un
+-- presupuesto distinto por mes. Si ya hay uno para esa categoría y mes (por ejemplo, editado desde
+-- la pantalla de presupuestos), no se toca
+INSERT INTO Presupuesto(mes, monto, usuario_id, categoria_id)
+SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL m.meses MONTH), '%Y-%m'), ROUND(b.monto * m.ajuste), u.id, c.id
+FROM (
+  SELECT 'Vivienda' AS categoria, 290000 AS monto
+  UNION ALL SELECT 'Alimentación', 160000
+  UNION ALL SELECT 'Servicios', 40000
+  UNION ALL SELECT 'Transporte', 20000
+  UNION ALL SELECT 'Salud', 15000
+  UNION ALL SELECT 'Educación', 5000
+  UNION ALL SELECT 'Entretenimiento', 10000
+) b
+CROSS JOIN (
+  SELECT 5 AS meses, 1.00 AS ajuste
+  UNION ALL SELECT 4, 1.02
+  UNION ALL SELECT 3, 1.05
+  UNION ALL SELECT 2, 1.08
+  UNION ALL SELECT 1, 1.10
+  UNION ALL SELECT 0, 1.12
+) m
+JOIN Usuario u ON u.email = 'test@unlam.edu.ar'
+JOIN Categoria c ON c.nombre = b.categoria
+WHERE NOT EXISTS (
+  SELECT 1 FROM Presupuesto p
+  WHERE p.usuario_id = u.id
+    AND p.categoria_id = c.id
+    AND p.mes = DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL m.meses MONTH), '%Y-%m')
+);
