@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.resumen.ResumenCategoria;
+import com.tallerwebi.dominio.resumen.ResumenHormiga;
 import com.tallerwebi.dominio.resumen.ResumenMensual;
 import com.tallerwebi.dominio.resumen.ServicioResumen;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,7 +51,8 @@ public class ControladorResumenTest {
     List<ResumenCategoria> categorias = List.of(
       new ResumenCategoria("Sin categoría", 45000.0, 100.0)
     );
-    resumen = new ResumenMensual(45000.0, 0.0, -45000.0, 100.0, categorias);
+    ResumenHormiga hormiga = new ResumenHormiga(0.0, 0.0, 0.0, 0.0, List.of());
+    resumen = new ResumenMensual(45000.0, 0.0, -45000.0, 100.0, categorias, hormiga);
   }
 
   @Test
@@ -78,7 +80,7 @@ public class ControladorResumenTest {
   }
 
   @Test
-  public void debePasarALaVistaLosTotalesYCategoriasQueCalculaElServicio() {
+  public void debePasarALaVistaLosTotalesCategoriasYGastosHormigaQueCalculaElServicio() {
     when(servicioResumen.obtenerResumen(usuario, YearMonth.of(2026, 10))).thenReturn(resumen);
 
     ModelAndView resultado = controladorResumen.mostrarResumen(null, request);
@@ -88,6 +90,7 @@ public class ControladorResumenTest {
     assertEquals(-45000.0, resultado.getModel().get("disponible"));
     assertEquals(100.0, resultado.getModel().get("porcentajeUsado"));
     assertEquals(resumen.getCategorias(), resultado.getModel().get("categorias"));
+    assertEquals(resumen.getHormiga(), resultado.getModel().get("hormiga"));
   }
 
   @Test

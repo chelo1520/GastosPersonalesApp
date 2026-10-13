@@ -87,6 +87,42 @@ public class ResumenVistaTest {
       .andExpect(content().string(containsString("href=\"/home?mes=2026-10\"")));
   }
 
+  @Test
+  public void debeRenderizarLosGastosHormigaDelMesYSusCategorias() throws Exception {
+    Usuario usuario = new Usuario();
+    Categoria cafe = categoria("Café y snacks");
+    cafe.setEsencial(false);
+    Categoria salud = categoria("Salud");
+
+    try (Session session = sessionFactory.openSession()) {
+      Transaction transaction = session.beginTransaction();
+      session.persist(usuario);
+      session.persist(cafe);
+      session.persist(salud);
+      // 4 cafés de 2.500 son hormiga; 4 gastos chicos de Salud no, porque es esencial
+      for (int dia = 1; dia <= 4; dia++) {
+        session.persist(gasto(2500.0, LocalDate.of(2025, 8, dia), cafe, usuario));
+        session.persist(gasto(1000.0, LocalDate.of(2025, 8, dia), salud, usuario));
+      }
+      transaction.commit();
+    }
+
+    mockMvc
+      .perform(get("/home").param("mes", "2025-08").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("Gastos hormiga")))
+      .andExpect(content().string(containsString("$ 10.000")))
+      .andExpect(content().string(containsString("1,8</span> % del presupuesto")))
+      .andExpect(content().string(containsString("Café y snacks")));
+  }
+
+  private Gasto gasto(Double importe, LocalDate fecha, Categoria categoria, Usuario usuario) {
+    Gasto gasto = new Gasto(importe, fecha, "Gasto de prueba");
+    gasto.setCategoria(categoria);
+    gasto.setUsuario(usuario);
+    return gasto;
+  }
+
   private Categoria categoria(String nombre) {
     Categoria categoria = new Categoria();
     categoria.setNombre(nombre);
@@ -108,7 +144,8 @@ public class ResumenVistaTest {
       .perform(get("/home").param("mes", "2026-01").sessionAttr("USUARIO", usuario))
       .andExpect(status().isOk())
       .andExpect(content().string(containsString("Enero 2026")))
-      .andExpect(content().string(containsString("Todavía no hay gastos este mes.")));
+      .andExpect(content().string(containsString("Todavía no hay gastos este mes.")))
+      .andExpect(content().string(containsString("No hay gastos hormiga este mes.")));
   }
 
   @Test

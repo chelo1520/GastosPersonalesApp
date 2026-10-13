@@ -13,8 +13,12 @@ import com.tallerwebi.dominio.resumen.ResumenCategoria;
 import com.tallerwebi.dominio.resumen.ResumenMensual;
 import com.tallerwebi.dominio.resumen.ServicioResumen;
 import com.tallerwebi.dominio.resumen.ServicioResumenImpl;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -117,6 +121,27 @@ public class ServicioResumenImplTest {
     assertEquals(550000.0, resumen.getDisponible());
     assertEquals(0.0, resumen.getPorcentajeUsado());
     assertTrue(resumen.getCategorias().isEmpty());
+  }
+
+  @Test
+  void debeIncluirLosGastosHormigaProyectadosAFinDeMesCuandoElMesEsElActual() {
+    // Hoy: 15 de septiembre. 4 cafés de 2.500 = 10.000, proyectados a 30 días = 20.000
+    Clock hoy = Clock.fixed(Instant.parse("2026-09-15T12:00:00Z"), ZoneId.of("UTC"));
+    servicioResumen = new ServicioResumenImpl(repositorioGastoMock, hoy);
+    Categoria cafe = categoria("Café y snacks");
+    cafe.setEsencial(false);
+    List<Gasto> gastos = new ArrayList<>();
+    for (int i = 0; i < 4; i++) {
+      Gasto gasto = gasto(2500.0, "Café");
+      gasto.setCategoria(cafe);
+      gastos.add(gasto);
+    }
+    when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE)).thenReturn(gastos);
+
+    ResumenMensual resumen = servicioResumen.obtenerResumen(usuario, SEPTIEMBRE);
+
+    assertEquals(10000.0, resumen.getHormiga().getTotal());
+    assertEquals(20000.0, resumen.getHormiga().getProyeccion());
   }
 
   private Gasto gasto(Double importe, String descripcion) {

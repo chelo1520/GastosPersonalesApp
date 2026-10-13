@@ -15,6 +15,7 @@
       mesActual (String, ej. "Octubre 2026"), mesAnterior / mesSiguiente (String, ej. "2026-09")
       gastado, presupuesto, disponible (números), porcentajeUsado (número, ej. 80)
       categorias: lista con nombre, gastado, porcentajeTotal, disponible, porcentajeUsado
+      hormiga: total, porcentajePresupuesto, proyeccion, porcentajeProyeccion, categorias (nombre, gastado)
   -->
   <main class="app-main app-resumen-main">
 
@@ -63,6 +64,34 @@
           <span th:text="${#numbers.formatInteger(porcentajeUsado, 1)}">80</span> % del presupuesto usado
         </small>
       </article>
+    </section>
+
+    <!-- Gastos hormiga: chicos, frecuentes y prescindibles -->
+    <section class="app-resumen-card app-resumen-hormiga" aria-label="Gastos hormiga del mes">
+      <h2 class="app-resumen-card-titulo">Gastos hormiga</h2>
+
+      <p class="app-gastos-vacio mb-0" th:if="${hormiga.total == 0}">No hay gastos hormiga este mes.</p>
+
+      <div th:unless="${hormiga.total == 0}" class="app-resumen-hormiga-cuerpo">
+        <div>
+          <strong class="app-resumen-monto"
+                  th:text="'$ ' + ${#numbers.formatDecimal(hormiga.total, 1, 'POINT', 0, 'COMMA')}">$ 44.400</strong>
+          <small class="app-resumen-barra-texto">
+            <span th:text="${#numbers.formatDecimal(hormiga.porcentajePresupuesto, 1, 'POINT', 1, 'COMMA')}">8,1</span> % del presupuesto
+            · proyección a fin de mes:
+            <span th:text="'$ ' + ${#numbers.formatDecimal(hormiga.proyeccion, 1, 'POINT', 0, 'COMMA')}">$ 68.820</span>
+            (<span th:text="${#numbers.formatDecimal(hormiga.porcentajeProyeccion, 1, 'POINT', 1, 'COMMA')}">12,5</span> %)
+          </small>
+        </div>
+
+        <ul class="app-resumen-hormiga-lista list-unstyled mb-0" id="lista-hormiga">
+          <li th:each="cat : ${hormiga.categorias}">
+            <span th:text="${cat.nombre}">Café y snacks</span>
+            <span class="app-resumen-num"
+                  th:text="'$ ' + ${#numbers.formatDecimal(cat.gastado, 1, 'POINT', 0, 'COMMA')}">$ 30.000</span>
+          </li>
+        </ul>
+      </div>
     </section>
 
     <!-- Gráfico + tabla -->

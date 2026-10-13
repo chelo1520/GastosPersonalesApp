@@ -59,6 +59,7 @@ public class ControladorResumen {
     model.put("disponible", resumen.getDisponible());
     model.put("porcentajeUsado", resumen.getPorcentajeUsado());
     model.put("categorias", resumen.getCategorias());
+    model.put("hormiga", resumen.getHormiga());
 
     return new ModelAndView("resumen", model);
   }

@@ -5,6 +5,8 @@ import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.RepositorioGasto;
 import com.tallerwebi.dominio.presupuesto.PresupuestoMensual;
 import jakarta.transaction.Transactional;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -24,10 +26,18 @@ public class ServicioResumenImpl implements ServicioResumen {
   static final String SIN_CATEGORIA = "Sin categoría";
 
   private RepositorioGasto repositorioGasto;
+  private Clock reloj;
+  private final CalculadoraGastosHormiga calculadoraHormiga = new CalculadoraGastosHormiga();
 
   @Autowired
   public ServicioResumenImpl(RepositorioGasto repositorioGasto) {
+    this(repositorioGasto, Clock.systemDefaultZone());
+  }
+
+  // Permite fijar "hoy" en los tests
+  public ServicioResumenImpl(RepositorioGasto repositorioGasto, Clock reloj) {
     this.repositorioGasto = repositorioGasto;
+    this.reloj = reloj;
   }
 
   @Override
@@ -70,7 +80,8 @@ public class ServicioResumenImpl implements ServicioResumen {
       presupuesto,
       presupuesto - gastado,
       porcentajeUsado(gastado, presupuesto),
-      categorias
+      categorias,
+      calculadoraHormiga.calcular(gastos, presupuesto, mes, LocalDate.now(reloj))
     );
   }
 

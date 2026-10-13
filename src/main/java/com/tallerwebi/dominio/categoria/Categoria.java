@@ -15,6 +15,9 @@ public class Categoria {
   private String descripcion;
   private String nombre;
 
+  // Una categoría sin marcar se trata como esencial: ante la duda, no se cuenta como gasto hormiga
+  private Boolean esencial;
+
   public Long getId() {
     return id;
   }
@@ -37,5 +40,13 @@ public class Categoria {
 
   public void setNombre(String nombre) {
     this.nombre = nombre;
+  }
+
+  public boolean isEsencial() {
+    return !Boolean.FALSE.equals(esencial);
+  }
+
+  public void setEsencial(Boolean esencial) {
+    this.esencial = esencial;
   }
 }
