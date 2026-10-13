@@ -17,6 +17,7 @@
       categorias: lista con nombre, gastado, porcentajeTotal, disponible, porcentajeUsado
       hormiga: total, porcentajePresupuesto, categorias (nombre, gastado, categoriaId)
       alertas: lista con nivel (AMARILLA / ROJA) y mensaje
+      historial: lista con etiqueta (ej. "Oct 2026") y resumen (gastado, hormiga, resto, presupuesto, enCurso)
   -->
   <main class="app-main app-resumen-main">
 
@@ -120,6 +121,43 @@
         </div>
       </article>
 
+    </section>
+
+    <!-- Historial: lo gastado en los últimos 6 meses, con la parte hormiga y el presupuesto de cada mes -->
+    <section class="app-resumen-card app-resumen-historial" aria-labelledby="titulo-historial"
+             th:unless="${#lists.isEmpty(historial)}">
+      <h2 class="app-resumen-card-titulo" id="titulo-historial">Historial de gastos</h2>
+
+      <div class="app-resumen-historial-canvas">
+        <canvas id="grafico-historial" role="img"
+                aria-label="Gráfico de barras de lo gastado por mes, con la parte hormiga y el presupuesto de cada mes"></canvas>
+      </div>
+
+      <!-- El gráfico lee los datos de esta tabla; queda disponible para lectores de pantalla -->
+      <table class="visually-hidden" id="tabla-historial">
+        <caption>Gastos de los últimos meses</caption>
+        <thead>
+          <tr>
+            <th scope="col">Mes</th>
+            <th scope="col">Gastado</th>
+            <th scope="col">Gastos hormiga</th>
+            <th scope="col">Presupuesto</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="fila : ${historial}"
+              th:data-etiqueta="${fila.etiqueta}"
+              th:data-resto="${fila.resumen.resto}"
+              th:data-hormiga="${fila.resumen.hormiga}"
+              th:data-presupuesto="${fila.resumen.presupuesto}"
+              th:data-en-curso="${fila.resumen.enCurso}">
+            <th scope="row" th:text="${fila.etiqueta + (fila.resumen.enCurso ? ' (en curso)' : '')}">Oct 2026</th>
+            <td th:text="'$ ' + ${#numbers.formatDecimal(fila.resumen.gastado, 1, 'POINT', 0, 'COMMA')}">$ 320.500</td>
+            <td th:text="'$ ' + ${#numbers.formatDecimal(fila.resumen.hormiga, 1, 'POINT', 0, 'COMMA')}">$ 44.400</td>
+            <td th:text="'$ ' + ${#numbers.formatDecimal(fila.resumen.presupuesto, 1, 'POINT', 0, 'COMMA')}">$ 550.000</td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
     <!-- Gastos hormiga: chicos, frecuentes y prescindibles -->

@@ -131,6 +131,16 @@
   font-size: 0.8rem;
 }
 
+/* Historial de gastos por mes */
+.app-resumen-historial {
+  margin-top: 24px;
+}
+
+.app-resumen-historial-canvas {
+  position: relative;
+  height: 280px;
+}
+
 /* Gastos hormiga */
 .app-resumen-hormiga {
   margin-top: 24px;

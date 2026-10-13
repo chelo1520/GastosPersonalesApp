@@ -59,7 +59,7 @@ public class ServicioResumenImpl implements ServicioResumen {
       gastadoPorCategoria.merge(nombreCategoria, gasto.getImporte(), Double::sum);
     }
 
-    double presupuesto = PresupuestoMensual.MONTO;
+    double presupuesto = presupuestoDe(mes);
 
     // De la que más se gastó a la que menos, como se lee el gráfico de torta.
     // No hay presupuesto por categoría: como hoy todos los gastos van a una sola,
@@ -92,6 +92,53 @@ public class ServicioResumenImpl implements ServicioResumen {
       hormiga,
       alertas
     );
+  }
+
+  @Override
+  public List<ResumenDeMes> obtenerHistorial(Usuario usuario, YearMonth hasta, int cantidadMeses) {
+    YearMonth desde = hasta.minusMonths(cantidadMeses - 1L);
+    // Una sola consulta para todos los meses; después se reparte por mes
+    Map<YearMonth, List<Gasto>> gastosPorMes = new LinkedHashMap<>();
+    for (YearMonth mes = desde; !mes.isAfter(hasta); mes = mes.plusMonths(1)) {
+      gastosPorMes.put(mes, new ArrayList<>());
+    }
+    for (Gasto gasto : repositorioGasto.obtenerGastosEntreFechas(
+      usuario,
+      desde.atDay(1),
+      hasta.atEndOfMonth()
+    )) {
+      List<Gasto> delMes = gastosPorMes.get(YearMonth.from(gasto.getFecha()));
+      if (delMes != null) {
+        delMes.add(gasto);
+      }
+    }
+
+    YearMonth mesActual = YearMonth.now(reloj);
+    List<ResumenDeMes> historial = new ArrayList<>();
+    for (Map.Entry<YearMonth, List<Gasto>> mes : gastosPorMes.entrySet()) {
+      double presupuesto = presupuestoDe(mes.getKey());
+      double gastado = mes.getValue().stream().mapToDouble(Gasto::getImporte).sum();
+      // "Chico" es el 2 % del presupuesto de ese mes, no del actual
+      double hormiga = calculadoraHormiga.calcular(mes.getValue(), presupuesto).getTotal();
+      historial.add(
+        new ResumenDeMes(
+          mes.getKey(),
+          gastado,
+          hormiga,
+          presupuesto,
+          mes.getKey().equals(mesActual)
+        )
+      );
+    }
+    return historial;
+  }
+
+  // Único lugar de donde sale el presupuesto de un mes: cuando exista la entidad Presupuesto,
+  // se busca acá y el historial, el resumen y los gastos hormiga lo toman solos. Hasta entonces el
+  // mes no se usa: es el mismo presupuesto para todos
+  @SuppressWarnings("PMD.UnusedFormalParameter")
+  private double presupuestoDe(YearMonth mes) {
+    return PresupuestoMensual.MONTO;
   }
 
   private double porcentaje(double parte, double total) {

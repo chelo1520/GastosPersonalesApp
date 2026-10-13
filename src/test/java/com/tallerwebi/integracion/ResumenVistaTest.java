@@ -76,6 +76,10 @@ public class ResumenVistaTest {
       .andExpect(status().isOk())
       .andExpect(view().name("resumen"))
       .andExpect(content().string(containsString("Septiembre 2026")))
+      // Historial: de abril a septiembre, con lo de septiembre en la última fila
+      .andExpect(content().string(containsString("id=\"tabla-historial\"")))
+      .andExpect(content().string(containsString("data-etiqueta=\"Abr 2026\"")))
+      .andExpect(content().string(containsString("data-resto=\"259800.0\"")))
       .andExpect(content().string(containsString("$ 259.800")))
       // Presupuesto fijo de 550.000: quedan 290.200 disponibles
       .andExpect(content().string(containsString("$ 550.000")))

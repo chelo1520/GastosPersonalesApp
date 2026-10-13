@@ -1,12 +1,14 @@
 package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.resumen.ResumenDeMes;
 import com.tallerwebi.dominio.resumen.ResumenMensual;
 import com.tallerwebi.dominio.resumen.ServicioResumen;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Clock;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -21,6 +23,9 @@ import org.springframework.web.servlet.ModelAndView;
  */
 @Controller
 public class ControladorResumen {
+
+  // 12 barras en el celular quedan muy finas
+  static final int MESES_HISTORIAL = 6;
 
   private ServicioResumen servicioResumen;
   private Clock reloj;
@@ -61,8 +66,19 @@ public class ControladorResumen {
     model.put("categorias", resumen.getCategorias());
     model.put("hormiga", resumen.getHormiga());
     model.put("alertas", resumen.getAlertas());
+    model.put("historial", historial(usuario, mesMostrado));
 
     return new ModelAndView("resumen", model);
+  }
+
+  // Los 6 meses que terminan en el mes que se está mirando
+  private List<MesDelHistorial> historial(Usuario usuario, YearMonth mesMostrado) {
+    List<ResumenDeMes> meses = servicioResumen.obtenerHistorial(
+      usuario,
+      mesMostrado,
+      MESES_HISTORIAL
+    );
+    return meses == null ? List.of() : meses.stream().map(MesDelHistorial::new).toList();
   }
 
   private YearMonth elegirMes(String mes) {
