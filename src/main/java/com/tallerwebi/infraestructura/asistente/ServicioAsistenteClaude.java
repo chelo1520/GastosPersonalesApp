@@ -35,8 +35,9 @@ import org.springframework.stereotype.Component;
 public class ServicioAsistenteClaude implements ServicioAsistente {
 
   static final String VARIABLE_CLAVE = "ANTHROPIC_API_KEY";
-  // Modelo por defecto; se puede cambiar con la variable de entorno ASISTENTE_MODELO
-  static final String MODELO_POR_DEFECTO = "claude-opus-5-5";
+  // Modelo por defecto: la tarea es reescribir cuatro oraciones con números dados, Haiku alcanza y es
+  // 40 veces más barato que Opus. Se cambia con la variable de entorno ASISTENTE_MODELO
+  static final String MODELO_POR_DEFECTO = "claude-haiku-5-5";
   static final String VARIABLE_MODELO = "ASISTENTE_MODELO";
   // Las consultas se cachean por usuario y mes; esto es solo una red de seguridad de costo
   static final int MAXIMO_LLAMADAS_POR_DIA = 200;
