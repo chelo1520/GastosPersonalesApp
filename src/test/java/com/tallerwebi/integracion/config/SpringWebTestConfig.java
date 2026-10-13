@@ -1,10 +1,18 @@
 package com.tallerwebi.integracion.config;
 
+import com.tallerwebi.dominio.indicadores.ClienteIndicadores;
+import com.tallerwebi.dominio.indicadores.CotizacionDolar;
+import com.tallerwebi.dominio.indicadores.InflacionMensual;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -23,6 +31,45 @@ public class SpringWebTestConfig implements WebMvcConfigurer {
   // Spring + Thymeleaf need this
   @Autowired
   private ApplicationContext applicationContext;
+
+  // Indicadores fijos para los tests de integración: nada de red. Dólar a 1.500 todos los
+  // días de 2026 e inflación del 2 % mensual hasta agosto de 2026
+  @Bean
+  @Primary
+  public ClienteIndicadores clienteIndicadoresDePrueba() {
+    return new ClienteIndicadores() {
+      @Override
+      public List<CotizacionDolar> obtenerDolarOficialHistorico() {
+        List<CotizacionDolar> serie = new ArrayList<>();
+        for (
+          LocalDate dia = LocalDate.of(2025, 1, 1);
+          dia.isBefore(LocalDate.of(2027, 1, 1));
+          dia = dia.plusDays(1)
+        ) {
+          serie.add(new CotizacionDolar(dia, 1450.0, 1500.0));
+        }
+        return serie;
+      }
+
+      @Override
+      public CotizacionDolar obtenerDolarOficialDeHoy() {
+        return new CotizacionDolar(LocalDate.now(), 1450.0, 1500.0);
+      }
+
+      @Override
+      public List<InflacionMensual> obtenerInflacionMensual() {
+        List<InflacionMensual> serie = new ArrayList<>();
+        for (
+          YearMonth mes = YearMonth.of(2025, 1);
+          !mes.isAfter(YearMonth.of(2026, 8));
+          mes = mes.plusMonths(1)
+        ) {
+          serie.add(new InflacionMensual(mes, 2.0, false));
+        }
+        return serie;
+      }
+    };
+  }
 
   @Override
   public void addResourceHandlers(final ResourceHandlerRegistry registry) {
