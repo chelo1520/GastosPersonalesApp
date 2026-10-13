@@ -85,7 +85,7 @@ public class ControladorAsistente {
 
   @RequestMapping(path = "/asistente/aplicar/{id}", method = RequestMethod.POST)
   public ModelAndView aplicarConsejo(
-    @PathVariable Long id,
+    @PathVariable("id") Long id,
     @RequestParam(value = PARAM_PERIODO, required = false) Integer periodo,
     HttpServletRequest request
   ) {
@@ -104,7 +104,7 @@ public class ControladorAsistente {
 
   @RequestMapping(path = "/asistente/descartar/{id}", method = RequestMethod.POST)
   public ModelAndView descartarConsejo(
-    @PathVariable Long id,
+    @PathVariable("id") Long id,
     @RequestParam(value = PARAM_PERIODO, required = false) Integer periodo,
     HttpServletRequest request
   ) {
