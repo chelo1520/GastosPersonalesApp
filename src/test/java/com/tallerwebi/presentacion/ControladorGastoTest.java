@@ -214,6 +214,32 @@ public class ControladorGastoTest {
   }
 
   @Test
+  public void debeEliminarElGastoYRedirigirAMisGastos() {
+    ModelAndView resultado = controladorGasto.eliminarGasto(10L, request);
+
+    assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
+    verify(gastoServicio).eliminarGasto(10L, usuario);
+  }
+
+  @Test
+  public void debeRedirigirAMisGastosCuandoSeQuiereEliminarUnGastoInexistenteODeOtroUsuario() {
+    doThrow(new GastoNoEncontrado()).when(gastoServicio).eliminarGasto(99L, usuario);
+
+    ModelAndView resultado = controladorGasto.eliminarGasto(99L, request);
+
+    assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
+  }
+
+  @Test
+  public void debeRedirigirALoginSinEliminarCuandoNoHayUsuarioEnSesion() {
+    when(session.getAttribute("USUARIO")).thenReturn(null);
+
+    assertEquals("redirect:/login", controladorGasto.eliminarGasto(10L, request).getViewName());
+
+    verifyNoInteractions(gastoServicio);
+  }
+
+  @Test
   public void debeRedirigirALoginSinModificarCuandoNoHayUsuarioEnSesion() {
     when(session.getAttribute("USUARIO")).thenReturn(null);
 

@@ -238,6 +238,36 @@ public class ServicioGastoImplTest {
   }
 
   @Test
+  void debeEliminarElGastoCuandoPerteneceAlUsuario() {
+    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    Usuario usuario = usuarioConId(1L);
+    Gasto gastoGuardado = gastoDe(usuario);
+    when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoGuardado);
+
+    gastoServicio.eliminarGasto(10L, usuario);
+
+    verify(repositorioGastoMock).eliminar(gastoGuardado);
+  }
+
+  @Test
+  void debeLanzarGastoNoEncontradoSinEliminarCuandoElGastoNoExiste() {
+    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    when(repositorioGastoMock.buscarPorId(99L)).thenReturn(null);
+
+    assertThrows(GastoNoEncontrado.class, () -> gastoServicio.eliminarGasto(99L, usuarioConId(1L)));
+    verify(repositorioGastoMock, never()).eliminar(any());
+  }
+
+  @Test
+  void debeLanzarGastoNoEncontradoSinEliminarCuandoElGastoEsDeOtroUsuario() {
+    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoDe(usuarioConId(2L)));
+
+    assertThrows(GastoNoEncontrado.class, () -> gastoServicio.eliminarGasto(10L, usuarioConId(1L)));
+    verify(repositorioGastoMock, never()).eliminar(any());
+  }
+
+  @Test
   void debeDevolverElGastoCuandoPerteneceAlUsuario() {
     GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
     Usuario usuario = usuarioConId(1L);

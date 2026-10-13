@@ -245,9 +245,22 @@ a:hover {
   font-size: 14px;
 }
 
-.app-gasto-editar {
+.app-gasto-editar,
+.app-gasto-eliminar {
   flex-shrink: 0;
   white-space: nowrap;
+}
+
+.app-gasto-acciones {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.app-gasto-eliminar-form {
+  margin: 0;
 }
 
 .app-gastos-vacio {
@@ -673,26 +686,17 @@ a:hover {
   white-space: nowrap;
 }
 
-/* Acciones de cada gasto: "Es hormiga" / "No es hormiga" al lado de "Editar" */
-.app-gasto-acciones {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
 .app-gasto-mobile-categoria {
   color: var(--app-texto-suave);
   font-size: 12px;
 }
 
-/* En el celular no entran los dos botones en fila: van uno debajo del otro */
+/* En el celular no entran los botones en fila: van uno debajo del otro, del mismo ancho */
 .app-gasto-mobile .app-gasto-acciones {
   flex-direction: column;
   align-items: stretch;
 }
 
-.app-gasto-mobile .app-gasto-acciones .app-hormiga-boton {
+.app-gasto-mobile .app-gasto-acciones .btn {
   width: 100%;
 }

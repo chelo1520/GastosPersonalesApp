@@ -65,6 +65,11 @@
                   </th:block>
                   <a class="btn btn-sm btn-outline-secondary app-gasto-editar"
                     th:href="@{/modificar-gasto/{id}(id=${gasto.id})}">Editar</a>
+                  <form class="app-gasto-eliminar-form" method="post"
+                    th:action="@{/eliminar-gasto/{id}(id=${gasto.id})}"
+                    onsubmit="return confirm('¿Seguro que querés eliminar este gasto?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger app-gasto-eliminar">Eliminar</button>
+                  </form>
                 </div>
               </td>
             </tr>
@@ -91,6 +96,11 @@
             </th:block>
             <a class="btn btn-sm btn-outline-secondary app-gasto-editar"
               th:href="@{/modificar-gasto/{id}(id=${gasto.id})}">Editar</a>
+            <form class="app-gasto-eliminar-form" method="post"
+              th:action="@{/eliminar-gasto/{id}(id=${gasto.id})}"
+              onsubmit="return confirm('¿Seguro que querés eliminar este gasto?');">
+              <button type="submit" class="btn btn-sm btn-outline-danger app-gasto-eliminar">Eliminar</button>
+            </form>
           </div>
         </article>
       </div>

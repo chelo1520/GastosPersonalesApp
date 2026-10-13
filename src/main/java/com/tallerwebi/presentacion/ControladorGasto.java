@@ -143,6 +143,23 @@ public class ControladorGasto {
     return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);
   }
 
+  @RequestMapping(path = "/eliminar-gasto/{id}", method = RequestMethod.POST)
+  public ModelAndView eliminarGasto(@PathVariable("id") Long id, HttpServletRequest request) {
+    Usuario usuario = SesionUsuario.obtener(request);
+    if (usuario == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+
+    try {
+      gastoServicio.eliminarGasto(id, usuario);
+    } catch (GastoNoEncontrado e) {
+      // Un gasto inexistente o de otro usuario no se elimina: se vuelve a la lista igual
+      return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);
+    }
+
+    return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);
+  }
+
   private ModelAndView vistaRegistrarGasto(Gasto gasto, String error) {
     ModelAndView vista = vistaFormularioGasto(gasto, error);
     vista.addObject("titulo", "Registrar gasto");

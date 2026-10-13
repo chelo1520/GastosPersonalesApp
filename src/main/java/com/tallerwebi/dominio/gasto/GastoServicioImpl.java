@@ -83,6 +83,12 @@ public class GastoServicioImpl implements GastoServicio {
     repositorioGasto.modificar(gasto);
   }
 
+  @Override
+  public void eliminarGasto(Long id, Usuario usuario) {
+    Gasto gasto = obtenerGasto(id, usuario);
+    repositorioGasto.eliminar(gasto);
+  }
+
   private boolean esDelUsuario(Gasto gasto, Usuario usuario) {
     return (
       usuario != null &&
