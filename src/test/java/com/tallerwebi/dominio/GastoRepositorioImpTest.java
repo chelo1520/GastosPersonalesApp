@@ -179,6 +179,19 @@ public class GastoRepositorioImpTest {
   }
 
   @Test
+  void debeDejarDeEncontrarElGastoCuandoSeElimina() {
+    Gasto gasto = new Gasto(1000.00, LocalDate.of(2026, 9, 13), "Supermercado");
+    repositorioGasto.guardar(gasto);
+    Long id = gasto.getId();
+
+    repositorioGasto.eliminar(gasto);
+
+    this.sessionFactory.getCurrentSession().flush();
+    this.sessionFactory.getCurrentSession().clear();
+    assertNull(repositorioGasto.buscarPorId(id));
+  }
+
+  @Test
   void debeDevolverNullCuandoSeBuscaUnGastoQueNoExiste() {
     assertNull(repositorioGasto.buscarPorId(999L));
   }

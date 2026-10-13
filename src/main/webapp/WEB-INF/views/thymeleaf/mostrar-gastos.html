@@ -50,8 +50,15 @@
                 $ <span th:text="${#numbers.formatDecimal(gasto.importe, 1, 'POINT', 2, 'COMMA')}">46.200,00</span>
               </td>
               <td class="text-end">
-                <a class="btn btn-sm btn-outline-secondary app-gasto-editar"
-                  th:href="@{/modificar-gasto/{id}(id=${gasto.id})}">Editar</a>
+                <div class="app-gasto-acciones">
+                  <a class="btn btn-sm btn-outline-secondary app-gasto-editar"
+                    th:href="@{/modificar-gasto/{id}(id=${gasto.id})}">Editar</a>
+                  <form class="app-gasto-eliminar-form" method="post"
+                    th:action="@{/eliminar-gasto/{id}(id=${gasto.id})}"
+                    onsubmit="return confirm('¿Seguro que querés eliminar este gasto?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger app-gasto-eliminar">Eliminar</button>
+                  </form>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -68,8 +75,15 @@
               $ <span th:text="${#numbers.formatDecimal(gasto.importe, 1, 'POINT', 2, 'COMMA')}">46.200,00</span>
             </strong>
           </div>
-          <a class="btn btn-sm btn-outline-secondary app-gasto-editar"
-            th:href="@{/modificar-gasto/{id}(id=${gasto.id})}">Editar</a>
+          <div class="app-gasto-acciones">
+            <a class="btn btn-sm btn-outline-secondary app-gasto-editar"
+              th:href="@{/modificar-gasto/{id}(id=${gasto.id})}">Editar</a>
+            <form class="app-gasto-eliminar-form" method="post"
+              th:action="@{/eliminar-gasto/{id}(id=${gasto.id})}"
+              onsubmit="return confirm('¿Seguro que querés eliminar este gasto?');">
+              <button type="submit" class="btn btn-sm btn-outline-danger app-gasto-eliminar">Eliminar</button>
+            </form>
+          </div>
         </article>
       </div>
     </div>

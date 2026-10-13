@@ -245,9 +245,20 @@ a:hover {
   font-size: 14px;
 }
 
-.app-gasto-editar {
+.app-gasto-editar,
+.app-gasto-eliminar {
   flex-shrink: 0;
   white-space: nowrap;
+}
+
+.app-gasto-acciones {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.app-gasto-eliminar-form {
+  margin: 0;
 }
 
 .app-gastos-vacio {

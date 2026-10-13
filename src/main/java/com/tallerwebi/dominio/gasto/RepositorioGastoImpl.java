@@ -33,6 +33,11 @@ public class RepositorioGastoImpl implements RepositorioGasto {
   }
 
   @Override
+  public void eliminar(Gasto gasto) {
+    sessionFactory.getCurrentSession().delete(gasto);
+  }
+
+  @Override
   public Gasto buscarPorId(Long id) {
     return sessionFactory.getCurrentSession().get(Gasto.class, id);
   }
