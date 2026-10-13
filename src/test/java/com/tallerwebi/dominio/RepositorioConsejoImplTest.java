@@ -74,7 +74,6 @@ public class RepositorioConsejoImplTest {
       usuario,
       mes,
       TipoConsejo.PRESUPUESTO_DESACTUALIZADO,
-      Severidad.ATENCION,
       categoria,
       "texto",
       1000.0

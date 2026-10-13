@@ -56,6 +56,9 @@ $ mvn clean jetty:run
 Usuarios de demostración (contraseña `test`, como el usuario de prueba), con presupuestos de todo 2026 y gastos hasta el día de hoy,
 que se recargan en cada arranque: `alto@gastitos.demo` (consumo alto), `medio@gastitos.demo` (moderado)
 y `bajo@gastitos.demo` (muy bajo). Ver `src/main/resources/demo.sql`.
+
+El asistente redacta sus consejos con Claude si existe la variable de entorno `ANTHROPIC_API_KEY`
+(en `.env`, nunca en el repo). Sin la variable, muestra los consejos con el texto de las reglas.
 ## 2. Thymeleaf
 * [Documentación](https://www.thymeleaf.org/doc/tutorials/3.0/usingthymeleaf.html)
 

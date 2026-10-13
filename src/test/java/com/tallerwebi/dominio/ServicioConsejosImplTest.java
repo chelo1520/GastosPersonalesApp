@@ -12,10 +12,12 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.asistente.GastoReal;
+import com.tallerwebi.dominio.asistente.ServicioAsistente;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
 import com.tallerwebi.dominio.asistente.Veredicto;
 import com.tallerwebi.dominio.categoria.Categoria;
@@ -58,6 +60,7 @@ public class ServicioConsejosImplTest {
   private ServicioIndicadores servicioIndicadoresMock;
   private ServicioResumen servicioResumenMock;
   private ServicioGastoReal servicioGastoRealMock;
+  private ServicioAsistente servicioAsistenteMock;
   private ServicioConsejos servicio;
   private Usuario usuario;
   private Categoria alimentacion;
@@ -69,6 +72,9 @@ public class ServicioConsejosImplTest {
     servicioIndicadoresMock = mock(ServicioIndicadores.class);
     servicioResumenMock = mock(ServicioResumen.class);
     servicioGastoRealMock = mock(ServicioGastoReal.class);
+    servicioAsistenteMock = mock(ServicioAsistente.class);
+    // Sin IA: el asistente devuelve los consejos tal cual
+    when(servicioAsistenteMock.redactar(any(), any())).thenAnswer(inv -> inv.getArgument(0));
     servicio =
       new ServicioConsejosImpl(
         repositorioMock,
@@ -76,6 +82,7 @@ public class ServicioConsejosImplTest {
         servicioIndicadoresMock,
         servicioResumenMock,
         servicioGastoRealMock,
+        servicioAsistenteMock,
         HOY
       );
     usuario = new Usuario();
@@ -170,7 +177,6 @@ public class ServicioConsejosImplTest {
       usuario,
       OCTUBRE,
       TipoConsejo.PRESUPUESTO_DESACTUALIZADO,
-      Severidad.ATENCION,
       "Alimentación",
       "viejo",
       106000.0
@@ -192,7 +198,6 @@ public class ServicioConsejosImplTest {
       usuario,
       OCTUBRE,
       TipoConsejo.PRESUPUESTO_DESACTUALIZADO,
-      Severidad.ATENCION,
       "Alimentación",
       "x",
       106000.0
@@ -233,7 +238,6 @@ public class ServicioConsejosImplTest {
       usuario,
       OCTUBRE,
       TipoConsejo.PRESUPUESTO_DESACTUALIZADO,
-      Severidad.ATENCION,
       "Alimentación",
       "x",
       107000.0
@@ -255,7 +259,6 @@ public class ServicioConsejosImplTest {
       otro,
       OCTUBRE,
       TipoConsejo.PRESUPUESTO_DESACTUALIZADO,
-      Severidad.ATENCION,
       "Alimentación",
       "x",
       107000.0
@@ -272,7 +275,6 @@ public class ServicioConsejosImplTest {
       usuario,
       OCTUBRE,
       TipoConsejo.GASTO_REAL_EN_ALZA,
-      Severidad.ATENCION,
       null,
       "x",
       null
@@ -283,6 +285,33 @@ public class ServicioConsejosImplTest {
 
     assertThat(consejo.getEstado(), equalTo(EstadoConsejo.DESCARTADO));
     verify(repositorioMock).modificar(consejo);
+  }
+
+  @Test
+  void debeMostrarLaRedaccionDelAsistenteEnSuOrdenYGuardarlaCuandoLaIaResponde() {
+    conPresupuestoFijo(alimentacion, 100000.0, YearMonth.of(2026, 7));
+    when(servicioGastoRealMock.calcular(any(), anyInt()))
+      .thenReturn(
+        gastoReal(new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0))
+      );
+    when(servicioAsistenteMock.redactar(any(), any()))
+      .thenAnswer(inv -> {
+        List<Consejo> recibidos = inv.getArgument(0);
+        List<Consejo> alReves = new ArrayList<>(recibidos);
+        java.util.Collections.reverse(alReves);
+        for (Consejo c : alReves) {
+          c.setId(c.getId() == null ? 1L : c.getId());
+          c.redactar("Redactado: " + c.getTipo(), c.firmaDeLosHechos());
+        }
+        return alReves;
+      });
+
+    List<Consejo> consejos = servicio.obtenerPendientes(usuario);
+
+    assertThat(consejos, hasSize(2));
+    assertThat(consejos.get(0).getTipo(), equalTo(TipoConsejo.GASTO_REAL_EN_ALZA));
+    assertThat(consejos.get(0).getTextoParaMostrar(), equalTo("Redactado: GASTO_REAL_EN_ALZA"));
+    verify(repositorioMock, times(2)).modificar(any());
   }
 
   // El mismo monto desde el mes "desde" hasta octubre; antes de "desde", nada

@@ -1,6 +1,7 @@
 package com.tallerwebi.dominio.consejo;
 
 import com.tallerwebi.dominio.Usuario;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -33,15 +34,20 @@ public class Consejo {
   private TipoConsejo tipo;
 
   @Enumerated(EnumType.STRING)
-  private Severidad severidad;
-
-  @Enumerated(EnumType.STRING)
   private EstadoConsejo estado = EstadoConsejo.PENDIENTE;
 
   // Categoría a la que refiere (null si es un consejo general)
   private String categoria;
 
+  // Texto de las reglas: los hechos, siempre disponibles
   private String texto;
+
+  // Texto redactado por el asistente (HU-15); null si todavía no se redactó o no hay IA
+  @Column(length = 1000)
+  private String textoRedactado;
+
+  // Con qué hechos se redactó: si cambian, se vuelve a redactar
+  private String firmaHechos;
 
   // Monto propuesto para la acción "actualizar presupuesto" (null si no hay acción)
   private Double montoSugerido;
@@ -52,7 +58,6 @@ public class Consejo {
     Usuario usuario,
     YearMonth mes,
     TipoConsejo tipo,
-    Severidad severidad,
     String categoria,
     String texto,
     Double montoSugerido
@@ -60,7 +65,6 @@ public class Consejo {
     this.usuario = usuario;
     this.mes = mes.toString();
     this.tipo = tipo;
-    this.severidad = severidad;
     this.categoria = categoria;
     this.texto = texto;
     this.montoSugerido = montoSugerido;
@@ -87,7 +91,7 @@ public class Consejo {
   }
 
   public Severidad getSeveridad() {
-    return severidad;
+    return tipo.getSeveridad();
   }
 
   public EstadoConsejo getEstado() {
@@ -116,6 +120,29 @@ public class Consejo {
 
   public void setMontoSugerido(Double montoSugerido) {
     this.montoSugerido = montoSugerido;
+  }
+
+  public String getTextoRedactado() {
+    return textoRedactado;
+  }
+
+  public String getFirmaHechos() {
+    return firmaHechos;
+  }
+
+  public void redactar(String textoRedactado, String firmaHechos) {
+    this.textoRedactado = textoRedactado;
+    this.firmaHechos = firmaHechos;
+  }
+
+  // Lo que ve el usuario: la redacción del asistente si la hay, si no los hechos tal cual
+  public String getTextoParaMostrar() {
+    return textoRedactado != null ? textoRedactado : texto;
+  }
+
+  // Los hechos que importan para la redacción; si cambian, la redacción vieja ya no sirve
+  public String firmaDeLosHechos() {
+    return Integer.toHexString((texto + "|" + montoSugerido).hashCode());
   }
 
   public boolean isAplicable() {

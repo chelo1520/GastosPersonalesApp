@@ -15,7 +15,7 @@
       <div class="app-consejo-cuerpo">
         <span class="app-estado" th:classappend="'is-' + ${consejo.severidad.estilo}"
               th:text="${consejo.severidad == T(com.tallerwebi.dominio.consejo.Severidad).ALERTA} ? 'Alerta' : (${consejo.severidad == T(com.tallerwebi.dominio.consejo.Severidad).ATENCION} ? 'Atención' : 'Info')">Atención</span>
-        <p class="app-consejo-texto" th:text="${consejo.texto}">Tu presupuesto de Alimentación quedó atrás de la inflación.</p>
+        <p class="app-consejo-texto" th:text="${consejo.textoParaMostrar}">Tu presupuesto de Alimentación quedó atrás de la inflación.</p>
       </div>
       <div class="app-consejo-acciones">
         <form th:if="${consejo.aplicable}" method="post"

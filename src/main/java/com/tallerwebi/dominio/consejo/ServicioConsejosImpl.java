@@ -4,6 +4,7 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.asistente.CategoriaGastoReal;
 import com.tallerwebi.dominio.asistente.EstadoGastoReal;
 import com.tallerwebi.dominio.asistente.GastoReal;
+import com.tallerwebi.dominio.asistente.ServicioAsistente;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.excepcion.ConsejoNoEncontrado;
@@ -48,6 +49,7 @@ public class ServicioConsejosImpl implements ServicioConsejos {
   private final ServicioIndicadores servicioIndicadores;
   private final ServicioResumen servicioResumen;
   private final ServicioGastoReal servicioGastoReal;
+  private final ServicioAsistente servicioAsistente;
   private final Clock reloj;
 
   @Autowired
@@ -56,7 +58,8 @@ public class ServicioConsejosImpl implements ServicioConsejos {
     ServicioPresupuesto servicioPresupuesto,
     ServicioIndicadores servicioIndicadores,
     ServicioResumen servicioResumen,
-    ServicioGastoReal servicioGastoReal
+    ServicioGastoReal servicioGastoReal,
+    ServicioAsistente servicioAsistente
   ) {
     this(
       repositorioConsejo,
@@ -64,6 +67,7 @@ public class ServicioConsejosImpl implements ServicioConsejos {
       servicioIndicadores,
       servicioResumen,
       servicioGastoReal,
+      servicioAsistente,
       Clock.systemDefaultZone()
     );
   }
@@ -75,6 +79,7 @@ public class ServicioConsejosImpl implements ServicioConsejos {
     ServicioIndicadores servicioIndicadores,
     ServicioResumen servicioResumen,
     ServicioGastoReal servicioGastoReal,
+    ServicioAsistente servicioAsistente,
     Clock reloj
   ) {
     this.repositorioConsejo = repositorioConsejo;
@@ -82,6 +87,7 @@ public class ServicioConsejosImpl implements ServicioConsejos {
     this.servicioIndicadores = servicioIndicadores;
     this.servicioResumen = servicioResumen;
     this.servicioGastoReal = servicioGastoReal;
+    this.servicioAsistente = servicioAsistente;
     this.reloj = reloj;
   }
 
@@ -117,9 +123,18 @@ public class ServicioConsejosImpl implements ServicioConsejos {
       }
     }
     pendientes.sort(Comparator.comparing(Consejo::getSeveridad).reversed());
-    return pendientes.size() > MAXIMO_CONSEJOS
-      ? pendientes.subList(0, MAXIMO_CONSEJOS)
+    List<Consejo> paraMostrar = pendientes.size() > MAXIMO_CONSEJOS
+      ? new ArrayList<>(pendientes.subList(0, MAXIMO_CONSEJOS))
       : pendientes;
+
+    // La IA solo redacta y ordena; lo redactado se guarda para no volver a pedirlo
+    List<Consejo> redactados = servicioAsistente.redactar(paraMostrar, gastoReal);
+    for (Consejo consejo : redactados) {
+      if (consejo.getTextoRedactado() != null && consejo.getId() != null) {
+        repositorioConsejo.modificar(consejo);
+      }
+    }
+    return redactados;
   }
 
   @Override
@@ -175,7 +190,6 @@ public class ServicioConsejosImpl implements ServicioConsejos {
           usuario,
           mesActual,
           TipoConsejo.PRESUPUESTO_DESACTUALIZADO,
-          Severidad.ATENCION,
           nombre,
           texto,
           sugerido
@@ -237,7 +251,6 @@ public class ServicioConsejosImpl implements ServicioConsejos {
           usuario,
           mesActual,
           TipoConsejo.CATEGORIA_SUBE_MAS_QUE_LA_INFLACION,
-          Severidad.ALERTA,
           cat.getNombre(),
           texto,
           null
@@ -297,15 +310,7 @@ public class ServicioConsejosImpl implements ServicioConsejos {
       MESES_PARA_LA_TENDENCIA + MESES_PARA_LA_TENDENCIA,
       gastoReal.getVeredicto().getVariacionReal()
     );
-    return new Consejo(
-      usuario,
-      mesActual,
-      TipoConsejo.GASTO_REAL_EN_ALZA,
-      Severidad.ATENCION,
-      null,
-      texto,
-      null
-    );
+    return new Consejo(usuario, mesActual, TipoConsejo.GASTO_REAL_EN_ALZA, null, texto, null);
   }
 
   private Consejo buscarIgual(List<Consejo> guardados, Consejo calculado) {
