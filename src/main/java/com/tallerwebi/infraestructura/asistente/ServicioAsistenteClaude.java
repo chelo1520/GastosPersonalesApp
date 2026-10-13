@@ -35,7 +35,9 @@ import org.springframework.stereotype.Component;
 public class ServicioAsistenteClaude implements ServicioAsistente {
 
   static final String VARIABLE_CLAVE = "ANTHROPIC_API_KEY";
-  static final String MODELO = "claude-opus-5-5";
+  // Modelo por defecto; se puede cambiar con la variable de entorno ASISTENTE_MODELO
+  static final String MODELO_POR_DEFECTO = "claude-opus-5-5";
+  static final String VARIABLE_MODELO = "ASISTENTE_MODELO";
   // Las consultas se cachean por usuario y mes; esto es solo una red de seguridad de costo
   static final int MAXIMO_LLAMADAS_POR_DIA = 200;
   private static final long MAX_TOKENS = 2000L;
@@ -54,6 +56,7 @@ public class ServicioAsistenteClaude implements ServicioAsistente {
   private static final Logger LOG = Logger.getLogger(ServicioAsistenteClaude.class.getName());
 
   private final boolean conClave;
+  private final String modelo;
   private final ObjectMapper json = new ObjectMapper();
   private final Clock reloj;
   private AnthropicClient cliente;
@@ -61,12 +64,13 @@ public class ServicioAsistenteClaude implements ServicioAsistente {
   private int llamadasDelDia;
 
   public ServicioAsistenteClaude() {
-    this(System.getenv(VARIABLE_CLAVE), Clock.systemDefaultZone());
+    this(System.getenv(VARIABLE_CLAVE), System.getenv(VARIABLE_MODELO), Clock.systemDefaultZone());
   }
 
-  // Permite construirlo sin clave (tests, CI) y fijar "hoy"
-  public ServicioAsistenteClaude(String claveDeApi, Clock reloj) {
+  // Permite construirlo sin clave (tests, CI), elegir el modelo y fijar "hoy"
+  public ServicioAsistenteClaude(String claveDeApi, String modelo, Clock reloj) {
     this.reloj = reloj;
+    this.modelo = modelo == null || modelo.isBlank() ? MODELO_POR_DEFECTO : modelo;
     this.conClave = claveDeApi != null && !claveDeApi.isBlank();
     if (conClave) {
       this.cliente = AnthropicOkHttpClient.builder().apiKey(claveDeApi).build();
@@ -197,7 +201,7 @@ public class ServicioAsistenteClaude implements ServicioAsistente {
   private RedaccionDeConsejos consultar(String hechos) {
     StructuredMessageCreateParams<RedaccionDeConsejos> params = MessageCreateParams
       .builder()
-      .model(MODELO)
+      .model(modelo)
       .maxTokens(MAX_TOKENS)
       .outputConfig(RedaccionDeConsejos.class)
       // Las instrucciones no cambian: se cachean para pagar menos en cada consulta
@@ -244,6 +248,10 @@ public class ServicioAsistenteClaude implements ServicioAsistente {
 
   private synchronized void contarLlamada() {
     llamadasDelDia++;
+  }
+
+  String modeloEnUso() {
+    return modelo;
   }
 
   int llamadasHechasHoy() {

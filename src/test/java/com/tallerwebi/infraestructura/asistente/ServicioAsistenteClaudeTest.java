@@ -32,7 +32,7 @@ public class ServicioAsistenteClaudeTest {
 
   @BeforeEach
   public void init() {
-    sinClave = new ServicioAsistenteClaude(null, Clock.systemDefaultZone());
+    sinClave = new ServicioAsistenteClaude(null, null, Clock.systemDefaultZone());
     usuario = new Usuario();
     usuario.setEmail("diego@unlam.edu.ar");
     presupuesto =
@@ -133,6 +133,16 @@ public class ServicioAsistenteClaudeTest {
     presupuesto.setMontoSugerido(230000.0);
 
     assertThat(presupuesto.firmaDeLosHechos(), not(equalTo(firmaAnterior)));
+  }
+
+  @Test
+  void debeUsarOpus55SalvoQueSeIndiqueOtroModelo() {
+    assertThat(sinClave.modeloEnUso(), equalTo("claude-opus-5-5"));
+    assertThat(
+      new ServicioAsistenteClaude(null, "claude-haiku-5-5", Clock.systemDefaultZone())
+        .modeloEnUso(),
+      equalTo("claude-haiku-5-5")
+    );
   }
 
   private Consejo consejo(Long id, TipoConsejo tipo, String categoria, String texto, Double monto) {
