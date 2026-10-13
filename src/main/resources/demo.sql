@@ -2,11 +2,14 @@
 -- Se ejecuta en cada arranque, después de data.sql. Borra y vuelve a cargar SOLO los datos
 -- de estos tres usuarios, con fechas relativas a hoy, para que la demo siempre muestre el mes
 -- actual y los dos anteriores. Lo que se cargue a mano con estos usuarios se pierde al reiniciar.
--- Contraseña de los tres: demo
+-- Contraseña de los tres: test (la misma que el usuario de prueba de data.sql)
 
-INSERT INTO Usuario(email, password, rol, activo) SELECT 'alto@gastitos.demo', 'demo', 'USER', true FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM Usuario WHERE email = 'alto@gastitos.demo');
-INSERT INTO Usuario(email, password, rol, activo) SELECT 'medio@gastitos.demo', 'demo', 'USER', true FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM Usuario WHERE email = 'medio@gastitos.demo');
-INSERT INTO Usuario(email, password, rol, activo) SELECT 'bajo@gastitos.demo', 'demo', 'USER', true FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM Usuario WHERE email = 'bajo@gastitos.demo');
+INSERT INTO Usuario(email, password, rol, activo) SELECT 'alto@gastitos.demo', 'test', 'USER', true FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM Usuario WHERE email = 'alto@gastitos.demo');
+INSERT INTO Usuario(email, password, rol, activo) SELECT 'medio@gastitos.demo', 'test', 'USER', true FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM Usuario WHERE email = 'medio@gastitos.demo');
+INSERT INTO Usuario(email, password, rol, activo) SELECT 'bajo@gastitos.demo', 'test', 'USER', true FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM Usuario WHERE email = 'bajo@gastitos.demo');
+
+-- Por si la contraseña cambió después de crearlos
+UPDATE Usuario SET password = 'test' WHERE email IN ('alto@gastitos.demo', 'medio@gastitos.demo', 'bajo@gastitos.demo');
 
 DELETE FROM Gasto WHERE usuario_id IN (SELECT id FROM Usuario WHERE email IN ('alto@gastitos.demo', 'medio@gastitos.demo', 'bajo@gastitos.demo'));
 DELETE FROM Presupuesto WHERE usuario_id IN (SELECT id FROM Usuario WHERE email IN ('alto@gastitos.demo', 'medio@gastitos.demo', 'bajo@gastitos.demo'));
