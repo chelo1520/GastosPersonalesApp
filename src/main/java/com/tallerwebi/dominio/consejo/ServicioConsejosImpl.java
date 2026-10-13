@@ -137,7 +137,8 @@ public class ServicioConsejosImpl implements ServicioConsejos {
     }
     if (veredicto.getTextoRedactado() == null) {
       String sintesis = servicioAsistente.sintetizar(paraMostrar, gastoReal);
-      if (sintesis != null && !sintesis.isBlank()) {
+      // Solo se acepta si repite los números del veredicto que calculó Java; si no, queda la regla
+      if (GuardaDeLaSintesis.respetaElVeredicto(sintesis, gastoReal.getVeredicto())) {
         veredicto.redactar(sintesis.trim(), firmaDelPeriodo(paraMostrar));
         repositorioConsejo.modificar(veredicto);
       }

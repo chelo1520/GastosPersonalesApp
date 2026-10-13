@@ -379,13 +379,16 @@ public class ServicioConsejosImplTest {
       new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0)
     );
     when(servicioAsistenteMock.sintetizar(any(), any()))
-      .thenReturn(" Tu período en una frase: gastás 18,2 % más en serio. ");
+      .thenReturn(" Subieron 30,0 % con 10,0 % de inflación: gastás 18,2 % más en serio. ");
     conRepositorioQueRecuerda();
 
     String sintesis = servicio.sintetizar(usuario, gastoReal);
     List<Consejo> consejos = servicio.obtenerPendientes(usuario, gastoReal);
 
-    assertThat(sintesis, equalTo("Tu período en una frase: gastás 18,2 % más en serio."));
+    assertThat(
+      sintesis,
+      equalTo("Subieron 30,0 % con 10,0 % de inflación: gastás 18,2 % más en serio.")
+    );
     assertThat(consejos, hasSize(2));
     Consejo veredicto = consejos.get(0);
     assertThat(veredicto.getTipo(), equalTo(TipoConsejo.VEREDICTO_ROJO));
@@ -401,17 +404,35 @@ public class ServicioConsejosImplTest {
     GastoReal gastoReal = gastoReal(
       new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0)
     );
-    when(servicioAsistenteMock.sintetizar(any(), any())).thenReturn("Síntesis del período.");
+    String valida = "Subieron 30,0 %, inflación 10,0 %, 18,2 % más en serio.";
+    when(servicioAsistenteMock.sintetizar(any(), any())).thenReturn(valida);
     conRepositorioQueRecuerda();
     servicio.sintetizar(usuario, gastoReal);
 
     String segundaVez = servicio.sintetizar(usuario, gastoReal);
     List<Consejo> consejos = servicio.obtenerPendientes(usuario, gastoReal);
 
-    assertThat(segundaVez, equalTo("Síntesis del período."));
-    assertThat(consejos.get(0).getTextoParaMostrar(), equalTo("Síntesis del período."));
+    assertThat(segundaVez, equalTo(valida));
+    assertThat(consejos.get(0).getTextoParaMostrar(), equalTo(valida));
     assertThat(servicio.faltaLaSintesis(consejos), is(false));
     verify(servicioAsistenteMock, times(1)).sintetizar(any(), any());
+  }
+
+  @Test
+  void debeDescartarLaSintesisQueNoRepiteLosNumerosDelVeredictoYDejarLaRegla() {
+    GastoReal gastoReal = gastoReal(
+      new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0)
+    );
+    when(servicioAsistenteMock.sintetizar(any(), any()))
+      .thenReturn("Subieron 35,0 % con 10,0 % de inflación: gastás 18,2 % más en serio.");
+    conRepositorioQueRecuerda();
+
+    String sintesis = servicio.sintetizar(usuario, gastoReal);
+    List<Consejo> consejos = servicio.obtenerPendientes(usuario, gastoReal);
+
+    assertThat(sintesis, nullValue());
+    assertThat(consejos.get(0).getTextoRedactado(), nullValue());
+    assertThat(consejos.get(0).getTextoParaMostrar(), containsString("subieron 30,0 %"));
   }
 
   @Test
