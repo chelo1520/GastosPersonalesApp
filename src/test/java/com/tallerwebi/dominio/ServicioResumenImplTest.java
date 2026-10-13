@@ -120,7 +120,7 @@ public class ServicioResumenImplTest {
   }
 
   @Test
-  void debeAgruparEnSinCategoriaLosGastosQueNoTienenCategoriaConEl100PorCientoDelTotal() {
+  void debeAgruparEnSinCategoriaConEl100PorCientoDelTotalCuandoLosGastosNoTienenCategoria() {
     when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE))
       .thenReturn(List.of(gasto(30000.0, "Alquiler"), gasto(15000.0, "Supermercado")));
 
@@ -135,7 +135,7 @@ public class ServicioResumenImplTest {
   }
 
   @Test
-  void debeAgruparLosGastosPorCategoriaYOrdenarlosPorImporteDescendente() {
+  void debeAgruparPorCategoriaYOrdenarDeMayorAMenorCuandoHayGastosEnVariasCategorias() {
     when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE))
       .thenReturn(
         List.of(
@@ -175,7 +175,7 @@ public class ServicioResumenImplTest {
   }
 
   @Test
-  void debeSerVerdeCuandoSeUsaMenosDel80PorCientoDelPresupuestoDeLaCategoria() {
+  void debeTenerEstadoVerdeCuandoSeUsaMenosDel80PorCientoDelPresupuestoDeLaCategoria() {
     conPresupuestos(presupuesto(alimentacion, 100000.0));
     when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE))
       .thenReturn(List.of(gasto(79900.0, "Compra semanal", alimentacion)));
@@ -189,7 +189,7 @@ public class ServicioResumenImplTest {
   }
 
   @Test
-  void debeSerAmarilloCuandoSeUsaExactamenteEl80PorCientoDelPresupuestoDeLaCategoria() {
+  void debeTenerEstadoAmarilloCuandoSeUsaExactamenteEl80PorCientoDelPresupuestoDeLaCategoria() {
     conPresupuestos(presupuesto(alimentacion, 100000.0));
     when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE))
       .thenReturn(List.of(gasto(80000.0, "Compra semanal", alimentacion)));
@@ -203,7 +203,7 @@ public class ServicioResumenImplTest {
   }
 
   @Test
-  void debeSerRojoConDisponibleNegativoCuandoSeSuperaElPresupuestoDeLaCategoria() {
+  void debeTenerEstadoRojoYDisponibleNegativoCuandoSeSuperaElPresupuestoDeLaCategoria() {
     conPresupuestos(presupuesto(alimentacion, 100000.0));
     when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE))
       .thenReturn(List.of(gasto(120000.0, "Compra semanal", alimentacion)));
@@ -219,7 +219,7 @@ public class ServicioResumenImplTest {
   }
 
   @Test
-  void debeSerRojoCuandoSeUsaExactamenteEl100PorCientoDelPresupuestoDeLaCategoria() {
+  void debeTenerEstadoRojoCuandoSeUsaExactamenteEl100PorCientoDelPresupuestoDeLaCategoria() {
     conPresupuestos(presupuesto(alimentacion, 100000.0));
     when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE))
       .thenReturn(List.of(gasto(100000.0, "Compra semanal", alimentacion)));
