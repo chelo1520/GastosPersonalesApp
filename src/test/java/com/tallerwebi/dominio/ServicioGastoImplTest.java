@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
@@ -20,6 +21,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -53,6 +56,35 @@ public class ServicioGastoImplTest {
 
     assertEquals(usuario, gasto.getUsuario());
     verify(repositorioGastoMock).guardar(gasto);
+  }
+
+  @Test
+  void debeBuscarLosGastosDeLos7DiasHastaLaFechaDelGastoParaLaAlertaDeRepeticion() {
+    GastoServicio gastoServicio = new GastoServicioImpl(repositorioGastoMock, HOY);
+    Usuario usuario = new Usuario();
+    Categoria cafe = new Categoria();
+    cafe.setId(7L);
+    cafe.setNombre("Café y snacks");
+    cafe.setEsencial(false);
+    List<Gasto> semana = new ArrayList<>();
+    for (int dia = 3; dia <= 6; dia++) {
+      Gasto cafecito = new Gasto(2500.0, LocalDate.of(2026, 10, dia), "Café");
+      cafecito.setCategoria(cafe);
+      semana.add(cafecito);
+    }
+    Gasto nuevo = semana.get(3);
+    when(
+      repositorioGastoMock.obtenerGastosEntreFechas(
+        usuario,
+        LocalDate.of(2026, 9, 30),
+        LocalDate.of(2026, 10, 6)
+      )
+    )
+      .thenReturn(semana);
+
+    Alerta alerta = gastoServicio.alertaDeRepeticion(nuevo, usuario);
+
+    assertEquals("Es tu 4.º gasto en Café y snacks esta semana ($10.000)", alerta.getMensaje());
   }
 
   @Test

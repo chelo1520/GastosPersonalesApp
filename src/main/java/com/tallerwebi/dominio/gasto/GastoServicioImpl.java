@@ -1,8 +1,11 @@
 package com.tallerwebi.dominio.gasto;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.alerta.Alerta;
+import com.tallerwebi.dominio.alerta.CalculadoraAlertas;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
+import com.tallerwebi.dominio.presupuesto.PresupuestoMensual;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -24,6 +27,7 @@ public class GastoServicioImpl implements GastoServicio {
 
   private RepositorioGasto repositorioGasto;
   private Clock reloj;
+  private final CalculadoraAlertas calculadoraAlertas = new CalculadoraAlertas();
 
   @Autowired
   public GastoServicioImpl(RepositorioGasto repositorioGasto) {
@@ -43,6 +47,17 @@ public class GastoServicioImpl implements GastoServicio {
     gasto.setUsuario(usuario);
 
     repositorioGasto.guardar(gasto);
+  }
+
+  @Override
+  public Alerta alertaDeRepeticion(Gasto gasto, Usuario usuario) {
+    LocalDate desde = gasto.getFecha().minusDays(CalculadoraAlertas.DIAS_ALERTA_REPETICION - 1);
+    List<Gasto> gastosDeLaSemana = repositorioGasto.obtenerGastosEntreFechas(
+      usuario,
+      desde,
+      gasto.getFecha()
+    );
+    return calculadoraAlertas.alertaDeRepeticion(gasto, gastosDeLaSemana, PresupuestoMensual.MONTO);
   }
 
   @Override

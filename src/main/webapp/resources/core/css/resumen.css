@@ -133,7 +133,7 @@
 
 /* Gastos hormiga */
 .app-resumen-hormiga {
-  margin-bottom: 24px;
+  margin-top: 24px;
 }
 
 .app-resumen-hormiga-cuerpo {
@@ -149,6 +149,12 @@
   gap: 12px;
   padding: 8px 0;
   border-bottom: 1px solid var(--res-border);
+}
+
+.app-resumen-hormiga-acciones {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .app-resumen-hormiga-lista li:last-child {

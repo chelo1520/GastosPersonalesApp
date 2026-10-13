@@ -9,7 +9,6 @@ import com.tallerwebi.dominio.resumen.CalculadoraGastosHormiga;
 import com.tallerwebi.dominio.resumen.ResumenCategoria;
 import com.tallerwebi.dominio.resumen.ResumenHormiga;
 import java.time.LocalDate;
-import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,8 +17,6 @@ import org.junit.jupiter.api.Test;
 public class CalculadoraGastosHormigaTest {
 
   private static final double PRESUPUESTO = 550000.0;
-  private static final YearMonth OCTUBRE = YearMonth.of(2026, 10);
-  private static final LocalDate HOY = LocalDate.of(2026, 10, 20);
 
   private CalculadoraGastosHormiga calculadora;
   private Categoria cafe;
@@ -37,19 +34,17 @@ public class CalculadoraGastosHormigaTest {
   }
 
   @Test
-  void debeSumar44400QueEsEl8Coma1PorCientoConElEjemploDelDia20() {
+  void debeSumar44400QueEsEl8Coma1PorCientoConElEjemploDelDoc() {
     List<Gasto> gastos = new ArrayList<>();
     gastos.addAll(gastos(12, 2500.0, cafe));
     gastos.addAll(gastos(8, 1800.0, kiosco));
     gastos.addAll(gastos(3, 4000.0, delivery));
     gastos.addAll(gastos(8, 1500.0, supermercado));
 
-    ResumenHormiga hormiga = calculadora.calcular(gastos, PRESUPUESTO, OCTUBRE, HOY);
+    ResumenHormiga hormiga = calculadora.calcular(gastos, PRESUPUESTO);
 
     assertEquals(44400.0, hormiga.getTotal());
     assertEquals(8.07, hormiga.getPorcentajePresupuesto(), 0.01);
-    assertEquals(68820.0, hormiga.getProyeccion(), 0.001);
-    assertEquals(12.51, hormiga.getPorcentajeProyeccion(), 0.01);
     assertEquals(
       List.of("Café y snacks", "Kiosco"),
       hormiga.getCategorias().stream().map(ResumenCategoria::getNombre).toList()
@@ -60,12 +55,7 @@ public class CalculadoraGastosHormigaTest {
 
   @Test
   void noDebeContarUnaCategoriaEsencialAunqueTengaMuchosGastosChicos() {
-    ResumenHormiga hormiga = calculadora.calcular(
-      gastos(10, 1500.0, supermercado),
-      PRESUPUESTO,
-      OCTUBRE,
-      HOY
-    );
+    ResumenHormiga hormiga = calculadora.calcular(gastos(10, 1500.0, supermercado), PRESUPUESTO);
 
     assertEquals(0.0, hormiga.getTotal());
     assertTrue(hormiga.getCategorias().isEmpty());
@@ -73,12 +63,7 @@ public class CalculadoraGastosHormigaTest {
 
   @Test
   void noDebeContarUnaCategoriaConMenosDe4GastosChicos() {
-    ResumenHormiga hormiga = calculadora.calcular(
-      gastos(3, 4000.0, delivery),
-      PRESUPUESTO,
-      OCTUBRE,
-      HOY
-    );
+    ResumenHormiga hormiga = calculadora.calcular(gastos(3, 4000.0, delivery), PRESUPUESTO);
 
     assertEquals(0.0, hormiga.getTotal());
   }
@@ -90,12 +75,12 @@ public class CalculadoraGastosHormigaTest {
     gastos.addAll(gastos(3, 11001.0, delivery));
     gastos.addAll(gastos(3, 11000.0, delivery));
 
-    ResumenHormiga hormiga = calculadora.calcular(gastos, PRESUPUESTO, OCTUBRE, HOY);
+    ResumenHormiga hormiga = calculadora.calcular(gastos, PRESUPUESTO);
 
     assertEquals(0.0, hormiga.getTotal());
 
     gastos.addAll(gastos(1, 11000.0, delivery));
-    hormiga = calculadora.calcular(gastos, PRESUPUESTO, OCTUBRE, HOY);
+    hormiga = calculadora.calcular(gastos, PRESUPUESTO);
 
     assertEquals(44000.0, hormiga.getTotal());
   }
@@ -106,24 +91,9 @@ public class CalculadoraGastosHormigaTest {
     gastos.addAll(gastos(5, 1000.0, null));
     gastos.addAll(gastos(5, 1000.0, categoria("Otros", null)));
 
-    ResumenHormiga hormiga = calculadora.calcular(gastos, PRESUPUESTO, OCTUBRE, HOY);
+    ResumenHormiga hormiga = calculadora.calcular(gastos, PRESUPUESTO);
 
     assertEquals(0.0, hormiga.getTotal());
-  }
-
-  @Test
-  void debeProyectarLoMismoQueElTotalCuandoElMesYaCerro() {
-    YearMonth septiembre = YearMonth.of(2026, 9);
-
-    ResumenHormiga hormiga = calculadora.calcular(
-      gastos(4, 2500.0, cafe),
-      PRESUPUESTO,
-      septiembre,
-      HOY
-    );
-
-    assertEquals(10000.0, hormiga.getTotal());
-    assertEquals(10000.0, hormiga.getProyeccion());
   }
 
   private List<Gasto> gastos(int cantidad, double importe, Categoria categoria) {

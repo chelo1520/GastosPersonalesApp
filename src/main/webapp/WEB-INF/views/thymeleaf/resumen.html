@@ -15,7 +15,8 @@
       mesActual (String, ej. "Octubre 2026"), mesAnterior / mesSiguiente (String, ej. "2026-09")
       gastado, presupuesto, disponible (números), porcentajeUsado (número, ej. 80)
       categorias: lista con nombre, gastado, porcentajeTotal, disponible, porcentajeUsado
-      hormiga: total, porcentajePresupuesto, proyeccion, porcentajeProyeccion, categorias (nombre, gastado)
+      hormiga: total, porcentajePresupuesto, categorias (nombre, gastado, categoriaId)
+      alertas: lista con nivel (AMARILLA / ROJA) y mensaje
   -->
   <main class="app-main app-resumen-main">
 
@@ -32,6 +33,13 @@
         <span class="app-mvp-badge">MVP</span>
       </div>
       <a class="btn btn-primary app-registrar-link app-resumen-registrar" th:href="@{/registrar-gasto}">+ Registrar gasto</a>
+    </div>
+
+    <!-- Alertas de gastos hormiga: informan, no bloquean. Se calculan al abrir la pantalla -->
+    <div class="app-alerta" role="status" th:each="alerta : ${alertas}"
+         th:classappend="${alerta.nivel.name() == 'ROJA'} ? 'is-roja' : 'is-amarilla'">
+      <span th:text="${alerta.mensaje}">Llevás $44.400 en gastos hormiga, el 8% de tu presupuesto</span>
+      <a class="app-alerta-link" href="#gastos-hormiga">Ver gastos hormiga</a>
     </div>
 
     <!-- Tarjetas de totales -->
@@ -64,34 +72,6 @@
           <span th:text="${#numbers.formatInteger(porcentajeUsado, 1)}">80</span> % del presupuesto usado
         </small>
       </article>
-    </section>
-
-    <!-- Gastos hormiga: chicos, frecuentes y prescindibles -->
-    <section class="app-resumen-card app-resumen-hormiga" aria-label="Gastos hormiga del mes">
-      <h2 class="app-resumen-card-titulo">Gastos hormiga</h2>
-
-      <p class="app-gastos-vacio mb-0" th:if="${hormiga.total == 0}">No hay gastos hormiga este mes.</p>
-
-      <div th:unless="${hormiga.total == 0}" class="app-resumen-hormiga-cuerpo">
-        <div>
-          <strong class="app-resumen-monto"
-                  th:text="'$ ' + ${#numbers.formatDecimal(hormiga.total, 1, 'POINT', 0, 'COMMA')}">$ 44.400</strong>
-          <small class="app-resumen-barra-texto">
-            <span th:text="${#numbers.formatDecimal(hormiga.porcentajePresupuesto, 1, 'POINT', 1, 'COMMA')}">8,1</span> % del presupuesto
-            · proyección a fin de mes:
-            <span th:text="'$ ' + ${#numbers.formatDecimal(hormiga.proyeccion, 1, 'POINT', 0, 'COMMA')}">$ 68.820</span>
-            (<span th:text="${#numbers.formatDecimal(hormiga.porcentajeProyeccion, 1, 'POINT', 1, 'COMMA')}">12,5</span> %)
-          </small>
-        </div>
-
-        <ul class="app-resumen-hormiga-lista list-unstyled mb-0" id="lista-hormiga">
-          <li th:each="cat : ${hormiga.categorias}">
-            <span th:text="${cat.nombre}">Café y snacks</span>
-            <span class="app-resumen-num"
-                  th:text="'$ ' + ${#numbers.formatDecimal(cat.gastado, 1, 'POINT', 0, 'COMMA')}">$ 30.000</span>
-          </li>
-        </ul>
-      </div>
     </section>
 
     <!-- Gráfico + tabla -->
@@ -141,6 +121,37 @@
       </article>
 
     </section>
+
+    <!-- Gastos hormiga: chicos, frecuentes y prescindibles -->
+    <section class="app-resumen-card app-resumen-hormiga" id="gastos-hormiga" aria-label="Gastos hormiga del mes">
+      <h2 class="app-resumen-card-titulo">Gastos hormiga</h2>
+
+      <p class="app-gastos-vacio mb-0" th:if="${hormiga.total == 0}">No hay gastos hormiga este mes.</p>
+
+      <div th:unless="${hormiga.total == 0}" class="app-resumen-hormiga-cuerpo">
+        <div>
+          <strong class="app-resumen-monto"
+                  th:text="'$ ' + ${#numbers.formatDecimal(hormiga.total, 1, 'POINT', 0, 'COMMA')}">$ 44.400</strong>
+          <small class="app-resumen-barra-texto">
+            <span th:text="${#numbers.formatDecimal(hormiga.porcentajePresupuesto, 1, 'POINT', 1, 'COMMA')}">8,1</span> % del presupuesto
+          </small>
+        </div>
+
+        <ul class="app-resumen-hormiga-lista list-unstyled mb-0" id="lista-hormiga">
+          <li th:each="cat : ${hormiga.categorias}">
+            <span th:text="${cat.nombre}">Café y snacks</span>
+            <span class="app-resumen-hormiga-acciones">
+              <span class="app-resumen-num"
+                    th:text="'$ ' + ${#numbers.formatDecimal(cat.gastado, 1, 'POINT', 0, 'COMMA')}">$ 30.000</span>
+              <th:block th:if="${cat.categoriaId != null}">
+                <form th:replace="~{fragments/hormiga :: boton(${cat.categoriaId}, ${cat.nombre}, false, '/home')}"></form>
+              </th:block>
+            </span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
   </main>
 
   <nav class="app-mobile-nav d-md-none" aria-label="Navegación principal">

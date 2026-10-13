@@ -6,4 +6,6 @@ public interface CategoriaRepositorio {
   List<Categoria> obtenerTodas();
 
   Categoria buscarPorId(Long id);
+
+  void modificar(Categoria categoria);
 }

@@ -630,3 +630,52 @@ a:hover {
   --bs-btn-hover-color: var(--app-texto);
   --bs-btn-hover-border-color: var(--app-borde-input);
 }
+
+/* Alertas de gastos hormiga: informan, no bloquean */
+.app-alerta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.app-alerta.is-amarilla {
+  border-color: #f3d19c;
+  background: #fdf0e3;
+  color: #a8470a;
+}
+
+.app-alerta.is-roja {
+  border-color: #f2b8b5;
+  background: #fdecea;
+  color: var(--app-error);
+}
+
+.app-alerta-link {
+  color: inherit;
+  font-weight: 600;
+}
+
+
+/* Botón "Es hormiga" / "No es hormiga": cambia la categoría entre prescindible y esencial */
+.app-hormiga-form {
+  display: inline-block;
+  margin: 0;
+}
+
+.app-hormiga-boton {
+  white-space: nowrap;
+}
+
+.app-gasto-categoria {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}

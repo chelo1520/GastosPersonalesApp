@@ -1,12 +1,13 @@
 package com.tallerwebi.dominio.resumen;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.alerta.Alerta;
+import com.tallerwebi.dominio.alerta.CalculadoraAlertas;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.RepositorioGasto;
 import com.tallerwebi.dominio.presupuesto.PresupuestoMensual;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
-import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -28,6 +29,7 @@ public class ServicioResumenImpl implements ServicioResumen {
   private RepositorioGasto repositorioGasto;
   private Clock reloj;
   private final CalculadoraGastosHormiga calculadoraHormiga = new CalculadoraGastosHormiga();
+  private final CalculadoraAlertas calculadoraAlertas = new CalculadoraAlertas();
 
   @Autowired
   public ServicioResumenImpl(RepositorioGasto repositorioGasto) {
@@ -75,13 +77,20 @@ public class ServicioResumenImpl implements ServicioResumen {
     }
     categorias.sort(Comparator.comparing(ResumenCategoria::getGastado).reversed());
 
+    ResumenHormiga hormiga = calculadoraHormiga.calcular(gastos, presupuesto);
+    // Las alertas hablan de lo que "llevás": solo aplican al mes en curso
+    List<Alerta> alertas = mes.equals(YearMonth.now(reloj))
+      ? calculadoraAlertas.alertasDelMes(hormiga)
+      : List.of();
+
     return new ResumenMensual(
       gastado,
       presupuesto,
       presupuesto - gastado,
       porcentajeUsado(gastado, presupuesto),
       categorias,
-      calculadoraHormiga.calcular(gastos, presupuesto, mes, LocalDate.now(reloj))
+      hormiga,
+      alertas
     );
   }
 

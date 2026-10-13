@@ -1,5 +1,6 @@
 package com.tallerwebi.dominio.resumen;
 
+import com.tallerwebi.dominio.alerta.Alerta;
 import java.util.List;
 
 /**
@@ -13,6 +14,7 @@ public class ResumenMensual {
   private final Double porcentajeUsado;
   private final List<ResumenCategoria> categorias;
   private final ResumenHormiga hormiga;
+  private final List<Alerta> alertas;
 
   public ResumenMensual(
     Double gastado,
@@ -20,7 +22,8 @@ public class ResumenMensual {
     Double disponible,
     Double porcentajeUsado,
     List<ResumenCategoria> categorias,
-    ResumenHormiga hormiga
+    ResumenHormiga hormiga,
+    List<Alerta> alertas
   ) {
     this.gastado = gastado;
     this.presupuesto = presupuesto;
@@ -28,6 +31,7 @@ public class ResumenMensual {
     this.porcentajeUsado = porcentajeUsado;
     this.categorias = categorias;
     this.hormiga = hormiga;
+    this.alertas = alertas;
   }
 
   public Double getGastado() {
@@ -52,5 +56,9 @@ public class ResumenMensual {
 
   public ResumenHormiga getHormiga() {
     return hormiga;
+  }
+
+  public List<Alerta> getAlertas() {
+    return alertas;
   }
 }

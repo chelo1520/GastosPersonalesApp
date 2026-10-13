@@ -1,6 +1,7 @@
 package com.tallerwebi.integracion;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
@@ -113,7 +114,40 @@ public class ResumenVistaTest {
       .andExpect(content().string(containsString("Gastos hormiga")))
       .andExpect(content().string(containsString("$ 10.000")))
       .andExpect(content().string(containsString("1,8</span> % del presupuesto")))
-      .andExpect(content().string(containsString("Café y snacks")));
+      .andExpect(content().string(containsString("Café y snacks")))
+      // Agosto de 2025 ya cerró: no hay alertas
+      .andExpect(content().string(not(containsString("app-alerta"))));
+  }
+
+  @Test
+  public void debeMostrarLaAlertaDeAcumuladoYElBotonNoEsHormigaEnElMesEnCurso() throws Exception {
+    LocalDate hoy = LocalDate.now();
+    Usuario usuario = new Usuario();
+    Categoria delivery = categoria("Delivery");
+    delivery.setEsencial(false);
+
+    try (Session session = sessionFactory.openSession()) {
+      Transaction transaction = session.beginTransaction();
+      session.persist(usuario);
+      session.persist(delivery);
+      // 4 pedidos de 8.000 = 32.000, el 5,8 % del presupuesto: alerta amarilla
+      for (int i = 0; i < 4; i++) {
+        session.persist(gasto(8000.0, hoy, delivery, usuario));
+      }
+      transaction.commit();
+    }
+
+    mockMvc
+      .perform(get("/home").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("app-alerta")))
+      .andExpect(
+        content()
+          .string(containsString("Llevás $32.000 en gastos hormiga, el 6% de tu presupuesto"))
+      )
+      .andExpect(
+        content().string(containsString("/categorias/" + delivery.getId() + "/no-es-hormiga"))
+      );
   }
 
   private Gasto gasto(Double importe, LocalDate fecha, Categoria categoria, Usuario usuario) {

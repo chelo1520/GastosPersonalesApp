@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+  <!--
+    Botón que cambia una categoría entre esencial y prescindible. El gasto no guarda nada propio:
+    hereda el tipo de su categoría, así que el cambio vale para todos los gastos de esa categoría.
+      categoriaId, nombre: la categoría
+      esencial: true muestra "Es hormiga" (pasa a prescindible), false muestra "No es hormiga"
+      volver: pantalla a la que se vuelve ("/home" o "/mostrar-gastos")
+  -->
+  <form th:fragment="boton(categoriaId, nombre, esencial, volver)" method="post" class="app-hormiga-form"
+        th:action="${esencial}
+          ? @{/categorias/{id}/es-hormiga(id=${categoriaId}, volver=${volver})}
+          : @{/categorias/{id}/no-es-hormiga(id=${categoriaId}, volver=${volver})}">
+    <button type="submit" class="btn btn-sm btn-outline-secondary app-hormiga-boton"
+            th:text="${esencial} ? 'Es hormiga' : 'No es hormiga'"
+            th:title="${esencial}
+              ? 'Marca ' + ${nombre ?: 'esta categoría'} + ' como prescindible: sus gastos chicos y frecuentes (4 o más en el mes) van a contarse como gastos hormiga'
+              : 'Marca ' + ${nombre ?: 'esta categoría'} + ' como esencial: sus gastos dejan de contarse como gastos hormiga'">No es hormiga</button>
+  </form>
+
+</body>
+
+</html>

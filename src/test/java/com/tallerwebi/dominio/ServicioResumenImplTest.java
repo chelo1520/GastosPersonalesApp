@@ -124,24 +124,42 @@ public class ServicioResumenImplTest {
   }
 
   @Test
-  void debeIncluirLosGastosHormigaProyectadosAFinDeMesCuandoElMesEsElActual() {
-    // Hoy: 15 de septiembre. 4 cafés de 2.500 = 10.000, proyectados a 30 días = 20.000
-    Clock hoy = Clock.fixed(Instant.parse("2026-09-15T12:00:00Z"), ZoneId.of("UTC"));
-    servicioResumen = new ServicioResumenImpl(repositorioGastoMock, hoy);
-    Categoria cafe = categoria("Café y snacks");
-    cafe.setEsencial(false);
-    List<Gasto> gastos = new ArrayList<>();
-    for (int i = 0; i < 4; i++) {
-      Gasto gasto = gasto(2500.0, "Café");
-      gasto.setCategoria(cafe);
-      gastos.add(gasto);
-    }
-    when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE)).thenReturn(gastos);
+  void debeIncluirLosGastosHormigaYLaAlertaDeAcumuladoCuandoElMesEsElActual() {
+    // Hoy: 15 de septiembre. 4 deliveries de 8.000 = 32.000, el 5,8 % del presupuesto
+    servicioResumen = new ServicioResumenImpl(repositorioGastoMock, reloj("2026-09-15"));
+    when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE)).thenReturn(deliveries());
 
     ResumenMensual resumen = servicioResumen.obtenerResumen(usuario, SEPTIEMBRE);
 
-    assertEquals(10000.0, resumen.getHormiga().getTotal());
-    assertEquals(20000.0, resumen.getHormiga().getProyeccion());
+    assertEquals(32000.0, resumen.getHormiga().getTotal());
+    assertEquals(1, resumen.getAlertas().size());
+  }
+
+  @Test
+  void noDebeDarAlertasCuandoElMesYaCerro() {
+    servicioResumen = new ServicioResumenImpl(repositorioGastoMock, reloj("2026-10-15"));
+    when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE)).thenReturn(deliveries());
+
+    ResumenMensual resumen = servicioResumen.obtenerResumen(usuario, SEPTIEMBRE);
+
+    assertEquals(32000.0, resumen.getHormiga().getTotal());
+    assertTrue(resumen.getAlertas().isEmpty());
+  }
+
+  private Clock reloj(String fecha) {
+    return Clock.fixed(Instant.parse(fecha + "T12:00:00Z"), ZoneId.of("UTC"));
+  }
+
+  private List<Gasto> deliveries() {
+    Categoria delivery = categoria("Delivery");
+    delivery.setEsencial(false);
+    List<Gasto> gastos = new ArrayList<>();
+    for (int i = 0; i < 4; i++) {
+      Gasto gasto = gasto(8000.0, "Delivery");
+      gasto.setCategoria(delivery);
+      gastos.add(gasto);
+    }
+    return gastos;
   }
 
   private Gasto gasto(Double importe, String descripcion) {

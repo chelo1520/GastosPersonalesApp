@@ -1,6 +1,7 @@
 package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.categoria.CategoriaRepositorio;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class ControladorGasto {
@@ -68,7 +70,11 @@ public class ControladorGasto {
   }
 
   @RequestMapping(path = "/registrar-gasto", method = RequestMethod.POST)
-  public ModelAndView registrarGasto(Gasto gasto, HttpServletRequest request) {
+  public ModelAndView registrarGasto(
+    Gasto gasto,
+    HttpServletRequest request,
+    RedirectAttributes redirectAttributes
+  ) {
     Usuario usuario = SesionUsuario.obtener(request);
     if (usuario == null) {
       return new ModelAndView(REDIRECT_LOGIN);
@@ -82,6 +88,12 @@ public class ControladorGasto {
       gastoServicio.registrarGasto(gasto, usuario);
     } catch (GastoInvalidoExeption e) {
       return vistaRegistrarGasto(gasto, e.getMessage());
+    }
+
+    // Se muestra una sola vez, en la lista, después de guardar
+    Alerta alerta = gastoServicio.alertaDeRepeticion(gasto, usuario);
+    if (alerta != null) {
+      redirectAttributes.addFlashAttribute("alertaRepeticion", alerta);
     }
 
     return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);

@@ -31,4 +31,14 @@ public class CategoriaTest {
 
     assertFalse(categoria.isEsencial());
   }
+
+  @Test
+  void debeSerSiempreEsencialCuandoEsFijaAunqueSeLaMarqueComoNoEsencial() {
+    Categoria salud = new Categoria();
+    salud.setFija(true);
+    salud.setEsencial(false);
+
+    assertTrue(salud.isFija());
+    assertTrue(salud.isEsencial());
+  }
 }

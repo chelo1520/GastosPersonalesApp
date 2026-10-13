@@ -51,8 +51,8 @@ public class ControladorResumenTest {
     List<ResumenCategoria> categorias = List.of(
       new ResumenCategoria("Sin categoría", 45000.0, 100.0)
     );
-    ResumenHormiga hormiga = new ResumenHormiga(0.0, 0.0, 0.0, 0.0, List.of());
-    resumen = new ResumenMensual(45000.0, 0.0, -45000.0, 100.0, categorias, hormiga);
+    ResumenHormiga hormiga = new ResumenHormiga(0.0, 0.0, List.of());
+    resumen = new ResumenMensual(45000.0, 0.0, -45000.0, 100.0, categorias, hormiga, List.of());
   }
 
   @Test
@@ -91,6 +91,7 @@ public class ControladorResumenTest {
     assertEquals(100.0, resultado.getModel().get("porcentajeUsado"));
     assertEquals(resumen.getCategorias(), resultado.getModel().get("categorias"));
     assertEquals(resumen.getHormiga(), resultado.getModel().get("hormiga"));
+    assertEquals(resumen.getAlertas(), resultado.getModel().get("alertas"));
   }
 
   @Test

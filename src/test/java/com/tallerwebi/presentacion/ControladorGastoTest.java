@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.categoria.CategoriaRepositorio;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
@@ -20,6 +21,8 @@ import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 public class ControladorGastoTest {
 
@@ -32,6 +35,7 @@ public class ControladorGastoTest {
   private Categoria categoria;
   private HttpServletRequest request;
   private HttpSession session;
+  private RedirectAttributes redirectAttributes;
 
   @BeforeEach
   public void init() {
@@ -48,6 +52,7 @@ public class ControladorGastoTest {
     usuario = mock(Usuario.class);
     request = mock(HttpServletRequest.class);
     session = mock(HttpSession.class);
+    redirectAttributes = new RedirectAttributesModelMap();
     when(request.getSession(false)).thenReturn(session);
     when(session.getAttribute("USUARIO")).thenReturn(usuario);
 
@@ -74,11 +79,34 @@ public class ControladorGastoTest {
 
   @Test
   public void debeRegistrarElGastoYRedirigirAMisGastosCuandoElGastoEsValido() {
-    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request);
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request, redirectAttributes);
 
     assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
 
     verify(gastoServicio).registrarGasto(gasto, usuario);
+  }
+
+  @Test
+  public void debeMandarLaAlertaDeRepeticionALaListaCuandoElGastoRegistradoLaDispara() {
+    Alerta alerta = new Alerta(
+      Alerta.Tipo.REPETICION,
+      Alerta.Nivel.AMARILLA,
+      "Es tu 4.º gasto en Café y snacks esta semana ($10.000)",
+      1L
+    );
+    when(gastoServicio.alertaDeRepeticion(gasto, usuario)).thenReturn(alerta);
+
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request, redirectAttributes);
+
+    assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
+    assertEquals(alerta, redirectAttributes.getFlashAttributes().get("alertaRepeticion"));
+  }
+
+  @Test
+  public void noDebeMandarAlertaCuandoElGastoRegistradoNoLaDispara() {
+    controladorGasto.registrarGasto(gasto, request, redirectAttributes);
+
+    assertTrue(redirectAttributes.getFlashAttributes().isEmpty());
   }
 
   @Test
@@ -98,7 +126,7 @@ public class ControladorGastoTest {
     categoriaInexistente.setId(99L);
     gasto.setCategoria(categoriaInexistente);
 
-    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request);
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request, redirectAttributes);
 
     assertEquals("registrar-gasto", resultado.getViewName());
     assertEquals("La categoría seleccionada no existe", resultado.getModel().get("error"));
@@ -109,7 +137,7 @@ public class ControladorGastoTest {
   public void debePedirUnaCategoriaCuandoNoSeSeleccionaNinguna() {
     gasto.setCategoria(null);
 
-    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request);
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request, redirectAttributes);
 
     assertEquals("registrar-gasto", resultado.getViewName());
     assertEquals("Seleccioná una categoría", resultado.getModel().get("error"));
@@ -133,7 +161,7 @@ public class ControladorGastoTest {
       .when(gastoServicio)
       .registrarGasto(gasto, usuario);
 
-    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request);
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request, redirectAttributes);
 
     assertEquals("registrar-gasto", resultado.getViewName());
     assertEquals("El importe debe ser mayor a cero", resultado.getModel().get("error"));
@@ -226,7 +254,10 @@ public class ControladorGastoTest {
       "redirect:/login",
       controladorGasto.mostrarFormularioRegistrarGasto(request).getViewName()
     );
-    assertEquals("redirect:/login", controladorGasto.registrarGasto(gasto, request).getViewName());
+    assertEquals(
+      "redirect:/login",
+      controladorGasto.registrarGasto(gasto, request, redirectAttributes).getViewName()
+    );
     assertEquals(
       "redirect:/login",
       controladorGasto
@@ -246,7 +277,10 @@ public class ControladorGastoTest {
       "redirect:/login",
       controladorGasto.mostrarFormularioRegistrarGasto(request).getViewName()
     );
-    assertEquals("redirect:/login", controladorGasto.registrarGasto(gasto, request).getViewName());
+    assertEquals(
+      "redirect:/login",
+      controladorGasto.registrarGasto(gasto, request, redirectAttributes).getViewName()
+    );
     assertEquals(
       "redirect:/login",
       controladorGasto
