@@ -14,7 +14,7 @@
     Modelo esperado:
       mesActual (String, ej. "Octubre 2026"), mesAnterior / mesSiguiente (String, ej. "2026-09")
       gastado, presupuesto, disponible (números), porcentajeUsado (número, ej. 80)
-      categorias: lista con nombre, gastado, porcentajeTotal, disponible, porcentajeUsado
+      categorias: lista de ResumenCategoria (nombre, gastado, porcentajeTotal, presupuesto, disponible, porcentajeUsado, estado)
   -->
   <main class="app-main app-resumen-main">
 
@@ -88,6 +88,8 @@
                 <th scope="col">Categoría</th>
                 <th scope="col" class="text-end">Gastado</th>
                 <th scope="col" class="text-end">% del total</th>
+                <th scope="col" class="text-end">Disponible</th>
+                <th scope="col">Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -105,6 +107,18 @@
                     th:text="${#numbers.formatDecimal(cat.gastado, 1, 'POINT', 0, 'COMMA')}">118.400</td>
                 <td class="app-resumen-num text-end"
                     th:text="${#numbers.formatDecimal(cat.porcentajeTotal, 1, 'POINT', 1, 'COMMA')} + ' %'">37,0 %</td>
+                <td class="text-end">
+                  <span class="app-resumen-num" th:if="${cat.tienePresupuesto}"
+                        th:classappend="${cat.disponible < 0} ? 'is-neg'"
+                        th:text="${#numbers.formatDecimal(cat.disponible, 1, 'POINT', 0, 'COMMA')}">11.600</span>
+                  <span class="app-resumen-sin-presupuesto" th:unless="${cat.tienePresupuesto}">Sin presupuesto</span>
+                </td>
+                <td>
+                  <span class="app-estado" th:if="${cat.tienePresupuesto}"
+                        th:classappend="'is-' + ${cat.estado.estilo}"
+                        th:text="${#numbers.formatInteger(cat.porcentajeUsado, 1)} + ' %'">91 %</span>
+                  <span th:unless="${cat.tienePresupuesto}">—</span>
+                </td>
               </tr>
             </tbody>
           </table>

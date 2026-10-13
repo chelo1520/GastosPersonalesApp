@@ -10,26 +10,30 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.gasto.Gasto;
+import com.tallerwebi.dominio.presupuesto.Presupuesto;
 import com.tallerwebi.integracion.config.HibernateTestConfig;
 import com.tallerwebi.integracion.config.SpringWebTestConfig;
 import java.time.LocalDate;
-import org.hibernate.Session;
+import java.time.YearMonth;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 @ExtendWith(SpringExtension.class)
 @WebAppConfiguration
 @ContextConfiguration(classes = { SpringWebTestConfig.class, HibernateTestConfig.class })
+@Transactional
+@Rollback
 public class ResumenVistaTest {
 
   @Autowired
@@ -59,16 +63,9 @@ public class ResumenVistaTest {
     alquiler.setCategoria(vivienda);
     farmacia.setCategoria(salud);
 
-    try (Session session = sessionFactory.openSession()) {
-      Transaction transaction = session.beginTransaction();
-      session.persist(usuario);
-      session.persist(vivienda);
-      session.persist(salud);
-      session.persist(alquiler);
-      session.persist(farmacia);
-      session.persist(deOctubre);
-      transaction.commit();
-    }
+    persistir(usuario, vivienda, salud, alquiler, farmacia, deOctubre);
+    // Solo Vivienda tiene presupuesto: 250.000 de 260.000 → 96 % usado, amarillo
+    persistir(new Presupuesto(usuario, vivienda, YearMonth.of(2026, 9), 260000.0));
 
     mockMvc
       .perform(get("/home").param("mes", "2026-09").sessionAttr("USUARIO", usuario))
@@ -76,33 +73,23 @@ public class ResumenVistaTest {
       .andExpect(view().name("resumen"))
       .andExpect(content().string(containsString("Septiembre 2026")))
       .andExpect(content().string(containsString("$ 259.800")))
-      // Presupuesto fijo de 550.000: quedan 290.200 disponibles
-      .andExpect(content().string(containsString("$ 550.000")))
-      .andExpect(content().string(containsString("$ 290.200")))
+      // Presupuesto del mes = suma de los presupuestos por categoría: quedan 200 disponibles
+      .andExpect(content().string(containsString("$ 260.000")))
+      .andExpect(content().string(containsString("$ 200")))
       .andExpect(content().string(containsString("Vivienda")))
       .andExpect(content().string(containsString("Salud")))
       .andExpect(content().string(containsString("96,2 %")))
       .andExpect(content().string(containsString("3,8 %")))
+      .andExpect(content().string(containsString("app-estado is-warn")))
+      .andExpect(content().string(containsString("Sin presupuesto")))
       .andExpect(content().string(containsString("href=\"/home?mes=2026-08\"")))
       .andExpect(content().string(containsString("href=\"/home?mes=2026-10\"")));
-  }
-
-  private Categoria categoria(String nombre) {
-    Categoria categoria = new Categoria();
-    categoria.setNombre(nombre);
-    categoria.setDescripcion("Categoría de prueba");
-    return categoria;
   }
 
   @Test
   public void debeMostrarElAvisoDeMesSinGastosCuandoElMesNoTieneGastos() throws Exception {
     Usuario usuario = new Usuario();
-
-    try (Session session = sessionFactory.openSession()) {
-      Transaction transaction = session.beginTransaction();
-      session.persist(usuario);
-      transaction.commit();
-    }
+    persistir(usuario);
 
     mockMvc
       .perform(get("/home").param("mes", "2026-01").sessionAttr("USUARIO", usuario))
@@ -117,5 +104,18 @@ public class ResumenVistaTest {
       .perform(get("/home"))
       .andExpect(status().is3xxRedirection())
       .andExpect(redirectedUrl("/login"));
+  }
+
+  private void persistir(Object... entidades) {
+    for (Object entidad : entidades) {
+      sessionFactory.getCurrentSession().persist(entidad);
+    }
+  }
+
+  private Categoria categoria(String nombre) {
+    Categoria categoria = new Categoria();
+    categoria.setNombre(nombre);
+    categoria.setDescripcion("Categoría de prueba");
+    return categoria;
   }
 }

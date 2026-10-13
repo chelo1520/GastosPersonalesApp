@@ -54,4 +54,13 @@ public class ServicioPresupuestoImpl implements ServicioPresupuesto {
   public List<Presupuesto> obtenerDelMes(Usuario usuario, YearMonth mes) {
     return repositorioPresupuesto.obtenerDelMes(usuario, mes);
   }
+
+  @Override
+  public Double totalDelMes(Usuario usuario, YearMonth mes) {
+    double total = 0.0;
+    for (Presupuesto presupuesto : obtenerDelMes(usuario, mes)) {
+      total += presupuesto.getMonto();
+    }
+    return total;
+  }
 }

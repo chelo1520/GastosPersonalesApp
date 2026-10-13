@@ -7,7 +7,7 @@ import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
-import com.tallerwebi.dominio.presupuesto.PresupuestoMensual;
+import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -27,11 +27,17 @@ public class ControladorGasto {
   private static final String REDIRECT_MOSTRAR_GASTOS = "redirect:/mostrar-gastos";
   private GastoServicio gastoServicio;
   private CategoriaRepositorio categoriaRepositorio;
+  private ServicioPresupuesto servicioPresupuesto;
 
   @Autowired
-  public ControladorGasto(GastoServicio gastoServicio, CategoriaRepositorio categoriaRepositorio) {
+  public ControladorGasto(
+    GastoServicio gastoServicio,
+    CategoriaRepositorio categoriaRepositorio,
+    ServicioPresupuesto servicioPresupuesto
+  ) {
     this.gastoServicio = gastoServicio;
     this.categoriaRepositorio = categoriaRepositorio;
+    this.servicioPresupuesto = servicioPresupuesto;
   }
 
   @RequestMapping(path = "/mostrar-gastos", method = RequestMethod.GET)
@@ -231,7 +237,12 @@ public class ControladorGasto {
     model.put("gastos", gastos);
     model.put("mesBase", NombreDeMes.de(mesBase));
     model.put("mesSimulado", NombreDeMes.de(mesSimulado));
-    model.put("presupuesto", PresupuestoMensual.MONTO);
+    // Presupuesto del mes simulado; si todavía no se definió, se toma el del mes actual
+    Double presupuesto = servicioPresupuesto.totalDelMes(usuario, mesSimulado);
+    if (presupuesto <= 0) {
+      presupuesto = servicioPresupuesto.totalDelMes(usuario, mesActual);
+    }
+    model.put("presupuesto", presupuesto);
 
     return new ModelAndView("simulacion", model);
   }

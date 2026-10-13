@@ -20,6 +20,32 @@
   color: var(--res-muted);
 }
 
+/* Columna "Uso": barra + chip con el porcentaje */
+.app-presupuestos-uso-col {
+  width: 30%;
+}
+
+.app-presupuestos-uso {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-presupuestos-uso .app-resumen-barra {
+  flex: 1 1 auto;
+  margin-top: 0;
+}
+
+@media (max-width: 575.98px) {
+  /* Se ocultan Gastado y Disponible para que la tabla entre sin scroll horizontal */
+  #tabla-presupuestos th:nth-child(3),
+  #tabla-presupuestos td:nth-child(3),
+  #tabla-presupuestos th:nth-child(4),
+  #tabla-presupuestos td:nth-child(4) {
+    display: none;
+  }
+}
+
 /* Formulario en una fila en desktop, apilado en mobile */
 .app-presupuestos-form-row {
   display: grid;
