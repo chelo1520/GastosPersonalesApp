@@ -3,11 +3,16 @@ package com.tallerwebi.presentacion;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.asistente.GastoReal;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
+import com.tallerwebi.dominio.asistente.Veredicto;
 import com.tallerwebi.dominio.consejo.Consejo;
 import com.tallerwebi.dominio.consejo.ServicioConsejos;
 import com.tallerwebi.dominio.excepcion.ConsejoNoEncontrado;
 import com.tallerwebi.dominio.excepcion.IndicadoresNoDisponibles;
+import com.tallerwebi.dominio.presupuesto.Presupuesto;
+import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.YearMonth;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,14 +42,17 @@ public class ControladorAsistente {
 
   private final ServicioGastoReal servicioGastoReal;
   private final ServicioConsejos servicioConsejos;
+  private final ServicioPresupuesto servicioPresupuesto;
 
   @Autowired
   public ControladorAsistente(
     ServicioGastoReal servicioGastoReal,
-    ServicioConsejos servicioConsejos
+    ServicioConsejos servicioConsejos,
+    ServicioPresupuesto servicioPresupuesto
   ) {
     this.servicioGastoReal = servicioGastoReal;
     this.servicioConsejos = servicioConsejos;
+    this.servicioPresupuesto = servicioPresupuesto;
   }
 
   // periodo: cantidad de meses (3, 6 o 12); cualquier otro valor cae en 6
@@ -74,17 +82,42 @@ public class ControladorAsistente {
       if (gastoReal.getUltimoMesCerrado() != null) {
         model.put("ultimoMesCerrado", NombreDeMes.de(gastoReal.getUltimoMesCerrado()));
       }
+      if (gastoReal.getVeredicto() != null) {
+        model.put("periodoTexto", textoDelPeriodo(gastoReal.getVeredicto()));
+      }
       // Los consejos (y el veredicto) salen del mismo análisis que muestra la pantalla
       List<Consejo> consejos = servicioConsejos.obtenerPendientes(usuario, gastoReal);
       model.put("consejos", consejos);
       // La síntesis de la IA tarda: la vista la pide en segundo plano a /asistente/sintesis
       model.put("sintesisPendiente", servicioConsejos.faltaLaSintesis(consejos));
+      // La propuesta muestra el monto vigente tachado: es dato vivo, no del consejo
+      YearMonth mesActual = YearMonth.now();
+      model.put("montosActuales", montosDelMes(usuario, mesActual));
+      model.put("mesActualNombre", NombreDeMes.de(mesActual));
     } catch (IndicadoresNoDisponibles e) {
       // Sin IPC ni dólar no hay análisis posible: la vista avisa y no muestra el resto
       model.put("indicadoresNoDisponibles", true);
     }
 
     return new ModelAndView("asistente", model);
+  }
+
+  // "Mayo a Septiembre 2026": el primer y el último mes cerrado que compara el veredicto
+  static String textoDelPeriodo(Veredicto veredicto) {
+    String desde = NombreDeMes.de(veredicto.getDesde());
+    String hasta = NombreDeMes.de(veredicto.getHasta());
+    if (veredicto.getDesde().getYear() == veredicto.getHasta().getYear()) {
+      desde = desde.substring(0, desde.length() - 5);
+    }
+    return desde + " a " + hasta;
+  }
+
+  private Map<String, Double> montosDelMes(Usuario usuario, YearMonth mes) {
+    Map<String, Double> montos = new HashMap<>();
+    for (Presupuesto presupuesto : servicioPresupuesto.obtenerDelMes(usuario, mes)) {
+      montos.put(presupuesto.getCategoria().getNombre(), presupuesto.getMonto());
+    }
+    return montos;
   }
 
   // La síntesis del período como texto plano; 204 si no hay (sin clave, sin veredicto, sin red)

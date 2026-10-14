@@ -3,6 +3,7 @@ package com.tallerwebi.presentacion;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -16,12 +17,17 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.asistente.GastoReal;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
 import com.tallerwebi.dominio.asistente.Veredicto;
+import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.consejo.ServicioConsejos;
 import com.tallerwebi.dominio.excepcion.ConsejoNoEncontrado;
 import com.tallerwebi.dominio.excepcion.IndicadoresNoDisponibles;
+import com.tallerwebi.dominio.presupuesto.Presupuesto;
+import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -32,6 +38,7 @@ public class ControladorAsistenteTest {
 
   private ServicioGastoReal servicioMock;
   private ServicioConsejos servicioConsejosMock;
+  private ServicioPresupuesto servicioPresupuestoMock;
   private HttpServletRequest requestMock;
   private HttpSession sessionMock;
   private Usuario usuario;
@@ -41,13 +48,16 @@ public class ControladorAsistenteTest {
   public void init() {
     servicioMock = mock(ServicioGastoReal.class);
     servicioConsejosMock = mock(ServicioConsejos.class);
+    servicioPresupuestoMock = mock(ServicioPresupuesto.class);
+    when(servicioPresupuestoMock.obtenerDelMes(any(), any())).thenReturn(List.of());
     requestMock = mock(HttpServletRequest.class);
     sessionMock = mock(HttpSession.class);
     usuario = new Usuario();
     when(requestMock.getSession(false)).thenReturn(sessionMock);
     when(sessionMock.getAttribute("USUARIO")).thenReturn(usuario);
     when(servicioMock.calcular(any(), anyInt())).thenReturn(sinDatos());
-    controlador = new ControladorAsistente(servicioMock, servicioConsejosMock);
+    controlador =
+      new ControladorAsistente(servicioMock, servicioConsejosMock, servicioPresupuestoMock);
   }
 
   @Test
@@ -193,6 +203,37 @@ public class ControladorAsistenteTest {
       equalTo(HttpStatus.UNAUTHORIZED)
     );
     verify(servicioConsejosMock, never()).sintetizar(any(), any());
+  }
+
+  @Test
+  public void debePonerElPeriodoEnPalabrasYLosMontosVigentesParaLaPropuesta() {
+    Veredicto veredicto = new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 9.4, 7.6);
+    when(servicioMock.calcular(any(), anyInt()))
+      .thenReturn(
+        new GastoReal(List.of(), veredicto, YearMonth.of(2026, 9), List.of(), null, true)
+      );
+    Categoria alimentacion = new Categoria();
+    alimentacion.setNombre("Alimentación");
+    when(servicioPresupuestoMock.obtenerDelMes(any(), any()))
+      .thenReturn(List.of(new Presupuesto(usuario, alimentacion, YearMonth.now(), 180000.0)));
+
+    ModelAndView mav = controlador.mostrarAsistente(6, null, requestMock);
+
+    assertThat(mav.getModel().get("periodoTexto"), equalTo("Mayo a Septiembre 2026"));
+    @SuppressWarnings("unchecked")
+    Map<String, Double> montos = (Map<String, Double>) mav.getModel().get("montosActuales");
+    assertThat(montos.get("Alimentación"), equalTo(180000.0));
+    assertThat(mav.getModel().get("mesActualNombre"), notNullValue());
+  }
+
+  @Test
+  public void debeEscribirElPeriodoConElAnioSoloUnaVezSiEsElMismo() {
+    assertThat(
+      ControladorAsistente.textoDelPeriodo(
+        new Veredicto(YearMonth.of(2025, 11), YearMonth.of(2026, 9), 1.0, 1.0)
+      ),
+      equalTo("Noviembre 2025 a Septiembre 2026")
+    );
   }
 
   private GastoReal sinDatos() {
