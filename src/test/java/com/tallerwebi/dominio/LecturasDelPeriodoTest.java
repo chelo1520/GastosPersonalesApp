@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 
 import com.tallerwebi.dominio.asistente.CategoriaGastoReal;
 import com.tallerwebi.dominio.asistente.GastoReal;
@@ -56,6 +57,12 @@ public class LecturasDelPeriodoTest {
     assertThat(resultado.get(0).getTexto(), containsString("gastás 18,2 % más en serio."));
     // Así el veredicto de 6 meses y el de 12 no se pisan la síntesis
     assertThat(resultado.get(0).getCategoria(), equalTo("6 meses"));
+    // El título corto es lo que muestra la tira
+    assertThat(
+      resultado.get(0).getTitulo(),
+      equalTo("Gastás 18,2 % más en serio que en Mayo 2026")
+    );
+    assertThat(resultado.get(0).getAncla(), nullValue());
   }
 
   @Test
@@ -86,6 +93,9 @@ public class LecturasDelPeriodoTest {
       )
     );
     assertThat(balance.getTexto(), containsString("Es el 3.º mes seguido bajando en serio."));
+    assertThat(balance.getTitulo(), equalTo("Septiembre 2026 costó 2,1 % menos en serio"));
+    assertThat(balance.getMesSenialado(), equalTo("2026-09"));
+    assertThat(balance.getCategoriaSenialada(), nullValue());
   }
 
   @Test
@@ -142,6 +152,9 @@ public class LecturasDelPeriodoTest {
       )
     );
     assertThat(baja.getTexto(), containsString("($ 70.200 contra $ 89.000)"));
+    assertThat(baja.getTitulo(), equalTo("Servicios bajó 22,4 % real"));
+    assertThat(baja.getCategoriaSenialada(), equalTo("Servicios"));
+    assertThat(baja.getMesSenialado(), nullValue());
   }
 
   @Test
@@ -187,6 +200,8 @@ public class LecturasDelPeriodoTest {
         "En 3 de 4 categorías gastaste en Septiembre 2026 lo mismo en serio que en Agosto 2026"
       )
     );
+    assertThat(habitos.getTitulo(), equalTo("3 de 4 categorías: solo subió el precio"));
+    assertThat(habitos.getAncla(), nullValue());
   }
 
   @Test
@@ -228,20 +243,27 @@ public class LecturasDelPeriodoTest {
 
     Consejo lectura = soloDeTipo(resultado, TipoConsejo.HORMIGA_ALTA);
     String texto = lectura.getTexto();
+    // Una idea y tres números: total, parte del margen y pico. El % del presupuesto queda para la severidad
     assertThat(
       texto,
-      containsString(
-        "Entre Abril 2026 y Septiembre 2026 se te fueron $ 358.800 en gastos hormiga, el 7,1 % del presupuesto"
+      equalTo(
+        "Entre Abril 2026 y Septiembre 2026 se te fueron $ 358.800 en gastos hormiga: el 75 % de lo que te sobró, con el pico en Julio 2026 ($ 70.200). Con la mitad pagabas casi un mes de Alimentación."
       )
     );
-    assertThat(
-      texto,
-      containsString("y el 75 % de lo que te sobró; el pico fue Julio 2026 ($ 70.200).")
-    );
-    // Vivienda es la más grande pero no cuenta: la equivalencia va contra Alimentación
-    assertThat(texto, containsString("Con la mitad pagabas 0,9 meses de Alimentación."));
+    // Vivienda es la más grande pero no cuenta: la equivalencia va contra Alimentación (0,9 meses → "casi un mes")
+    assertThat(lectura.getTitulo(), equalTo("Gastos hormiga: $ 358.800 en el período"));
+    assertThat(lectura.getMesSenialado(), equalTo("2026-07"));
     // El mes en curso (12.000 de hormiga) no entra: es de Resumen
     assertThat(texto, not(containsString("12.000")));
+  }
+
+  @Test
+  void debeDecirLaEquivalenciaEnPalabrasYNoEnDecimales() {
+    assertThat(LecturasDelPeriodo.enMeses(0.3), equalTo(""));
+    assertThat(LecturasDelPeriodo.enMeses(0.6), equalTo("más de medio mes"));
+    assertThat(LecturasDelPeriodo.enMeses(0.8), equalTo("casi un mes"));
+    assertThat(LecturasDelPeriodo.enMeses(1.2), equalTo("un mes"));
+    assertThat(LecturasDelPeriodo.enMeses(2.4), equalTo("2 meses"));
   }
 
   @Test
@@ -263,6 +285,7 @@ public class LecturasDelPeriodoTest {
       containsString("Tus gastos hormiga están bajo control: $ 20.000")
     );
     assertThat(lectura.getTexto(), containsString("el 1,2 % del presupuesto."));
+    assertThat(lectura.getTitulo(), equalTo("Gastos hormiga: $ 20.000 en el período"));
   }
 
   @Test
@@ -285,6 +308,8 @@ public class LecturasDelPeriodoTest {
         "No tuviste gastos hormiga entre Agosto 2026 y Septiembre 2026: lo chico y prescindible está bajo control."
       )
     );
+    assertThat(lectura.getTitulo(), equalTo("Sin gastos hormiga en el período"));
+    assertThat(lectura.getAncla(), nullValue());
   }
 
   @Test

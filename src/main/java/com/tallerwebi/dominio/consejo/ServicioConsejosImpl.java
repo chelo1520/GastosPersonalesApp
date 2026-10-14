@@ -175,7 +175,8 @@ public class ServicioConsejosImpl implements ServicioConsejos {
         repositorioConsejo.guardar(calculado);
         pendientes.add(calculado);
       } else if (guardado.getEstado() == EstadoConsejo.PENDIENTE) {
-        guardado.setTexto(calculado.getTexto());
+        guardado.setHechos(calculado.getTitulo(), calculado.getTexto());
+        guardado.setAncla(calculado.getAncla());
         guardado.setMontoSugerido(calculado.getMontoSugerido());
         if (!guardado.isVeredicto()) {
           // Solo el veredicto lleva síntesis; una redacción vieja por tarjeta ya no se muestra
@@ -273,6 +274,8 @@ public class ServicioConsejosImpl implements ServicioConsejos {
           texto,
           sugerido
         )
+          .conTitulo("Presupuesto de " + nombre)
+          .ancladoALaCategoria(nombre)
       );
     }
     return consejos;
@@ -334,6 +337,8 @@ public class ServicioConsejosImpl implements ServicioConsejos {
           texto,
           null
         )
+          .conTitulo(cat.getNombre() + " sube más que la inflación")
+          .ancladoALaCategoria(cat.getNombre())
       );
     }
     return consejos;

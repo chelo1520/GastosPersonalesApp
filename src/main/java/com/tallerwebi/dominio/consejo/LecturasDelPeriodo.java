@@ -32,8 +32,12 @@ public class LecturasDelPeriodo {
   static final int MINIMO_CATEGORIAS_COMPARABLES = 3;
   private static final double DIFERENCIA_MINIMA = 0.5;
   private static final double MEDIO_MES = 0.5;
+  private static final double CASI_UN_MES = 0.75;
+  private static final double UN_MES_LARGO = 1.5;
   private static final int MINIMO_MESES_CERRADOS = 2;
   private static final String VIVIENDA = "Vivienda";
+  private static final String MAS = "más";
+  private static final String MENOS = "menos";
   private static final Locale ARGENTINA = Locale.of("es", "AR");
 
   public List<Consejo> calcular(Usuario usuario, YearMonth mesActual, GastoReal gastoReal) {
@@ -84,6 +88,14 @@ public class LecturasDelPeriodo {
     // El veredicto se guarda por período (3, 6 o 12 meses): cada uno tiene su propia síntesis.
     // Va en "categoria" porque es lo que identifica al consejo junto con el tipo
     String periodo = gastoReal.getMeses().size() + " meses";
+    String titulo = String.format(
+      ARGENTINA,
+      "Gastás %s en serio que en %s",
+      Math.abs(real) < DIFERENCIA_MINIMA
+        ? "lo mismo"
+        : String.format(ARGENTINA, "%.1f %% %s", Math.abs(real), real > 0 ? MAS : MENOS),
+      nombreDeMes(veredicto.getDesde())
+    );
     return new Consejo(
       usuario,
       mesActual,
@@ -91,7 +103,8 @@ public class LecturasDelPeriodo {
       periodo,
       texto,
       null
-    );
+    )
+      .conTitulo(titulo);
   }
 
   private static TipoConsejo tipoDelVeredicto(EstadoGastoReal estado) {
@@ -123,7 +136,7 @@ public class LecturasDelPeriodo {
         nombreDeMes(ultimo.getMes()),
         ultimo.getGastadoEnPesosDeHoy(),
         Math.abs(real),
-        mejor ? "menos" : "más",
+        mejor ? MENOS : MAS,
         nombreDeMes(anterior.getMes())
       )
     );
@@ -139,7 +152,16 @@ public class LecturasDelPeriodo {
       );
     }
     TipoConsejo tipo = mejor ? TipoConsejo.BALANCE_DEL_MES_MEJOR : TipoConsejo.BALANCE_DEL_MES_PEOR;
-    return new Consejo(usuario, mesActual, tipo, null, texto.toString(), null);
+    String titulo = String.format(
+      ARGENTINA,
+      "%s costó %.1f %% %s en serio",
+      nombreDeMes(ultimo.getMes()),
+      Math.abs(real),
+      mejor ? MENOS : MAS
+    );
+    return new Consejo(usuario, mesActual, tipo, null, texto.toString(), null)
+      .conTitulo(titulo)
+      .ancladoAlMes(ultimo.getMes());
   }
 
   // Cuántos meses seguidos, contando el último, se movieron en la misma dirección que el último
@@ -193,13 +215,22 @@ public class LecturasDelPeriodo {
       baja ? "bajó" : "subió",
       nombreDeMes(ultimo),
       Math.abs(elegida.getVariacionReal()),
-      baja ? "menos" : "más",
+      baja ? MENOS : MAS,
       nombreDeMes(ultimo.minusMonths(1)),
       elegida.getGastado(),
       elegida.getGastadoAnterior()
     );
     TipoConsejo tipo = baja ? TipoConsejo.MAYOR_BAJA_REAL : TipoConsejo.MAYOR_SUBA_REAL;
-    return new Consejo(usuario, mesActual, tipo, elegida.getNombre(), texto, null);
+    String titulo = String.format(
+      ARGENTINA,
+      "%s %s %.1f %% real",
+      elegida.getNombre(),
+      baja ? "bajó" : "subió",
+      Math.abs(elegida.getVariacionReal())
+    );
+    return new Consejo(usuario, mesActual, tipo, elegida.getNombre(), texto, null)
+      .conTitulo(titulo)
+      .ancladoALaCategoria(elegida.getNombre());
   }
 
   // Entre las categorías con ese diagnóstico que pesan en el mes, la de mayor variación real
@@ -250,7 +281,14 @@ public class LecturasDelPeriodo {
       nombreDeMes(ultimo),
       nombreDeMes(ultimo.minusMonths(1))
     );
-    return new Consejo(usuario, mesActual, TipoConsejo.HABITOS_CON_LA_INFLACION, null, texto, null);
+    String titulo = String.format(
+      ARGENTINA,
+      "%d de %d categorías: solo subió el precio",
+      conLaInflacion,
+      comparables
+    );
+    return new Consejo(usuario, mesActual, TipoConsejo.HABITOS_CON_LA_INFLACION, null, texto, null)
+      .conTitulo(titulo);
   }
 
   // Los gastos hormiga de los meses cerrados: cuánto fueron, qué parte del margen se llevaron y a qué
@@ -268,7 +306,8 @@ public class LecturasDelPeriodo {
         "No tuviste gastos hormiga entre %s: lo chico y prescindible está bajo control.",
         periodo
       );
-      return new Consejo(usuario, mesActual, TipoConsejo.HORMIGA_CONTROLADA, null, texto, null);
+      return new Consejo(usuario, mesActual, TipoConsejo.HORMIGA_CONTROLADA, null, texto, null)
+        .conTitulo("Sin gastos hormiga en el período");
     }
     if (porcentaje < HORMIGA_ALTA) {
       String texto = porcentaje < HORMIGA_CONTROLADA
@@ -286,22 +325,26 @@ public class LecturasDelPeriodo {
           acumulado.total(),
           porcentaje
         );
-      return new Consejo(usuario, mesActual, TipoConsejo.HORMIGA_CONTROLADA, null, texto, null);
+      return new Consejo(usuario, mesActual, TipoConsejo.HORMIGA_CONTROLADA, null, texto, null)
+        .conTitulo(
+          String.format(ARGENTINA, "Gastos hormiga: $ %,.0f en el período", acumulado.total())
+        )
+        .ancladoAlMes(acumulado.pico().getMes());
     }
+    // Una idea y tres números: el total, qué parte del margen se llevó y el pico
     StringBuilder texto = new StringBuilder(
       String.format(
         ARGENTINA,
-        "Entre %s se te fueron $ %,.0f en gastos hormiga, el %.1f %% del presupuesto",
+        "Entre %s se te fueron $ %,.0f en gastos hormiga",
         periodo,
-        acumulado.total(),
-        porcentaje
+        acumulado.total()
       )
     );
     if (acumulado.margen() > 0) {
       texto.append(
         String.format(
           ARGENTINA,
-          " y el %.0f %% de lo que te sobró",
+          ": el %.0f %% de lo que te sobró",
           Math.min((acumulado.total() / acumulado.margen()) * 100, 100)
         )
       );
@@ -309,13 +352,17 @@ public class LecturasDelPeriodo {
     texto.append(
       String.format(
         ARGENTINA,
-        "; el pico fue %s ($ %,.0f).",
+        ", con el pico en %s ($ %,.0f).",
         nombreDeMes(acumulado.pico().getMes()),
         acumulado.pico().getHormiga()
       )
     );
     texto.append(equivalencia(gastoReal, acumulado.total() / 2));
-    return new Consejo(usuario, mesActual, TipoConsejo.HORMIGA_ALTA, null, texto.toString(), null);
+    return new Consejo(usuario, mesActual, TipoConsejo.HORMIGA_ALTA, null, texto.toString(), null)
+      .conTitulo(
+        String.format(ARGENTINA, "Gastos hormiga: $ %,.0f en el período", acumulado.total())
+      )
+      .ancladoAlMes(acumulado.pico().getMes());
   }
 
   private record AcumuladoHormiga(
@@ -362,7 +409,7 @@ public class LecturasDelPeriodo {
     );
   }
 
-  // "Con la mitad pagabas 0,9 meses de Alimentación": la categoría principal del último mes cerrado, sin Vivienda
+  // "Con la mitad pagabas casi un mes de Alimentación": la categoría principal del último mes cerrado, sin Vivienda
   private static String equivalencia(GastoReal gastoReal, double monto) {
     CategoriaGastoReal principal = null;
     for (CategoriaGastoReal categoria : gastoReal.getCategorias()) {
@@ -376,16 +423,24 @@ public class LecturasDelPeriodo {
     if (principal == null || principal.getGastado() <= 0) {
       return "";
     }
-    double meses = monto / principal.getGastado();
+    String cuanto = enMeses(monto / principal.getGastado());
+    return cuanto.isEmpty()
+      ? ""
+      : " Con la mitad pagabas " + cuanto + " de " + principal.getNombre() + ".";
+  }
+
+  // En palabras, no en decimales: menos de medio mes no se dice
+  public static String enMeses(double meses) {
     if (meses < MEDIO_MES) {
       return "";
     }
-    return String.format(
-      ARGENTINA,
-      " Con la mitad pagabas %.1f meses de %s.",
-      meses,
-      principal.getNombre()
-    );
+    if (meses < CASI_UN_MES) {
+      return "más de medio mes";
+    }
+    if (meses < UN_MES_LARGO) {
+      return meses < 1 ? "casi un mes" : "un mes";
+    }
+    return String.format(ARGENTINA, "%d meses", Math.round(meses));
   }
 
   static String nombreDeMes(YearMonth mes) {

@@ -114,6 +114,8 @@ public class ServicioConsejosImplTest {
     assertThat(consejos, hasSize(1));
     Consejo consejo = consejos.get(0);
     assertThat(consejo.getTipo(), equalTo(TipoConsejo.PRESUPUESTO_DESACTUALIZADO));
+    assertThat(consejo.getTitulo(), equalTo("Presupuesto de Alimentación"));
+    assertThat(consejo.getCategoriaSenialada(), equalTo("Alimentación"));
     assertThat(consejo.getSeveridad(), equalTo(Severidad.ATENCION));
     assertThat(consejo.getCategoria(), equalTo("Alimentación"));
     // 100.000 × 1,02³ = 106.120,8 → redondeado hacia arriba al millar
