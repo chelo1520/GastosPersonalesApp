@@ -52,7 +52,7 @@ public class ServicioAsistenteClaude implements ServicioAsistente {
     "Escribí un solo párrafo, de tres a cinco oraciones, en español rioplatense con voseo, en tono " +
     "cercano y directo, que le cuente al usuario cómo le fue en el período conectando esas " +
     "conclusiones: empezá por el veredicto (cuánto subieron sus gastos, cuánto la inflación y cuánto " +
-    "cambió en serio, con esos tres números), seguí por lo más importante de las lecturas y, si hay " +
+    "cambió en términos reales, con esos tres números), seguí por lo más importante de las lecturas y, si hay " +
     "propuestas, cerrá con lo que se propone hacer y su monto. Reglas: usá solo los hechos y números " +
     "que recibís, sin inventar, redondear distinto ni agregar recomendaciones o conclusiones propias; " +
     "no hace falta repetir todos los números, elegí los que hacen al relato; sin emojis, sin signos de " +

@@ -17,7 +17,7 @@
       <span class="app-tira-estado" th:classappend="'is-' + ${veredicto.severidad.estilo}"
             th:with="real=${gastoReal.veredicto.variacionReal}"
             th:text="${T(java.lang.Math).abs(real) < 0.5} ? 'Sin cambio real' : ((${real > 0} ? 'Aumento real +' : 'Baja real −') + ${#numbers.formatDecimal(T(java.lang.Math).abs(real), 1, 'POINT', 1, 'COMMA')} + ' %')">Aumento real +1,7 %</span>
-      <strong class="app-tira-titulo" th:text="${veredicto.titulo}">Gastás 1,7 % más en serio que en Mayo 2026</strong>
+      <strong class="app-tira-titulo" th:text="${veredicto.titulo}">Gastás 1,7 % más en términos reales que en Mayo 2026</strong>
       <span class="app-tira-conteo" th:with="lecturas=${consejos.?[lectura and !veredicto].size()}, propuestas=${consejos.?[propuesta].size()}">
         <span th:text="'· ' + ${lecturas} + (${lecturas == 1} ? ' lectura' : ' lecturas')">· 3 lecturas</span>
         <span th:if="${propuestas > 0}" th:text="'· ' + ${propuestas} + (${propuestas == 1} ? ' propuesta' : ' propuestas')">· 1 propuesta</span>

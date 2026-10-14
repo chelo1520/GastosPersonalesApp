@@ -42,7 +42,8 @@ public class ServicioAsistenteClaudeTest {
         "Tu presupuesto quedó atrás",
         220000.0
       );
-    veredicto = consejo(2L, TipoConsejo.VEREDICTO_AMARILLO, null, "Gastás más en serio", null);
+    veredicto =
+      consejo(2L, TipoConsejo.VEREDICTO_AMARILLO, null, "Gastás más en términos reales", null);
   }
 
   @Test

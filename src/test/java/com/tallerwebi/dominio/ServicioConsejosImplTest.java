@@ -180,7 +180,7 @@ public class ServicioConsejosImplTest {
     assertThat(veredicto.isAplicable(), is(false));
     assertThat(veredicto.getTexto(), containsString("Desde Mayo 2026 tus gastos subieron 30,0 %"));
     assertThat(veredicto.getTexto(), containsString("La inflación fue 10,0 %"));
-    assertThat(veredicto.getTexto(), containsString("gastás 18,2 % más en serio."));
+    assertThat(veredicto.getTexto(), containsString("gastás 18,2 % más en términos reales."));
   }
 
   @Test
@@ -194,7 +194,10 @@ public class ServicioConsejosImplTest {
 
     assertThat(consejos, hasSize(1));
     assertThat(consejos.get(0).getTipo(), equalTo(TipoConsejo.VEREDICTO_VERDE));
-    assertThat(consejos.get(0).getTexto(), containsString("gastás 9,1 % menos en serio."));
+    assertThat(
+      consejos.get(0).getTexto(),
+      containsString("gastás 9,1 % menos en términos reales.")
+    );
   }
 
   @Test
@@ -381,7 +384,9 @@ public class ServicioConsejosImplTest {
       new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0)
     );
     when(servicioAsistenteMock.sintetizar(any(), any()))
-      .thenReturn(" Subieron 30,0 % con 10,0 % de inflación: gastás 18,2 % más en serio. ");
+      .thenReturn(
+        " Subieron 30,0 % con 10,0 % de inflación: gastás 18,2 % más en términos reales. "
+      );
     conRepositorioQueRecuerda();
 
     String sintesis = servicio.sintetizar(usuario, gastoReal);
@@ -389,7 +394,7 @@ public class ServicioConsejosImplTest {
 
     assertThat(
       sintesis,
-      equalTo("Subieron 30,0 % con 10,0 % de inflación: gastás 18,2 % más en serio.")
+      equalTo("Subieron 30,0 % con 10,0 % de inflación: gastás 18,2 % más en términos reales.")
     );
     assertThat(consejos, hasSize(2));
     Consejo veredicto = consejos.get(0);
@@ -406,7 +411,7 @@ public class ServicioConsejosImplTest {
     GastoReal gastoReal = gastoReal(
       new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0)
     );
-    String valida = "Subieron 30,0 %, inflación 10,0 %, 18,2 % más en serio.";
+    String valida = "Subieron 30,0 %, inflación 10,0 %, 18,2 % más en términos reales.";
     when(servicioAsistenteMock.sintetizar(any(), any())).thenReturn(valida);
     conRepositorioQueRecuerda();
     servicio.sintetizar(usuario, gastoReal);
@@ -426,7 +431,7 @@ public class ServicioConsejosImplTest {
       new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0)
     );
     when(servicioAsistenteMock.sintetizar(any(), any()))
-      .thenReturn("Subieron 35,0 % con 10,0 % de inflación: gastás 18,2 % más en serio.");
+      .thenReturn("Subieron 35,0 % con 10,0 % de inflación: gastás 18,2 % más en términos reales.");
     conRepositorioQueRecuerda();
 
     String sintesis = servicio.sintetizar(usuario, gastoReal);

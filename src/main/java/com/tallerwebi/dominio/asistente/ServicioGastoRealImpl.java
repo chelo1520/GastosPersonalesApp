@@ -173,7 +173,7 @@ public class ServicioGastoRealImpl implements ServicioGastoReal {
         )
       );
     }
-    // Las que más subieron en serio, primero; las que no se pueden comparar, al final
+    // Las que más subieron en términos reales, primero; las que no se pueden comparar, al final
     categorias.sort(
       Comparator.comparing(
         CategoriaGastoReal::getVariacionReal,

@@ -54,13 +54,16 @@ public class LecturasDelPeriodoTest {
 
     assertThat(resultado, hasSize(1));
     assertThat(resultado.get(0).getTipo(), equalTo(TipoConsejo.VEREDICTO_ROJO));
-    assertThat(resultado.get(0).getTexto(), containsString("gastás 18,2 % más en serio."));
+    assertThat(
+      resultado.get(0).getTexto(),
+      containsString("gastás 18,2 % más en términos reales.")
+    );
     // Así el veredicto de 6 meses y el de 12 no se pisan la síntesis
     assertThat(resultado.get(0).getCategoria(), equalTo("6 meses"));
     // El título corto es lo que muestra la tira
     assertThat(
       resultado.get(0).getTitulo(),
-      equalTo("Gastás 18,2 % más en serio que en Mayo 2026")
+      equalTo("Gastás 18,2 % más en términos reales que en Mayo 2026")
     );
     assertThat(resultado.get(0).getAncla(), nullValue());
   }
@@ -92,8 +95,14 @@ public class LecturasDelPeriodoTest {
         "Septiembre 2026 costó $ 773.937 en pesos de hoy, 2,1 % menos que Agosto 2026."
       )
     );
-    assertThat(balance.getTexto(), containsString("Es el 3.º mes seguido bajando en serio."));
-    assertThat(balance.getTitulo(), equalTo("Septiembre 2026 costó 2,1 % menos en serio"));
+    assertThat(
+      balance.getTexto(),
+      containsString("Es el 3.º mes seguido bajando en términos reales.")
+    );
+    assertThat(
+      balance.getTitulo(),
+      equalTo("Septiembre 2026 costó 2,1 % menos en términos reales")
+    );
     assertThat(balance.getMesSenialado(), equalTo("2026-09"));
     assertThat(balance.getCategoriaSenialada(), nullValue());
   }
@@ -148,7 +157,7 @@ public class LecturasDelPeriodoTest {
     assertThat(
       baja.getTexto(),
       containsString(
-        "Servicios fue lo que más bajó en serio en Septiembre 2026: 22,4 % menos que en Agosto 2026"
+        "Servicios fue lo que más bajó en Septiembre 2026 descontada la inflación: 22,4 % menos que en Agosto 2026"
       )
     );
     assertThat(baja.getTexto(), containsString("($ 70.200 contra $ 89.000)"));
@@ -172,7 +181,12 @@ public class LecturasDelPeriodoTest {
 
     Consejo suba = soloDeTipo(resultado, TipoConsejo.MAYOR_SUBA_REAL);
     assertThat(suba.getCategoria(), equalTo("Entretenimiento"));
-    assertThat(suba.getTexto(), containsString("Entretenimiento fue lo que más subió en serio"));
+    assertThat(
+      suba.getTexto(),
+      containsString(
+        "Entretenimiento fue lo que más subió en Septiembre 2026 descontada la inflación"
+      )
+    );
     assertThat(suba.getTexto(), containsString("31,1 % más que en Agosto 2026"));
   }
 
@@ -197,7 +211,7 @@ public class LecturasDelPeriodoTest {
     assertThat(
       habitos.getTexto(),
       containsString(
-        "En 3 de 4 categorías gastaste en Septiembre 2026 lo mismo en serio que en Agosto 2026"
+        "En 3 de 4 categorías gastaste en Septiembre 2026 lo mismo que en Agosto 2026 en términos reales"
       )
     );
     assertThat(habitos.getTitulo(), equalTo("3 de 4 categorías: solo subió el precio"));

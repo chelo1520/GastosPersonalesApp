@@ -67,11 +67,11 @@ public class LecturasDelPeriodo {
     double real = veredicto.getVariacionReal();
     String cierre;
     if (Math.abs(real) < DIFERENCIA_MINIMA) {
-      cierre = "gastás lo mismo en serio.";
+      cierre = "gastás lo mismo en términos reales.";
     } else if (real > 0) {
-      cierre = String.format(ARGENTINA, "gastás %.1f %% más en serio.", real);
+      cierre = String.format(ARGENTINA, "gastás %.1f %% más en términos reales.", real);
     } else {
-      cierre = String.format(ARGENTINA, "gastás %.1f %% menos en serio.", -real);
+      cierre = String.format(ARGENTINA, "gastás %.1f %% menos en términos reales.", -real);
     }
     double nominal = veredicto.getVariacionNominal();
     String movimiento = nominal >= 0
@@ -90,7 +90,7 @@ public class LecturasDelPeriodo {
     String periodo = gastoReal.getMeses().size() + " meses";
     String titulo = String.format(
       ARGENTINA,
-      "Gastás %s en serio que en %s",
+      "Gastás %s en términos reales que en %s",
       Math.abs(real) < DIFERENCIA_MINIMA
         ? "lo mismo"
         : String.format(ARGENTINA, "%.1f %% %s", Math.abs(real), real > 0 ? MAS : MENOS),
@@ -145,7 +145,7 @@ public class LecturasDelPeriodo {
       texto.append(
         String.format(
           ARGENTINA,
-          " Es el %d.º mes seguido %s en serio.",
+          " Es el %d.º mes seguido %s en términos reales.",
           racha,
           mejor ? "bajando" : "subiendo"
         )
@@ -154,7 +154,7 @@ public class LecturasDelPeriodo {
     TipoConsejo tipo = mejor ? TipoConsejo.BALANCE_DEL_MES_MEJOR : TipoConsejo.BALANCE_DEL_MES_PEOR;
     String titulo = String.format(
       ARGENTINA,
-      "%s costó %.1f %% %s en serio",
+      "%s costó %.1f %% %s en términos reales",
       nombreDeMes(ultimo.getMes()),
       Math.abs(real),
       mejor ? MENOS : MAS
@@ -195,7 +195,7 @@ public class LecturasDelPeriodo {
     return cerrados;
   }
 
-  // La categoría que más bajó (AHORRASTE) o más subió (CONSUMIS_MAS) en serio, si pesa en el mes
+  // La categoría que más bajó (AHORRASTE) o más subió (CONSUMIS_MAS) en términos reales, si pesa en el mes
   private Consejo mayorVariacion(
     Usuario usuario,
     YearMonth mesActual,
@@ -210,7 +210,7 @@ public class LecturasDelPeriodo {
     YearMonth ultimo = gastoReal.getUltimoMesCerrado();
     String texto = String.format(
       ARGENTINA,
-      "%s fue lo que más %s en serio en %s: %.1f %% %s que en %s descontada la inflación ($ %,.0f contra $ %,.0f).",
+      "%s fue lo que más %s en %s descontada la inflación: %.1f %% %s que en %s ($ %,.0f contra $ %,.0f).",
       elegida.getNombre(),
       baja ? "bajó" : "subió",
       nombreDeMes(ultimo),
@@ -275,7 +275,7 @@ public class LecturasDelPeriodo {
     YearMonth ultimo = gastoReal.getUltimoMesCerrado();
     String texto = String.format(
       ARGENTINA,
-      "En %d de %d categorías gastaste en %s lo mismo en serio que en %s: lo que cambió fue el precio, no tus hábitos.",
+      "En %d de %d categorías gastaste en %s lo mismo que en %s en términos reales: lo que cambió fue el precio, no tus hábitos.",
       conLaInflacion,
       comparables,
       nombreDeMes(ultimo),
