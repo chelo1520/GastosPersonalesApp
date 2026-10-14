@@ -67,6 +67,28 @@ public class MostrarGastosVistaTest {
   }
 
   @Test
+  public void debeConfirmarElEliminarConElModalEnVezDelConfirmDelNavegador() throws Exception {
+    Usuario usuario = new Usuario();
+    Gasto gasto = new Gasto(46200.0, LocalDate.of(2026, 9, 30), "Compra semanal");
+    gasto.setUsuario(usuario);
+    sessionFactory.getCurrentSession().persist(usuario);
+    sessionFactory.getCurrentSession().persist(gasto);
+
+    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+    mockMvc
+      .perform(get("/mostrar-gastos").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("id=\"modal-eliminar-gasto\"")))
+      .andExpect(
+        content().string(containsString("data-accion=\"/eliminar-gasto/" + gasto.getId() + "\""))
+      )
+      .andExpect(content().string(containsString("data-descripcion=\"Compra semanal\"")))
+      .andExpect(content().string(containsString("data-importe=\"46.200,00\"")))
+      .andExpect(content().string(not(containsString("confirm("))));
+  }
+
+  @Test
   public void debeMostrarEsHormigaEnCategoriasEsencialesYNoEsHormigaEnPrescindiblesConSuLeyenda()
     throws Exception {
     Usuario usuario = new Usuario();
@@ -180,6 +202,68 @@ public class MostrarGastosVistaTest {
       .andExpect(content().string(containsString("Es tu 4.º gasto en Café y snacks esta semana")))
       .andExpect(content().string(containsString("/categorias/" + cafe.getId() + "/no-es-hormiga")))
       .andExpect(content().string(containsString("No es hormiga")));
+  }
+
+  @Test
+  public void debeMostrarElPopUpDePresupuestoAlRegistrarElGastoQueHaceLlegarAl80PorCiento()
+    throws Exception {
+    LocalDate hoy = LocalDate.now();
+    Usuario usuario = new Usuario();
+    Categoria alimentacion = categoria("Alimentación", true, false);
+    sessionFactory.getCurrentSession().persist(usuario);
+    sessionFactory.getCurrentSession().persist(alimentacion);
+    sessionFactory
+      .getCurrentSession()
+      .persist(new Presupuesto(usuario, alimentacion, YearMonth.from(hoy), 100000.0));
+    Gasto supermercado = new Gasto(70000.0, hoy, "Supermercado");
+    supermercado.setUsuario(usuario);
+    supermercado.setCategoria(alimentacion);
+    sessionFactory.getCurrentSession().persist(supermercado);
+
+    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+    MvcResult resultado = mockMvc
+      .perform(
+        post("/registrar-gasto")
+          .sessionAttr("USUARIO", usuario)
+          .param("importe", "15000")
+          .param("fecha", hoy.toString())
+          .param("descripcion", "Verdulería")
+          .param("categoria.id", alimentacion.getId().toString())
+      )
+      .andExpect(status().is3xxRedirection())
+      .andExpect(flash().attributeExists("alertaPresupuesto"))
+      .andReturn();
+
+    Alerta alerta = (Alerta) resultado.getFlashMap().get("alertaPresupuesto");
+    assertEquals(
+      "Con este gasto llegaste al 85% del presupuesto del mes ($85.000 de $100.000)",
+      alerta.getMensaje()
+    );
+
+    mockMvc
+      .perform(
+        get("/mostrar-gastos")
+          .sessionAttr("USUARIO", usuario)
+          .flashAttr("alertaPresupuesto", alerta)
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("modal-alerta-presupuesto")))
+      .andExpect(content().string(containsString("Con este gasto llegaste al 85%")));
+  }
+
+  @Test
+  public void noDebeMostrarElPopUpDePresupuestoSiNoSeRegistroUnGastoQueLoDispare()
+    throws Exception {
+    Usuario usuario = new Usuario();
+    sessionFactory.getCurrentSession().persist(usuario);
+
+    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+    mockMvc
+      .perform(get("/mostrar-gastos").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(not(containsString("modal-alerta-presupuesto"))));
   }
 
   @Test

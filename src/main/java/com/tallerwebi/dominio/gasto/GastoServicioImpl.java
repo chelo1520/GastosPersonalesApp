@@ -72,6 +72,15 @@ public class GastoServicioImpl implements GastoServicio {
   }
 
   @Override
+  public Alerta alertaDePresupuesto(Gasto gasto, Usuario usuario) {
+    YearMonth mes = YearMonth.from(gasto.getFecha());
+    // Ya guardado: el total del mes incluye el gasto nuevo
+    double gastadoDelMes = sumarGastos(usuario, mes.atDay(1), mes.atEndOfMonth());
+    double presupuesto = servicioPresupuesto.totalDelMes(usuario, mes);
+    return calculadoraAlertas.alertaDePresupuesto(gastadoDelMes, gasto.getImporte(), presupuesto);
+  }
+
+  @Override
   public Gasto obtenerGasto(Long id, Usuario usuario) {
     Gasto gasto = id == null ? null : repositorioGasto.buscarPorId(id);
     // Un gasto de otro usuario se trata igual que uno inexistente

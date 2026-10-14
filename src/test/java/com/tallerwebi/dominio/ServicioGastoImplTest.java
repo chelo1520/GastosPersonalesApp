@@ -103,6 +103,34 @@ public class ServicioGastoImplTest {
   }
 
   @Test
+  void debeAvisarCuandoElGastoRegistradoHaceLlegarElMesAl80PorCientoDelPresupuesto() {
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
+    Usuario usuario = new Usuario();
+    Gasto alquiler = new Gasto(400000.0, LocalDate.of(2026, 10, 1), "Alquiler");
+    Gasto supermercado = new Gasto(40000.0, LocalDate.of(2026, 10, 6), "Supermercado");
+    when(
+      repositorioGastoMock.obtenerGastosEntreFechas(
+        usuario,
+        LocalDate.of(2026, 10, 1),
+        LocalDate.of(2026, 10, 31)
+      )
+    )
+      .thenReturn(List.of(alquiler, supermercado));
+    when(servicioPresupuestoMock.totalDelMes(usuario, YearMonth.of(2026, 10))).thenReturn(550000.0);
+
+    Alerta alerta = gastoServicio.alertaDePresupuesto(supermercado, usuario);
+
+    assertEquals(
+      "Con este gasto llegaste al 80% del presupuesto del mes ($440.000 de $550.000)",
+      alerta.getMensaje()
+    );
+  }
+
+  @Test
   void debeLanzarGastoInvalidoSinGuardarCuandoElImporteEsNegativo() {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,

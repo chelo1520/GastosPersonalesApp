@@ -2,6 +2,7 @@ package com.tallerwebi.dominio.alerta;
 
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.resumen.CalculadoraGastosHormiga;
+import com.tallerwebi.dominio.resumen.EstadoPresupuesto;
 import com.tallerwebi.dominio.resumen.ResumenHormiga;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -10,7 +11,8 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * Las tres alertas de gastos hormiga. Se calculan cada vez que hacen falta: no se guardan
+ * Las alertas de gastos hormiga y del presupuesto del mes. Se calculan cada vez que
+ * hacen falta: no se guardan
  */
 public class CalculadoraAlertas {
 
@@ -76,6 +78,44 @@ public class CalculadoraAlertas {
       pesos(total) +
       ")",
       nuevo.getCategoria().getId()
+    );
+  }
+
+  // Presupuesto del mes: avisa solo con el gasto que hace cruzar un umbral del semáforo
+  // (80 % amarilla, 100 % roja). Los gastos siguientes en el mismo tramo no vuelven a avisar.
+  // gastadoDelMes ya incluye el gasto nuevo. Devuelve null si no corresponde alertar
+  public Alerta alertaDePresupuesto(double gastadoDelMes, double importeNuevo, double presupuesto) {
+    if (presupuesto <= 0) {
+      return null;
+    }
+    EstadoPresupuesto antes = EstadoPresupuesto.de(
+      ((gastadoDelMes - importeNuevo) / presupuesto) * 100
+    );
+    double porcentaje = (gastadoDelMes / presupuesto) * 100;
+    EstadoPresupuesto despues = EstadoPresupuesto.de(porcentaje);
+    if (despues == antes || despues == EstadoPresupuesto.VERDE) {
+      return null;
+    }
+
+    String gastadoDePresupuesto = pesos(gastadoDelMes) + " de " + pesos(presupuesto);
+    if (despues == EstadoPresupuesto.ROJO) {
+      return new Alerta(
+        Alerta.Tipo.PRESUPUESTO,
+        Alerta.Nivel.ROJA,
+        "Con este gasto te pasaste del presupuesto del mes: llevás " + gastadoDePresupuesto,
+        null
+      );
+    }
+    // floor: con 99,6 % todavía no se pasó, no tiene que decir 100 %
+    return new Alerta(
+      Alerta.Tipo.PRESUPUESTO,
+      Alerta.Nivel.AMARILLA,
+      "Con este gasto llegaste al " +
+      (long) Math.floor(porcentaje) +
+      "% del presupuesto del mes (" +
+      gastadoDePresupuesto +
+      ")",
+      null
     );
   }
 

@@ -65,11 +65,11 @@
                   </th:block>
                   <a class="btn btn-sm btn-outline-secondary app-gasto-editar"
                     th:href="@{/modificar-gasto/{id}(id=${gasto.id})}">Editar</a>
-                  <form class="app-gasto-eliminar-form" method="post"
-                    th:action="@{/eliminar-gasto/{id}(id=${gasto.id})}"
-                    onsubmit="return confirm('¿Seguro que querés eliminar este gasto?');">
-                    <button type="submit" class="btn btn-sm btn-outline-danger app-gasto-eliminar">Eliminar</button>
-                  </form>
+                  <button type="button" class="btn btn-sm btn-outline-danger app-gasto-eliminar"
+                    data-bs-toggle="modal" data-bs-target="#modal-eliminar-gasto"
+                    th:data-accion="@{/eliminar-gasto/{id}(id=${gasto.id})}"
+                    th:data-descripcion="${gasto.descripcion}"
+                    th:data-importe="${#numbers.formatDecimal(gasto.importe, 1, 'POINT', 2, 'COMMA')}">Eliminar</button>
                 </div>
               </td>
             </tr>
@@ -96,11 +96,11 @@
             </th:block>
             <a class="btn btn-sm btn-outline-secondary app-gasto-editar"
               th:href="@{/modificar-gasto/{id}(id=${gasto.id})}">Editar</a>
-            <form class="app-gasto-eliminar-form" method="post"
-              th:action="@{/eliminar-gasto/{id}(id=${gasto.id})}"
-              onsubmit="return confirm('¿Seguro que querés eliminar este gasto?');">
-              <button type="submit" class="btn btn-sm btn-outline-danger app-gasto-eliminar">Eliminar</button>
-            </form>
+            <button type="button" class="btn btn-sm btn-outline-danger app-gasto-eliminar"
+              data-bs-toggle="modal" data-bs-target="#modal-eliminar-gasto"
+              th:data-accion="@{/eliminar-gasto/{id}(id=${gasto.id})}"
+              th:data-descripcion="${gasto.descripcion}"
+              th:data-importe="${#numbers.formatDecimal(gasto.importe, 1, 'POINT', 2, 'COMMA')}">Eliminar</button>
           </div>
         </article>
       </div>
@@ -129,7 +129,65 @@
     </a>
   </nav>
 
+  <!-- Pop-up de presupuesto: llega una sola vez, con el gasto que hace cruzar el 80 % o el 100 % del mes -->
+  <div class="modal fade" id="modal-alerta-presupuesto" tabindex="-1"
+       aria-labelledby="modal-alerta-presupuesto-titulo" aria-hidden="true"
+       th:if="${alertaPresupuesto != null}">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title h5 fw-bold" id="modal-alerta-presupuesto-titulo">Ojo con tu presupuesto</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="app-alerta mb-0"
+               th:classappend="${alertaPresupuesto.nivel.name() == 'ROJA'} ? 'is-roja' : 'is-amarilla'">
+            <span th:text="${alertaPresupuesto.mensaje}">Con este gasto llegaste al 85% del presupuesto del mes ($467.500 de $550.000)</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+          <a class="btn btn-primary" th:href="@{/home}">Ver resumen</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmación de eliminar: un solo modal; el botón de cada gasto le pasa la acción y los datos -->
+  <div class="modal fade" id="modal-eliminar-gasto" tabindex="-1"
+       aria-labelledby="modal-eliminar-gasto-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" method="post" id="form-eliminar-gasto">
+        <div class="modal-header">
+          <h2 class="modal-title h5 fw-bold" id="modal-eliminar-gasto-titulo">Eliminar gasto</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="app-alerta is-roja mb-0">
+            <span>¿Seguro que querés eliminar «<span id="eliminar-gasto-descripcion">Compra semanal</span>»
+              ($ <span id="eliminar-gasto-importe">46.200,00</span>)? No se puede deshacer.</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script th:replace="~{fragments/layout :: scripts}"></script>
+  <script>
+    document.getElementById("modal-eliminar-gasto").addEventListener("show.bs.modal", (e) => {
+      const boton = e.relatedTarget;
+      document.getElementById("form-eliminar-gasto").action = boton.dataset.accion;
+      document.getElementById("eliminar-gasto-descripcion").textContent = boton.dataset.descripcion;
+      document.getElementById("eliminar-gasto-importe").textContent = boton.dataset.importe;
+    });
+  </script>
+  <script th:if="${alertaPresupuesto != null}">
+    new bootstrap.Modal(document.getElementById("modal-alerta-presupuesto")).show();
+  </script>
 </body>
 
 </html>

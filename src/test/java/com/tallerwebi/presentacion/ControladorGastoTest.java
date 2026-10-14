@@ -107,6 +107,21 @@ public class ControladorGastoTest {
   }
 
   @Test
+  public void debeMandarLaAlertaDePresupuestoAlPopUpCuandoElGastoRegistradoCruzaEl80PorCiento() {
+    Alerta alerta = new Alerta(
+      Alerta.Tipo.PRESUPUESTO,
+      Alerta.Nivel.AMARILLA,
+      "Con este gasto llegaste al 80% del presupuesto del mes ($440.000 de $550.000)",
+      null
+    );
+    when(gastoServicio.alertaDePresupuesto(gasto, usuario)).thenReturn(alerta);
+
+    controladorGasto.registrarGasto(gasto, request, redirectAttributes);
+
+    assertEquals(alerta, redirectAttributes.getFlashAttributes().get("alertaPresupuesto"));
+  }
+
+  @Test
   public void noDebeMandarAlertaCuandoElGastoRegistradoNoLaDispara() {
     controladorGasto.registrarGasto(gasto, request, redirectAttributes);
 

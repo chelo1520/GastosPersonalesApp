@@ -15,6 +15,10 @@ public interface GastoServicio {
   // Alerta de repetición para un gasto recién registrado, o null si no corresponde
   Alerta alertaDeRepeticion(Gasto gasto, Usuario usuario);
 
+  // Alerta si el gasto recién registrado hizo cruzar el 80 % o el 100 % del presupuesto del mes,
+  // o null si no corresponde
+  Alerta alertaDePresupuesto(Gasto gasto, Usuario usuario);
+
   Gasto obtenerGasto(Long id, Usuario usuario);
 
   void modificarGasto(Long id, Gasto datos, Usuario usuario);
