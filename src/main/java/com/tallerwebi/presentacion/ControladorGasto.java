@@ -101,6 +101,11 @@ public class ControladorGasto {
     if (alerta != null) {
       redirectAttributes.addFlashAttribute("alertaRepeticion", alerta);
     }
+    // Pop-up, también una sola vez: solo con el gasto que cruza el 80 % o el 100 %
+    Alerta alertaPresupuesto = gastoServicio.alertaDePresupuesto(gasto, usuario);
+    if (alertaPresupuesto != null) {
+      redirectAttributes.addFlashAttribute("alertaPresupuesto", alertaPresupuesto);
+    }
 
     return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);
   }

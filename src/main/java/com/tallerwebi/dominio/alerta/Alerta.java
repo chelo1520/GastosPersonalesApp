@@ -1,17 +1,18 @@
 package com.tallerwebi.dominio.alerta;
 
 /**
- * Aviso sobre gastos hormiga: informa cuánto se va, no bloquea nada
+ * Aviso sobre gastos hormiga o presupuestos: informa cuánto se va, no bloquea nada
  */
 public class Alerta {
 
-  /** Qué mira la alerta: el total del mes o un gasto que se repite */
+  /** Qué mira la alerta: el total hormiga del mes, un gasto que se repite o el presupuesto de una categoría */
   public enum Tipo {
     ACUMULADO,
     REPETICION,
+    PRESUPUESTO,
   }
 
-  /** Amarilla avisa, roja marca que ya se pasó el 10 % del presupuesto */
+  /** Amarilla avisa, roja marca que ya se pasó el límite */
   public enum Nivel {
     AMARILLA,
     ROJA,
