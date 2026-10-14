@@ -23,7 +23,7 @@
       porMes.set(el.dataset.mes, { numero, el });
     }
     if (el.dataset.categoria) {
-      const fila = document.querySelector('#tabla-categorias tr[data-categoria="' + CSS.escape(el.dataset.categoria) + '"]');
+      const fila = document.querySelector("#tabla-categorias tr[data-categoria=\"" + CSS.escape(el.dataset.categoria) + "\"]");
       if (fila) {
         fila.classList.add("is-con-lectura", "is-" + estiloDe(el));
         const nombre = fila.querySelector(".app-categoria-nombre");
@@ -132,7 +132,7 @@
   // ---- "Ver en la tabla": resalta la fila de la categoría ----
   document.querySelectorAll(".app-ver-en-tabla").forEach((boton) => {
     boton.addEventListener("click", () => {
-      const fila = document.querySelector('#tabla-categorias tr[data-categoria="' + CSS.escape(boton.dataset.categoria) + '"]');
+      const fila = document.querySelector("#tabla-categorias tr[data-categoria=\"" + CSS.escape(boton.dataset.categoria) + "\"]");
       if (!fila) {
         return;
       }
