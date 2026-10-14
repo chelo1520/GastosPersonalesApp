@@ -16,7 +16,8 @@
       periodo (3, 6 o 12), periodos
       gastoReal: meses, veredicto, ultimoMesCerrado, categorias, indicadoresActualizadosEn, indicadoresAlDia
       meses: lista de MesAsistente (etiqueta + datos: gastado, gastadoEnPesosDeHoy, gastadoUsd, ipc, ipcEstimado, enCurso)
-      ultimoMesCerrado (String)
+      ultimoMesCerrado (String), mesAnteriorAlCerrado (String, sin año)
+      categorias: las del último mes cerrado, ordenadas por magnitud del cambio real (las sin comparación al final)
       consejos: lista de Consejo pendientes del mes; el primero es el veredicto (id, titulo, texto, textoParaMostrar, severidad,
                 categoria, montoSugerido, aplicable, veredicto, lectura, propuesta, mesSenialado, categoriaSenialada)
       sintesisPendiente (boolean): la IA está disponible y la síntesis del veredicto se pide en segundo plano
@@ -27,8 +28,8 @@
 
     <div class="app-resumen-titulo">
       <div>
-        <h1 class="h3 fw-bold mb-0">Tu gasto real</h1>
-        <p class="app-asistente-subtitulo" th:if="${periodoTexto != null}"><span th:text="${periodoTexto}">Mayo a Septiembre 2026</span> · solo meses cerrados</p>
+        <h1 class="h3 fw-bold mb-0">Asistente</h1>
+        <p class="app-asistente-subtitulo">Tu gasto real<span th:if="${periodoTexto != null}" th:text="' de ' + ${periodoTexto}"> de Mayo a Septiembre 2026</span>, descontada la inflación · solo meses cerrados</p>
       </div>
       <nav class="app-asistente-periodos" aria-label="Período">
         <a th:each="p : ${periodos}" th:href="@{/asistente(periodo=${p})}" th:text="${p} + ' meses'"
@@ -53,7 +54,7 @@
       <!-- Gráfico -->
       <section class="app-resumen-card app-asistente-grafico">
         <div class="app-asistente-grafico-titulo">
-          <h2 class="app-resumen-card-titulo">Gasto por mes</h2>
+          <h2 class="app-resumen-card-titulo">Gasto por mes: lo que pagaste y lo que vale hoy</h2>
           <label class="app-asistente-toggle">
             <input type="checkbox" id="toggle-usd"> Ver en dólares
           </label>
@@ -67,7 +68,7 @@
       <!-- Tarjetas -->
       <aside class="app-asistente-kpis" aria-label="Resumen del período" th:if="${gastoReal.veredicto != null}">
         <article class="app-resumen-card">
-          <span class="app-resumen-card-label">Tus gastos (nominal)</span>
+          <span class="app-resumen-card-label">Tus gastos</span>
           <strong class="app-resumen-monto"
                   th:text="${gastoReal.veredicto.variacionNominal >= 0 ? '+' : ''} + ${#numbers.formatDecimal(gastoReal.veredicto.variacionNominal, 1, 'POINT', 1, 'COMMA')} + ' %'">+25,0 %</strong>
         </article>
@@ -83,6 +84,55 @@
         </article>
       </aside>
       </div>
+
+      <!-- Por categoría -->
+      <section class="app-resumen-card app-asistente-categorias" th:if="${!#lists.isEmpty(categorias)}">
+        <h2 class="app-resumen-card-titulo mb-1">
+          <span th:text="${ultimoMesCerrado}">Septiembre 2026</span> por categoría: ¿subió el precio o consumiste más?
+        </h2>
+        <p class="app-asistente-subtitulo mb-3">Lo que lee el asistente para sus lecturas. Primero las categorías que más cambiaron en términos reales.</p>
+        <div class="table-responsive">
+          <table class="table app-resumen-tabla mb-0" id="tabla-categorias">
+            <thead>
+              <tr>
+                <th scope="col">Categoría</th>
+                <th scope="col" class="text-end">Gastado</th>
+                <th scope="col" class="text-end" th:text="'vs. ' + ${mesAnteriorAlCerrado}">vs. Agosto</th>
+                <th scope="col" class="text-end">Inflación</th>
+                <th scope="col" class="text-end" title="Descontada la inflación">Cambio real</th>
+                <th scope="col">Qué cambió</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="cat, it : ${categorias}" th:data-categoria="${cat.nombre}"
+                  th:classappend="${it.index >= 5} ? 'app-fila-extra'">
+                <td class="app-categoria-nombre" th:text="${cat.nombre}">Entretenimiento</td>
+                <td class="app-resumen-num text-end"
+                    th:text="${#numbers.formatDecimal(cat.gastado, 1, 'POINT', 0, 'COMMA')}">63.000</td>
+                <td class="app-resumen-num text-end">
+                  <span th:if="${cat.variacionNominal != null}"
+                        th:text="${cat.variacionNominal >= 0 ? '+' : ''} + ${#numbers.formatDecimal(cat.variacionNominal, 1, 'POINT', 1, 'COMMA')} + ' %'">+35,0 %</span>
+                  <span th:unless="${cat.variacionNominal != null}">—</span>
+                </td>
+                <td class="app-resumen-num text-end"
+                    th:text="'+' + ${#numbers.formatDecimal(cat.ipc, 1, 'POINT', 1, 'COMMA')} + ' %'">+1,7 %</td>
+                <td class="app-resumen-num text-end">
+                  <span th:if="${cat.variacionReal != null}"
+                        th:classappend="${cat.variacionReal > 0} ? 'is-neg'"
+                        th:text="${cat.variacionReal >= 0 ? '+' : ''} + ${#numbers.formatDecimal(cat.variacionReal, 1, 'POINT', 1, 'COMMA')} + ' %'">+32,7 %</span>
+                  <span th:unless="${cat.variacionReal != null}">—</span>
+                </td>
+                <td>
+                  <span class="app-estado" th:classappend="'is-' + ${cat.diagnostico.estilo}"
+                        th:text="${cat.diagnostico.texto}">Consumís más</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <button type="button" class="app-enlace app-ver-todas" id="ver-todas-las-categorias" aria-expanded="false"
+                th:if="${categorias.size() > 5}" th:text="'Ver las ' + ${categorias.size()} + ' categorías'">Ver las 8 categorías</button>
+      </section>
 
       <div class="app-asistente-grid-2">
       <!-- Mes por mes: los datos del gráfico (el JS los lee de acá), plegados por defecto -->
@@ -130,54 +180,6 @@
         </div>
       </section>
       </div>
-
-      <!-- Por categoría -->
-      <section class="app-resumen-card app-asistente-categorias" th:if="${!#lists.isEmpty(gastoReal.categorias)}">
-        <h2 class="app-resumen-card-titulo">
-          <span th:text="${ultimoMesCerrado}">Septiembre 2026</span> por categoría: ¿precio o consumo?
-        </h2>
-        <div class="table-responsive">
-          <table class="table app-resumen-tabla mb-0" id="tabla-categorias">
-            <thead>
-              <tr>
-                <th scope="col">Categoría</th>
-                <th scope="col" class="text-end">Gastado</th>
-                <th scope="col" class="text-end">vs. mes anterior</th>
-                <th scope="col" class="text-end">IPC</th>
-                <th scope="col" class="text-end">Real</th>
-                <th scope="col">Diagnóstico</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr th:each="cat, it : ${gastoReal.categorias}" th:data-categoria="${cat.nombre}"
-                  th:classappend="${it.index >= 5} ? 'app-fila-extra'">
-                <td class="app-categoria-nombre" th:text="${cat.nombre}">Entretenimiento</td>
-                <td class="app-resumen-num text-end"
-                    th:text="${#numbers.formatDecimal(cat.gastado, 1, 'POINT', 0, 'COMMA')}">63.000</td>
-                <td class="app-resumen-num text-end">
-                  <span th:if="${cat.variacionNominal != null}"
-                        th:text="${cat.variacionNominal >= 0 ? '+' : ''} + ${#numbers.formatDecimal(cat.variacionNominal, 1, 'POINT', 1, 'COMMA')} + ' %'">+35,0 %</span>
-                  <span th:unless="${cat.variacionNominal != null}">—</span>
-                </td>
-                <td class="app-resumen-num text-end"
-                    th:text="'+' + ${#numbers.formatDecimal(cat.ipc, 1, 'POINT', 1, 'COMMA')} + ' %'">+1,7 %</td>
-                <td class="app-resumen-num text-end">
-                  <span th:if="${cat.variacionReal != null}"
-                        th:classappend="${cat.variacionReal > 0} ? 'is-neg'"
-                        th:text="${cat.variacionReal >= 0 ? '+' : ''} + ${#numbers.formatDecimal(cat.variacionReal, 1, 'POINT', 1, 'COMMA')} + ' %'">+32,7 %</span>
-                  <span th:unless="${cat.variacionReal != null}">—</span>
-                </td>
-                <td>
-                  <span class="app-estado" th:classappend="'is-' + ${cat.diagnostico.estilo}"
-                        th:text="${cat.diagnostico.texto}">Consumís más</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <button type="button" class="app-enlace app-ver-todas" id="ver-todas-las-categorias" aria-expanded="false"
-                th:if="${gastoReal.categorias.size() > 5}" th:text="'Ver las ' + ${gastoReal.categorias.size()} + ' categorías'">Ver las 8 categorías</button>
-      </section>
 
       <footer class="app-asistente-pie">
         <span>Fuente: ArgentinaDatos (INDEC y dólar oficial) y DolarApi.</span>

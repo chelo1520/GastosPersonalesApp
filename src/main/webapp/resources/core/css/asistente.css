@@ -150,6 +150,14 @@
   padding: 3px;
 }
 
+.app-tira-rotulo {
+  color: var(--res-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 .app-tira-estado {
   padding: 3px 10px;
   border-radius: 999px;

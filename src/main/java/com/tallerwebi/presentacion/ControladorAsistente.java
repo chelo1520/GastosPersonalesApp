@@ -1,6 +1,7 @@
 package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.asistente.CategoriaGastoReal;
 import com.tallerwebi.dominio.asistente.GastoReal;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
 import com.tallerwebi.dominio.asistente.Veredicto;
@@ -12,6 +13,8 @@ import com.tallerwebi.dominio.presupuesto.Presupuesto;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +84,13 @@ public class ControladorAsistente {
       model.put("meses", gastoReal.getMeses().stream().map(MesAsistente::new).toList());
       if (gastoReal.getUltimoMesCerrado() != null) {
         model.put("ultimoMesCerrado", NombreDeMes.de(gastoReal.getUltimoMesCerrado()));
+        model.put(
+          "mesAnteriorAlCerrado",
+          NombreDeMes.de(gastoReal.getUltimoMesCerrado().minusMonths(1)).replaceAll(" \\d{4}$", "")
+        );
       }
+      // La tabla muestra primero lo que más cambió en términos reales, que es lo que señala el asistente
+      model.put("categorias", porMagnitudDelCambioReal(gastoReal.getCategorias()));
       if (gastoReal.getVeredicto() != null) {
         model.put("periodoTexto", textoDelPeriodo(gastoReal.getVeredicto()));
       }
@@ -100,6 +109,17 @@ public class ControladorAsistente {
     }
 
     return new ModelAndView("asistente", model);
+  }
+
+  // Mayor cambio real primero, suba o baja; las que no se pueden comparar (nuevas, sin datos) al final
+  static List<CategoriaGastoReal> porMagnitudDelCambioReal(List<CategoriaGastoReal> categorias) {
+    List<CategoriaGastoReal> ordenadas = new ArrayList<>(categorias);
+    ordenadas.sort(
+      Comparator
+        .comparing((CategoriaGastoReal c) -> c.getVariacionReal() == null)
+        .thenComparing(c -> -Math.abs(c.getVariacionReal() == null ? 0 : c.getVariacionReal()))
+    );
+    return ordenadas;
   }
 
   // "Mayo a Septiembre 2026": el primer y el último mes cerrado que compara el veredicto

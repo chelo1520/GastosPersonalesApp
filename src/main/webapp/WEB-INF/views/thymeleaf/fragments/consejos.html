@@ -13,6 +13,7 @@
   <section th:fragment="tira(consejos, periodo)" class="app-resumen-card app-tira" aria-label="Tu asistente"
            th:with="veredicto=${consejos.^[veredicto]}">
     <img class="app-tira-isotipo" th:src="@{/img/isotipo-sobre-oscuro.svg}" width="28" height="28" alt="">
+    <span class="app-tira-rotulo">Tu asistente</span>
     <th:block th:if="${veredicto != null}">
       <span class="app-tira-estado" th:classappend="'is-' + ${veredicto.severidad.estilo}"
             th:with="real=${gastoReal.veredicto.variacionReal}"

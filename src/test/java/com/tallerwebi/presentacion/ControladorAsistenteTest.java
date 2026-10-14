@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.asistente.CategoriaGastoReal;
 import com.tallerwebi.dominio.asistente.GastoReal;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
 import com.tallerwebi.dominio.asistente.Veredicto;
@@ -234,6 +235,38 @@ public class ControladorAsistenteTest {
       ),
       equalTo("Noviembre 2025 a Septiembre 2026")
     );
+  }
+
+  @Test
+  public void debeOrdenarLasCategoriasPorMagnitudDelCambioRealConLasNuevasAlFinal() {
+    List<CategoriaGastoReal> categorias = List.of(
+      new CategoriaGastoReal("Salud", 17600.0, 17100.0, 1.7),
+      new CategoriaGastoReal("Cine", 5000.0, 0.0, 1.7),
+      new CategoriaGastoReal("Servicios", 70200.0, 89000.0, 1.7),
+      new CategoriaGastoReal("Entretenimiento", 80000.0, 60000.0, 1.7)
+    );
+
+    List<String> orden = ControladorAsistente
+      .porMagnitudDelCambioReal(categorias)
+      .stream()
+      .map(CategoriaGastoReal::getNombre)
+      .toList();
+
+    // Entretenimiento +31 %, Servicios −22 %, Salud +1 %; Cine es nueva y no compara
+    assertThat(orden, equalTo(List.of("Entretenimiento", "Servicios", "Salud", "Cine")));
+  }
+
+  @Test
+  public void debePonerElMesAnteriorAlCerradoSinAnioParaLaCabeceraDeLaTabla() {
+    Veredicto veredicto = new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 9.4, 7.6);
+    when(servicioMock.calcular(any(), anyInt()))
+      .thenReturn(
+        new GastoReal(List.of(), veredicto, YearMonth.of(2026, 9), List.of(), null, true)
+      );
+
+    ModelAndView mav = controlador.mostrarAsistente(6, null, requestMock);
+
+    assertThat(mav.getModel().get("mesAnteriorAlCerrado"), equalTo("Agosto"));
   }
 
   private GastoReal sinDatos() {
