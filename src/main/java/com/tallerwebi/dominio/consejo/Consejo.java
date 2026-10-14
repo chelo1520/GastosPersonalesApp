@@ -43,6 +43,7 @@ public class Consejo {
   // Categoría a la que refiere (null si es un consejo general; en el veredicto, el período)
   private String categoria;
 
+  // Hibernate deja un embebido en null cuando todas sus columnas son null: los getters lo contemplan
   @Embedded
   private Hechos hechos = new Hechos();
 
@@ -110,11 +111,11 @@ public class Consejo {
   }
 
   public String getTitulo() {
-    return hechos.getTitulo();
+    return hechos == null ? null : hechos.getTitulo();
   }
 
   public String getTexto() {
-    return hechos.getTexto();
+    return hechos == null ? null : hechos.getTexto();
   }
 
   // Los hechos se recalculan en cada visita; el estado y la síntesis se conservan
@@ -123,7 +124,7 @@ public class Consejo {
   }
 
   public Consejo conTitulo(String titulo) {
-    this.hechos = new Hechos(titulo, hechos.getTexto());
+    this.hechos = new Hechos(titulo, getTexto());
     return this;
   }
 
@@ -168,11 +169,11 @@ public class Consejo {
   }
 
   public String getTextoRedactado() {
-    return sintesis.getTexto();
+    return sintesis == null ? null : sintesis.getTexto();
   }
 
   public String getFirmaHechos() {
-    return sintesis.getFirma();
+    return sintesis == null ? null : sintesis.getFirma();
   }
 
   public void redactar(String textoRedactado, String firmaHechos) {
@@ -181,12 +182,12 @@ public class Consejo {
 
   // Lo que ve el usuario: en el veredicto, la síntesis del asistente si la hay; si no, los hechos tal cual
   public String getTextoParaMostrar() {
-    return sintesis.getTexto() != null ? sintesis.getTexto() : hechos.getTexto();
+    return getTextoRedactado() != null ? getTextoRedactado() : getTexto();
   }
 
   // Los hechos que importan para la síntesis; si cambian, la síntesis vieja ya no sirve
   public String firmaDeLosHechos() {
-    return Integer.toHexString((hechos.getTexto() + "|" + montoSugerido).hashCode());
+    return Integer.toHexString((getTexto() + "|" + montoSugerido).hashCode());
   }
 
   public boolean isAplicable() {

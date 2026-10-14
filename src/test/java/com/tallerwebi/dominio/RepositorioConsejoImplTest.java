@@ -3,6 +3,7 @@ package com.tallerwebi.dominio;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 
 import com.tallerwebi.dominio.consejo.Consejo;
 import com.tallerwebi.dominio.consejo.EstadoConsejo;
@@ -67,6 +68,39 @@ public class RepositorioConsejoImplTest {
       repositorio.buscarPorId(consejo.getId()).getEstado(),
       equalTo(EstadoConsejo.APLICADO)
     );
+  }
+
+  @Test
+  void debeLeerDesdeLaBaseUnConsejoSinSintesisSinRomper() {
+    // Sin síntesis, Hibernate deja el embebido en null al leer: el consejo tiene que seguir funcionando
+    Consejo consejo = consejo(diego, OCTUBRE, "Alimentación")
+      .conTitulo("Presupuesto de Alimentación");
+    repositorio.guardar(consejo);
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+
+    Consejo leido = repositorio.buscarPorId(consejo.getId());
+
+    assertThat(leido.getTextoRedactado(), nullValue());
+    assertThat(leido.getFirmaHechos(), nullValue());
+    assertThat(leido.getTextoParaMostrar(), equalTo("texto"));
+    assertThat(leido.getTitulo(), equalTo("Presupuesto de Alimentación"));
+    assertThat(leido.firmaDeLosHechos(), equalTo(consejo.firmaDeLosHechos()));
+  }
+
+  @Test
+  void debeLeerDesdeLaBaseLaSintesisYElAnclaGuardadas() {
+    Consejo consejo = consejo(diego, OCTUBRE, "Alimentación").ancladoALaCategoria("Alimentación");
+    consejo.redactar("Síntesis guardada.", "firma-1");
+    repositorio.guardar(consejo);
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+
+    Consejo leido = repositorio.buscarPorId(consejo.getId());
+
+    assertThat(leido.getTextoParaMostrar(), equalTo("Síntesis guardada."));
+    assertThat(leido.getFirmaHechos(), equalTo("firma-1"));
+    assertThat(leido.getCategoriaSenialada(), equalTo("Alimentación"));
   }
 
   private Consejo consejo(Usuario usuario, YearMonth mes, String categoria) {
