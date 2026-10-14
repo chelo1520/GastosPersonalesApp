@@ -100,6 +100,63 @@ public class CalculadoraAlertasTest {
     assertNull(calculadora.alertaDeRepeticion(semana.get(2), semana, PRESUPUESTO));
   }
 
+  @Test
+  void debeAvisarEnAmarilloConElGastoQueHaceLlegarAl80PorCientoDelPresupuestoDelMes() {
+    // Antes 400.000 (72 %), con el gasto de 40.000 llega a 440.000 (80 %)
+    Alerta alerta = calculadora.alertaDePresupuesto(440000.0, 40000.0, PRESUPUESTO);
+
+    assertEquals(Alerta.Tipo.PRESUPUESTO, alerta.getTipo());
+    assertEquals(Alerta.Nivel.AMARILLA, alerta.getNivel());
+    assertEquals(
+      "Con este gasto llegaste al 80% del presupuesto del mes ($440.000 de $550.000)",
+      alerta.getMensaje()
+    );
+  }
+
+  @Test
+  void debeAvisarEnRojoConElGastoQueHacePasarElPresupuestoDelMes() {
+    Alerta alerta = calculadora.alertaDePresupuesto(560000.0, 30000.0, PRESUPUESTO);
+
+    assertEquals(Alerta.Nivel.ROJA, alerta.getNivel());
+    assertEquals(
+      "Con este gasto te pasaste del presupuesto del mes: llevás $560.000 de $550.000",
+      alerta.getMensaje()
+    );
+  }
+
+  @Test
+  void debeAvisarEnRojoCuandoUnSoloGastoPasaDeMenosDel80AMasDel100() {
+    Alerta alerta = calculadora.alertaDePresupuesto(600000.0, 300000.0, PRESUPUESTO);
+
+    assertEquals(Alerta.Nivel.ROJA, alerta.getNivel());
+  }
+
+  @Test
+  void noDebeVolverAAvisarConLosGastosSiguientesDentroDelMismoTramo() {
+    // Ya estaba en 85 %, sigue en amarillo
+    assertNull(calculadora.alertaDePresupuesto(480000.0, 12500.0, PRESUPUESTO));
+    // Ya estaba pasado
+    assertNull(calculadora.alertaDePresupuesto(620000.0, 20000.0, PRESUPUESTO));
+  }
+
+  @Test
+  void noDebeAvisarCuandoElMesSigueDebajoDel80PorCiento() {
+    assertNull(calculadora.alertaDePresupuesto(300000.0, 50000.0, PRESUPUESTO));
+  }
+
+  @Test
+  void noDebeAvisarCuandoNoHayPresupuestoDefinido() {
+    assertNull(calculadora.alertaDePresupuesto(300000.0, 50000.0, 0.0));
+  }
+
+  @Test
+  void noDebeDecir100PorCientoSiTodaviaNoSePaso() {
+    Alerta alerta = calculadora.alertaDePresupuesto(549000.0, 200000.0, PRESUPUESTO);
+
+    assertEquals(Alerta.Nivel.AMARILLA, alerta.getNivel());
+    assertTrue(alerta.getMensaje().startsWith("Con este gasto llegaste al 99%"));
+  }
+
   private ResumenHormiga hormiga(double total, double porcentaje) {
     return new ResumenHormiga(total, porcentaje, List.of());
   }
