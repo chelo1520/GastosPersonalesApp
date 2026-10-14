@@ -79,6 +79,8 @@ public class AsistenteVistaTest {
       .andExpect(view().name("asistente"))
       .andExpect(content().string(containsString("Tu asistente")))
       .andExpect(content().string(containsString("Lo que veo")))
+      .andExpect(content().string(containsString("id=\"modal-confirmar\"")))
+      .andExpect(content().string(not(containsString("confirm("))))
       .andExpect(content().string(containsString("tus gastos subieron 20,0 %")))
       .andExpect(content().string(containsString("Alimentación")))
       .andExpect(content().string(containsString("Consumís más")))

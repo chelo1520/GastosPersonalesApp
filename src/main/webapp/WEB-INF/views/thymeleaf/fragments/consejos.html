@@ -92,9 +92,13 @@
             </p>
             <p class="app-propuesta-texto" th:text="${p.texto}">Tu presupuesto de Alimentación es el mismo desde Octubre 2025.</p>
             <div class="app-consejo-acciones">
+              <!-- Pide confirmación con el modal de fragments/confirmar (confirmar.js), no con el confirm() del navegador -->
               <form th:if="${p.aplicable}" method="post"
                     th:action="@{/asistente/aplicar/{id}(id=${p.id}, periodo=${periodo})}"
-                    th:attr="onsubmit=|return confirm('¿Actualizar el presupuesto de ${p.categoria} a $ ${#numbers.formatDecimal(p.montoSugerido, 1, 'POINT', 0, 'COMMA')}?');|">
+                    th:with="actual=${montosActuales != null ? montosActuales[p.categoria] : null}"
+                    data-confirmar-titulo="Actualizar presupuesto"
+                    data-confirmar-boton="Actualizar"
+                    th:data-confirmar-texto="${actual != null} ? |Llevás el presupuesto de ${p.categoria} de $ ${#numbers.formatDecimal(actual, 1, 'POINT', 0, 'COMMA')} a $ ${#numbers.formatDecimal(p.montoSugerido, 1, 'POINT', 0, 'COMMA')} a partir de ${mesActualNombre}.| : |Llevás el presupuesto de ${p.categoria} a $ ${#numbers.formatDecimal(p.montoSugerido, 1, 'POINT', 0, 'COMMA')} a partir de ${mesActualNombre}.|">
                 <button type="submit" class="btn btn-primary btn-sm app-consejo-aplicar">Actualizar presupuesto</button>
               </form>
               <form method="post" th:action="@{/asistente/descartar/{id}(id=${p.id}, periodo=${periodo})}">

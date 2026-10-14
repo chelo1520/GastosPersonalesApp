@@ -217,8 +217,12 @@
     <aside th:replace="~{fragments/consejos :: panel(${consejos}, ${periodo})}"></aside>
   </th:block>
 
+  <!-- Modal de confirmación de la propuesta (confirmar.js) -->
+  <div th:replace="~{fragments/confirmar :: modal}"></div>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <script th:replace="~{fragments/layout :: scripts}"></script>
+  <script th:src="@{/js/confirmar.js}" charset="utf-8"></script>
   <script th:src="@{/js/asistente.js}" charset="utf-8"></script>
 </body>
 
