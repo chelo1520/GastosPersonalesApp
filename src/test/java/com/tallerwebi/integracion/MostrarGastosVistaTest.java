@@ -115,6 +115,7 @@ public class MostrarGastosVistaTest {
           )
       )
       .andExpect(content().string(containsString("Marca Otros como prescindible")))
+      .andExpect(content().string(containsString("Marcar categoría como hormiga")))
       // Salud es fija: se muestra la categoría, pero sin botón para marcarla como hormiga
       .andExpect(content().string(containsString("Farmacia")))
       .andExpect(content().string(not(containsString("/categorias/" + salud.getId() + "/"))))
@@ -130,7 +131,7 @@ public class MostrarGastosVistaTest {
         content()
           .string(
             containsString(
-              "Marca Kiosco como esencial: sus gastos dejan de contarse como gastos hormiga"
+              "Marca Kiosco como esencial: todos sus gastos dejan de contarse como gastos hormiga"
             )
           )
       );
@@ -201,7 +202,7 @@ public class MostrarGastosVistaTest {
       .andExpect(status().isOk())
       .andExpect(content().string(containsString("Es tu 4.º gasto en Café y snacks esta semana")))
       .andExpect(content().string(containsString("/categorias/" + cafe.getId() + "/no-es-hormiga")))
-      .andExpect(content().string(containsString("No es hormiga")));
+      .andExpect(content().string(containsString("Quitar categoría de hormiga")));
   }
 
   @Test

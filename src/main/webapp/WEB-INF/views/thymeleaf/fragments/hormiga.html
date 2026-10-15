@@ -6,8 +6,10 @@
   <!--
     Botón que cambia una categoría entre esencial y prescindible. El gasto no guarda nada propio:
     hereda el tipo de su categoría, así que el cambio vale para todos los gastos de esa categoría.
+    Por eso el texto nombra la categoría: que no parezca que marca solo el gasto de esa fila.
       categoriaId, nombre: la categoría
-      esencial: true muestra "Es hormiga" (pasa a prescindible), false muestra "No es hormiga"
+      esencial: true muestra "Marcar categoría como hormiga" (pasa a prescindible),
+                false muestra "Quitar categoría de hormiga"
       volver: pantalla a la que se vuelve ("/home" o "/mostrar-gastos")
   -->
   <form th:fragment="boton(categoriaId, nombre, esencial, volver)" method="post" class="app-hormiga-form"
@@ -15,10 +17,13 @@
           ? @{/categorias/{id}/es-hormiga(id=${categoriaId}, volver=${volver})}
           : @{/categorias/{id}/no-es-hormiga(id=${categoriaId}, volver=${volver})}">
     <button type="submit" class="btn btn-sm btn-outline-secondary app-hormiga-boton"
-            th:text="${esencial} ? 'Es hormiga' : 'No es hormiga'"
+            th:text="${esencial} ? 'Marcar categoría como hormiga' : 'Quitar categoría de hormiga'"
             th:title="${esencial}
-              ? 'Marca ' + ${nombre ?: 'esta categoría'} + ' como prescindible: sus gastos chicos y frecuentes (4 o más en el mes) van a contarse como gastos hormiga'
-              : 'Marca ' + ${nombre ?: 'esta categoría'} + ' como esencial: sus gastos dejan de contarse como gastos hormiga'">No es hormiga</button>
+              ? 'Marca ' + ${nombre ?: 'esta categoría'} + ' como prescindible: todos sus gastos chicos y frecuentes (4 o más en el mes) van a contarse como gastos hormiga'
+              : 'Marca ' + ${nombre ?: 'esta categoría'} + ' como esencial: todos sus gastos dejan de contarse como gastos hormiga'"
+            th:aria-label="${esencial}
+              ? 'Marcar ' + ${nombre ?: 'esta categoría'} + ' como hormiga, aplica a todos sus gastos'
+              : 'Quitar ' + ${nombre ?: 'esta categoría'} + ' de hormiga, aplica a todos sus gastos'">Quitar categoría de hormiga</button>
   </form>
 
 </body>

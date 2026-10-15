@@ -21,7 +21,7 @@ public class Alerta {
   private final Tipo tipo;
   private final Nivel nivel;
   private final String mensaje;
-  // Categoría que se puede marcar como "No es hormiga" desde la alerta (solo en la de repetición)
+  // Categoría que se puede marcar como "Quitar categoría de hormiga" desde la alerta (solo en la de repetición)
   private final Long categoriaId;
 
   public Alerta(Tipo tipo, Nivel nivel, String mensaje, Long categoriaId) {

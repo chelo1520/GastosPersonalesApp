@@ -86,12 +86,12 @@ public class VistaRegistrarGastoE2E {
   }
 
   @Test
-  void deberiaQuedarseEnRegistrarGastoSinGuardarSiLaFechaEsDelMesAnterior()
+  void deberiaQuedarseEnRegistrarGastoSinGuardarSiLaFechaEsDeHaceMasDeUnAnio()
     throws MalformedURLException {
-    LocalDate mesAnterior = LocalDate.now().minusMonths(1);
+    LocalDate haceMasDeUnAnio = LocalDate.now().minusMonths(13);
     dadoQueElUsuarioInicioSesion();
     dadoQueElUsuarioEstaEnRegistrarGasto();
-    cuandoElUsuarioCompletaElFormularioYTocaGuardar("1000", mesAnterior, "Gasto del mes pasado");
+    cuandoElUsuarioCompletaElFormularioYTocaGuardar("1000", haceMasDeUnAnio, "Gasto viejo");
     entoncesLaFechaDeberiaSerInvalida();
     entoncesDeberiaSeguirEnRegistrarGasto();
   }
