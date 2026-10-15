@@ -26,6 +26,24 @@
               : 'Quitar ' + ${nombre ?: 'esta categoría'} + ' de hormiga, aplica a todos sus gastos'">Quitar categoría de hormiga</button>
   </form>
 
+  <!--
+    Check "¿Es hormiga?" de la tabla de categorías del resumen. Tildado = categoría prescindible.
+    Al cambiarlo se envía solo (resumen.js) y pide lo contrario de lo que hay: tildado manda a no-es-hormiga.
+      categoriaId, nombre: la categoría
+      esHormiga: estado actual (true = prescindible)
+      volver: pantalla a la que se vuelve (ej. "/home?mes=2026-09")
+  -->
+  <form th:fragment="check(categoriaId, nombre, esHormiga, volver)" method="post" class="app-hormiga-check"
+        th:action="${esHormiga}
+          ? @{/categorias/{id}/no-es-hormiga(id=${categoriaId}, volver=${volver})}
+          : @{/categorias/{id}/es-hormiga(id=${categoriaId}, volver=${volver})}">
+    <input class="form-check-input" type="checkbox" th:checked="${esHormiga}"
+           th:aria-label="'¿' + ${nombre} + ' es gasto hormiga? Aplica a todos sus gastos'"
+           th:title="${esHormiga}
+             ? 'Destildá para marcar ' + ${nombre} + ' como esencial: todos sus gastos dejan de contarse como gastos hormiga'
+             : 'Tildá para marcar ' + ${nombre} + ' como prescindible: todos sus gastos chicos y frecuentes (4 o más en el mes) van a contarse como gastos hormiga'" />
+  </form>
+
 </body>
 
 </html>

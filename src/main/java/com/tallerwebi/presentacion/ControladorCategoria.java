@@ -4,6 +4,7 @@ import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.categoria.CategoriaRepositorio;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +21,8 @@ public class ControladorCategoria {
 
   // Solo se vuelve a pantallas propias: evita redirigir a cualquier URL que llegue en el parámetro
   private static final List<String> PANTALLAS_DE_VUELTA = List.of("/home", "/mostrar-gastos");
+  // El resumen de un mes puntual (check "¿Es hormiga?" de la tabla): se vuelve al mismo mes
+  private static final Pattern RESUMEN_DE_UN_MES = Pattern.compile("/home\\?mes=\\d{4}-\\d{2}");
 
   private CategoriaRepositorio categoriaRepositorio;
 
@@ -65,7 +68,10 @@ public class ControladorCategoria {
       categoriaRepositorio.modificar(categoria);
     }
 
-    String destino = PANTALLAS_DE_VUELTA.contains(volver) ? volver : "/home";
+    boolean vueltaValida =
+      PANTALLAS_DE_VUELTA.contains(volver) ||
+      (volver != null && RESUMEN_DE_UN_MES.matcher(volver).matches());
+    String destino = vueltaValida ? volver : "/home";
     return new ModelAndView("redirect:" + destino);
   }
 }

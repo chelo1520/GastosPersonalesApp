@@ -171,3 +171,11 @@
     },
   });
 })();
+
+// Check "¿Es hormiga?" de la tabla de categorías: al cambiarlo se guarda, sin botón aparte
+document.querySelectorAll(".app-hormiga-check input").forEach((check) => {
+  check.addEventListener("change", () => {
+    check.disabled = true; // evita un doble envío mientras recarga
+    check.form.submit();
+  });
+});

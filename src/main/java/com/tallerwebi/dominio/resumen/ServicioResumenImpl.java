@@ -3,6 +3,7 @@ package com.tallerwebi.dominio.resumen;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.alerta.CalculadoraAlertas;
+import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.RepositorioGasto;
 import com.tallerwebi.dominio.presupuesto.Presupuesto;
@@ -58,13 +59,13 @@ public class ServicioResumenImpl implements ServicioResumen {
 
     double gastado = 0.0;
     Map<String, Double> gastadoPorCategoria = new LinkedHashMap<>();
+    // La entidad de cada fila, para el check "¿Es hormiga?" de la tabla
+    Map<String, Categoria> categoriaPorNombre = new LinkedHashMap<>();
     for (Gasto gasto : gastos) {
       gastado += gasto.getImporte();
-      String nombreCategoria = gasto.getCategoria() == null
-        ? null
-        : gasto.getCategoria().getNombre();
-      if (nombreCategoria == null || nombreCategoria.isBlank()) {
-        nombreCategoria = SIN_CATEGORIA;
+      String nombreCategoria = nombreDeCategoria(gasto);
+      if (gasto.getCategoria() != null) {
+        categoriaPorNombre.putIfAbsent(nombreCategoria, gasto.getCategoria());
       }
       gastadoPorCategoria.merge(nombreCategoria, gasto.getImporte(), Double::sum);
     }
@@ -75,28 +76,15 @@ public class ServicioResumenImpl implements ServicioResumen {
     for (Presupuesto definido : servicioPresupuesto.obtenerDelMes(usuario, mes)) {
       presupuesto += definido.getMonto();
       presupuestoPorCategoria.put(definido.getCategoria().getNombre(), definido.getMonto());
+      categoriaPorNombre.putIfAbsent(definido.getCategoria().getNombre(), definido.getCategoria());
     }
 
-    List<ResumenCategoria> categorias = new ArrayList<>();
-    for (Map.Entry<String, Double> categoria : gastadoPorCategoria.entrySet()) {
-      double gastadoCategoria = categoria.getValue();
-      categorias.add(
-        new ResumenCategoria(
-          categoria.getKey(),
-          gastadoCategoria,
-          porcentaje(gastadoCategoria, gastado),
-          presupuestoPorCategoria.get(categoria.getKey())
-        )
-      );
-    }
-    // Las categorías con presupuesto pero sin gastos también se muestran (gastado 0)
-    for (Map.Entry<String, Double> definido : presupuestoPorCategoria.entrySet()) {
-      if (!gastadoPorCategoria.containsKey(definido.getKey())) {
-        categorias.add(new ResumenCategoria(definido.getKey(), 0.0, 0.0, definido.getValue()));
-      }
-    }
-    // De la que más se gastó a la que menos, como se lee el gráfico de torta
-    categorias.sort(Comparator.comparing(ResumenCategoria::getGastado).reversed());
+    List<ResumenCategoria> categorias = filas(
+      gastado,
+      gastadoPorCategoria,
+      presupuestoPorCategoria,
+      categoriaPorNombre
+    );
 
     ResumenHormiga hormiga = calculadoraHormiga.calcular(gastos, presupuesto);
 
@@ -108,6 +96,72 @@ public class ServicioResumenImpl implements ServicioResumen {
       categorias,
       hormiga,
       alertasDelMes(hormiga, mes)
+    );
+  }
+
+  private List<ResumenCategoria> filas(
+    double gastado,
+    Map<String, Double> gastadoPorCategoria,
+    Map<String, Double> presupuestoPorCategoria,
+    Map<String, Categoria> categoriaPorNombre
+  ) {
+    List<ResumenCategoria> categorias = new ArrayList<>();
+    for (Map.Entry<String, Double> categoria : gastadoPorCategoria.entrySet()) {
+      double gastadoCategoria = categoria.getValue();
+      categorias.add(
+        fila(
+          categoria.getKey(),
+          gastadoCategoria,
+          porcentaje(gastadoCategoria, gastado),
+          presupuestoPorCategoria.get(categoria.getKey()),
+          categoriaPorNombre.get(categoria.getKey())
+        )
+      );
+    }
+    // Las categorías con presupuesto pero sin gastos también se muestran (gastado 0)
+    for (Map.Entry<String, Double> definido : presupuestoPorCategoria.entrySet()) {
+      if (!gastadoPorCategoria.containsKey(definido.getKey())) {
+        categorias.add(
+          fila(
+            definido.getKey(),
+            0.0,
+            0.0,
+            definido.getValue(),
+            categoriaPorNombre.get(definido.getKey())
+          )
+        );
+      }
+    }
+    // De la que más se gastó a la que menos, como se lee el gráfico de torta
+    categorias.sort(Comparator.comparing(ResumenCategoria::getGastado).reversed());
+    return categorias;
+  }
+
+  // Un gasto sin categoría, o con una sin nombre, se agrupa en "Sin categoría"
+  private static String nombreDeCategoria(Gasto gasto) {
+    String nombre = gasto.getCategoria() == null ? null : gasto.getCategoria().getNombre();
+    return nombre == null || nombre.isBlank() ? SIN_CATEGORIA : nombre;
+  }
+
+  // Sin categoría, o con una fija (siempre esencial), el check "¿Es hormiga?" no se puede cambiar
+  private ResumenCategoria fila(
+    String nombre,
+    Double gastado,
+    Double porcentajeTotal,
+    Double presupuesto,
+    Categoria categoria
+  ) {
+    if (categoria == null) {
+      return new ResumenCategoria(nombre, gastado, porcentajeTotal, presupuesto);
+    }
+    Boolean esHormiga = categoria.isFija() ? null : !categoria.isEsencial();
+    return new ResumenCategoria(
+      nombre,
+      gastado,
+      porcentajeTotal,
+      presupuesto,
+      categoria.getId(),
+      esHormiga
     );
   }
 

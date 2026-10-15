@@ -50,16 +50,8 @@
                   th:text="${#temporals.format(gasto.fecha, 'dd/MM/yyyy')}">30/09/2026</time>
               </td>
               <td th:text="${gasto.descripcion}">Compra semanal</td>
-              <td>
-                <!-- El botón hormiga va junto a la categoría porque cambia la categoría, no el gasto -->
-                <div class="app-gasto-categoria">
-                  <span th:text="${gasto.categoria?.nombre}">Alimentación</span>
-                  <!-- Las categorías fijas (vivienda, salud...) son siempre esenciales: no llevan botón -->
-                  <th:block th:if="${gasto.categoria != null and !gasto.categoria.fija}">
-                    <form th:replace="~{fragments/hormiga :: boton(${gasto.categoria.id}, ${gasto.categoria.nombre}, ${gasto.categoria.esencial}, '/mostrar-gastos')}"></form>
-                  </th:block>
-                </div>
-              </td>
+              <!-- Si la categoría es hormiga se cambia desde el resumen (check "¿Es hormiga?") -->
+              <td th:text="${gasto.categoria?.nombre}">Alimentación</td>
               <td class="app-gasto-importe text-end">
                 $ <span th:text="${#numbers.formatDecimal(gasto.importe, 1, 'POINT', 2, 'COMMA')}">46.200,00</span>
               </td>
@@ -85,13 +77,8 @@
             th:text="${#temporals.format(gasto.fecha, 'dd/MM/yyyy')}">30/09/2026</time>
           <div class="app-gasto-mobile-detalle">
             <span class="app-gasto-mobile-descripcion" th:text="${gasto.descripcion}">Compra semanal</span>
-            <div class="app-gasto-categoria" th:if="${gasto.categoria != null}">
-              <span class="app-gasto-mobile-categoria" th:text="${gasto.categoria.nombre}">Alimentación</span>
-              <!-- Las categorías fijas (vivienda, salud...) son siempre esenciales: no llevan botón -->
-              <th:block th:if="${!gasto.categoria.fija}">
-                <form th:replace="~{fragments/hormiga :: boton(${gasto.categoria.id}, ${gasto.categoria.nombre}, ${gasto.categoria.esencial}, '/mostrar-gastos')}"></form>
-              </th:block>
-            </div>
+            <span class="app-gasto-mobile-categoria" th:if="${gasto.categoria != null}"
+                  th:text="${gasto.categoria.nombre}">Alimentación</span>
             <strong class="app-gasto-importe">
               $ <span th:text="${#numbers.formatDecimal(gasto.importe, 1, 'POINT', 2, 'COMMA')}">46.200,00</span>
             </strong>

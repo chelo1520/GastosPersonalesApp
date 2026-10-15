@@ -92,6 +92,42 @@ public class ResumenVistaTest {
   }
 
   @Test
+  public void debeMostrarElCheckEsHormigaEnLaTablaDeCategoriasMenosEnLasFijas() throws Exception {
+    Usuario usuario = new Usuario();
+    Categoria kiosco = categoria("Kiosco");
+    kiosco.setEsencial(false);
+    Categoria otros = categoria("Otros");
+    Categoria salud = categoria("Salud");
+    salud.setFija(true);
+    persistir(usuario, kiosco, otros, salud);
+    persistir(gasto(1800.0, LocalDate.of(2026, 9, 3), kiosco, usuario));
+    persistir(gasto(5000.0, LocalDate.of(2026, 9, 4), otros, usuario));
+    persistir(gasto(9800.0, LocalDate.of(2026, 9, 5), salud, usuario));
+
+    mockMvc
+      .perform(get("/home").param("mes", "2026-09").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("¿Es hormiga?")))
+      // Kiosco es hormiga: tildado, y al destildarlo pasa a esencial; se vuelve al mismo mes
+      .andExpect(
+        content()
+          .string(
+            containsString("/categorias/" + kiosco.getId() + "/no-es-hormiga?volver=/home?mes")
+          )
+      )
+      .andExpect(content().string(containsString("Destildá para marcar Kiosco como esencial")))
+      // Otros es esencial: sin tildar, y al tildarlo pasa a hormiga
+      .andExpect(
+        content()
+          .string(containsString("/categorias/" + otros.getId() + "/es-hormiga?volver=/home?mes"))
+      )
+      .andExpect(content().string(containsString("Tildá para marcar Otros como prescindible")))
+      // Salud es fija: siempre esencial, no se puede tildar
+      .andExpect(content().string(not(containsString("/categorias/" + salud.getId() + "/"))))
+      .andExpect(content().string(containsString("Categoría fija: siempre es esencial")));
+  }
+
+  @Test
   public void debeRenderizarLosGastosHormigaDelMesYSusCategorias() throws Exception {
     Usuario usuario = new Usuario();
     Categoria cafe = categoria("Café y snacks");

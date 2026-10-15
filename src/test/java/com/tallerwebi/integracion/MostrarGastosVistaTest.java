@@ -89,52 +89,25 @@ public class MostrarGastosVistaTest {
   }
 
   @Test
-  public void debeMostrarEsHormigaEnCategoriasEsencialesYNoEsHormigaEnPrescindiblesConSuLeyenda()
-    throws Exception {
+  public void noDebeMostrarElBotonHormigaEnLaListaPorqueSeCambiaDesdeElResumen() throws Exception {
     Usuario usuario = new Usuario();
     Categoria otros = categoria("Otros", true, false);
     Categoria kiosco = categoria("Kiosco", false, false);
-    Categoria salud = categoria("Salud", true, true);
     sessionFactory.getCurrentSession().persist(usuario);
     sessionFactory.getCurrentSession().persist(otros);
     sessionFactory.getCurrentSession().persist(kiosco);
-    sessionFactory.getCurrentSession().persist(salud);
     persistirGasto(1800.0, "Golosina", kiosco, usuario);
     persistirGasto(5000.0, "Regalo", otros, usuario);
-    persistirGasto(9800.0, "Farmacia", salud, usuario);
 
     MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
 
     mockMvc
       .perform(get("/mostrar-gastos").sessionAttr("USUARIO", usuario))
       .andExpect(status().isOk())
-      .andExpect(
-        content()
-          .string(
-            containsString("/categorias/" + otros.getId() + "/es-hormiga?volver=/mostrar-gastos")
-          )
-      )
-      .andExpect(content().string(containsString("Marca Otros como prescindible")))
-      .andExpect(content().string(containsString("Marcar categoría como hormiga")))
-      // Salud es fija: se muestra la categoría, pero sin botón para marcarla como hormiga
-      .andExpect(content().string(containsString("Farmacia")))
-      .andExpect(content().string(not(containsString("/categorias/" + salud.getId() + "/"))))
-      .andExpect(
-        content()
-          .string(
-            containsString(
-              "/categorias/" + kiosco.getId() + "/no-es-hormiga?volver=/mostrar-gastos"
-            )
-          )
-      )
-      .andExpect(
-        content()
-          .string(
-            containsString(
-              "Marca Kiosco como esencial: todos sus gastos dejan de contarse como gastos hormiga"
-            )
-          )
-      );
+      .andExpect(content().string(containsString("Golosina")))
+      .andExpect(content().string(containsString("Kiosco")))
+      .andExpect(content().string(not(containsString("/categorias/" + otros.getId() + "/"))))
+      .andExpect(content().string(not(containsString("/categorias/" + kiosco.getId() + "/"))));
   }
 
   private Categoria categoria(String nombre, boolean esencial, boolean fija) {
