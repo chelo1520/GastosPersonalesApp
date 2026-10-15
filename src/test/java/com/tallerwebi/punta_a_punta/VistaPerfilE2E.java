@@ -79,7 +79,7 @@ public class VistaPerfilE2E {
   }
 
   private void cuandoNavegaAlPerfilDesdeElNavbar() {
-    page.locator("nav.app-nav a", new Page.LocatorOptions().setHasText("Perfil")).click();
+    page.locator(".app-cuenta a", new Page.LocatorOptions().setHasText("Perfil")).click();
     page.waitForURL("**/perfil**");
     vistaPerfil = new VistaPerfil(page);
   }
