@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+  <!--
+    Modal de confirmación con el estilo de la app, en reemplazo del confirm() del navegador.
+    Uso: incluir una vez por página con th:replace="~{fragments/confirmar :: modal}" y cargar /js/confirmar.js.
+    Cualquier formulario con data-confirmar-texto se detiene y pide confirmación antes de enviarse:
+      data-confirmar-titulo (opcional), data-confirmar-texto, data-confirmar-boton (opcional, por defecto "Confirmar").
+  -->
+  <div th:fragment="modal" class="modal fade app-confirmar" id="modal-confirmar" tabindex="-1"
+       aria-labelledby="modal-confirmar-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content app-confirmar-contenido">
+        <h2 class="app-confirmar-titulo" id="modal-confirmar-titulo">¿Confirmás?</h2>
+        <p class="app-confirmar-texto"></p>
+        <div class="app-confirmar-acciones">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary app-confirmar-si">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+
+</html>

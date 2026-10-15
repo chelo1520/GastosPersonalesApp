@@ -199,6 +199,24 @@ public class ServicioGastoRealImplTest {
     assertThat(gastoReal.isIndicadoresAlDia(), is(false));
   }
 
+  @Test
+  void debeLlevarElHormigaYElPresupuestoDeCadaMesAlPeriodo() {
+    when(servicioResumenMock.obtenerHistorial(usuario, OCTUBRE, 3))
+      .thenReturn(
+        List.of(
+          new ResumenDeMes(AGOSTO, 100000.0, 8000.0, 120000.0, false),
+          new ResumenDeMes(SEPTIEMBRE, 110000.0, 9000.0, 120000.0, false),
+          new ResumenDeMes(OCTUBRE, 30000.0, 2000.0, 120000.0, true)
+        )
+      );
+
+    List<MesGastoReal> meses = servicio.calcular(usuario, 3).getMeses();
+
+    assertThat(meses.get(0).getHormiga(), equalTo(8000.0));
+    assertThat(meses.get(0).getPresupuesto(), equalTo(120000.0));
+    assertThat(meses.get(2).getHormiga(), equalTo(2000.0));
+  }
+
   private void conHistorial(Double agosto, Double septiembre, Double octubre) {
     when(servicioResumenMock.obtenerHistorial(usuario, OCTUBRE, 3))
       .thenReturn(

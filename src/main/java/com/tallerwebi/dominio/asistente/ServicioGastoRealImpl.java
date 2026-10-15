@@ -109,7 +109,9 @@ public class ServicioGastoRealImpl implements ServicioGastoReal {
           ipc.getPorcentaje(),
           ipc.isEstimada(),
           dolar,
-          enCurso
+          enCurso,
+          mes.getHormiga(),
+          mes.getPresupuesto()
         )
       );
       // El IPC de este mes es lo que separa sus pesos de los del mes anterior
@@ -171,7 +173,7 @@ public class ServicioGastoRealImpl implements ServicioGastoReal {
         )
       );
     }
-    // Las que más subieron en serio, primero; las que no se pueden comparar, al final
+    // Las que más subieron en términos reales, primero; las que no se pueden comparar, al final
     categorias.sort(
       Comparator.comparing(
         CategoriaGastoReal::getVariacionReal,

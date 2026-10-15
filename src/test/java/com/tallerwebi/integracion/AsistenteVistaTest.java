@@ -1,7 +1,9 @@
 package com.tallerwebi.integracion;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -10,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.gasto.Gasto;
+import com.tallerwebi.dominio.presupuesto.Presupuesto;
 import com.tallerwebi.integracion.config.HibernateTestConfig;
 import com.tallerwebi.integracion.config.SpringWebTestConfig;
 import java.time.LocalDate;
@@ -75,6 +78,9 @@ public class AsistenteVistaTest {
       .andExpect(status().isOk())
       .andExpect(view().name("asistente"))
       .andExpect(content().string(containsString("Tu asistente")))
+      .andExpect(content().string(containsString("Lo que veo")))
+      .andExpect(content().string(containsString("id=\"modal-confirmar\"")))
+      .andExpect(content().string(not(containsString("confirm("))))
       .andExpect(content().string(containsString("tus gastos subieron 20,0 %")))
       .andExpect(content().string(containsString("Alimentación")))
       .andExpect(content().string(containsString("Consumís más")))
@@ -87,6 +93,66 @@ public class AsistenteVistaTest {
       .perform(get("/asistente").sessionAttr("USUARIO", usuario))
       .andExpect(status().isOk())
       .andExpect(content().string(containsString("Todavía no tengo dos meses cerrados")));
+  }
+
+  @Test
+  public void debeSugerirActualizarElPresupuestoYAplicarloDesdeElBotonCuandoQuedoAtrasDeLaInflacion()
+    throws Exception {
+    // El mismo presupuesto desde hace 6 meses con 2 % mensual de inflación → más del 5 % acumulado
+    Categoria alimentacion = categoria("Alimentación");
+    for (int i = 6; i >= 0; i--) {
+      sessionFactory
+        .getCurrentSession()
+        .persist(new Presupuesto(usuario, alimentacion, YearMonth.now().minusMonths(i), 100000.0));
+    }
+
+    String pagina = mockMvc
+      .perform(get("/asistente").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("Tu presupuesto de Alimentación ($ 100.000)")))
+      .andExpect(content().string(containsString("Actualizar presupuesto")))
+      .andReturn()
+      .getResponse()
+      .getContentAsString();
+    String id = pagina.replaceAll("(?s).*?/asistente/aplicar/(\\d+).*", "$1");
+
+    mockMvc
+      .perform(
+        post("/asistente/aplicar/" + id).param("periodo", "6").sessionAttr("USUARIO", usuario)
+      )
+      .andExpect(status().is3xxRedirection())
+      .andExpect(redirectedUrl("/asistente?periodo=6"));
+
+    mockMvc
+      .perform(get("/asistente").sessionAttr("USUARIO", usuario))
+      .andExpect(content().string(not(containsString("Actualizar presupuesto"))));
+    mockMvc
+      .perform(get("/presupuestos").sessionAttr("USUARIO", usuario))
+      .andExpect(content().string(not(containsString("100.000"))));
+  }
+
+  @Test
+  public void debeOcultarElConsejoCuandoSeDescartaDesdeElBoton() throws Exception {
+    Categoria alimentacion = categoria("Alimentación");
+    for (int i = 6; i >= 0; i--) {
+      sessionFactory
+        .getCurrentSession()
+        .persist(new Presupuesto(usuario, alimentacion, YearMonth.now().minusMonths(i), 100000.0));
+    }
+    String pagina = mockMvc
+      .perform(get("/asistente").sessionAttr("USUARIO", usuario))
+      .andReturn()
+      .getResponse()
+      .getContentAsString();
+    String id = pagina.replaceAll("(?s).*?/asistente/descartar/(\\d+).*", "$1");
+
+    mockMvc
+      .perform(post("/asistente/descartar/" + id).sessionAttr("USUARIO", usuario))
+      .andExpect(status().is3xxRedirection());
+
+    mockMvc
+      .perform(get("/asistente").sessionAttr("USUARIO", usuario))
+      .andExpect(content().string(not(containsString("Descartar"))));
   }
 
   private Categoria categoria(String nombre) {
