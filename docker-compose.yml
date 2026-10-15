@@ -37,7 +37,9 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
+      # Asistente con Claude (HU-15); sin la clave, los consejos salen con el texto de las reglas
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ASISTENTE_MODELO: ${ASISTENTE_MODELO:-}
 
 volumes:
   mysql_data:

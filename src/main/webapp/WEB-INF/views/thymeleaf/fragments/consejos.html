@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+  <!--
+    El asistente en dos piezas (rediseño "panel lateral"):
+      tira(consejos, periodo): una línea con el veredicto y el botón que abre el panel.
+      panel(consejos, periodo): offcanvas con la síntesis, las lecturas (acordeón) y la propuesta.
+    Lee también del modelo: sintesisPendiente, montosActuales, periodoTexto, mesActualNombre, gastoReal.
+  -->
+
+  <section th:fragment="tira(consejos, periodo)" class="app-resumen-card app-tira" aria-label="Tu asistente"
+           th:with="veredicto=${consejos.^[veredicto]}">
+    <img class="app-tira-isotipo" th:src="@{/img/isotipo-sobre-oscuro.svg}" width="28" height="28" alt="">
+    <span class="app-tira-rotulo">Tu asistente</span>
+    <th:block th:if="${veredicto != null}">
+      <span class="app-tira-estado" th:classappend="'is-' + ${veredicto.severidad.estilo}"
+            th:with="real=${gastoReal.veredicto.variacionReal}"
+            th:text="${T(java.lang.Math).abs(real) < 0.5} ? 'Sin cambio real' : ((${real > 0} ? 'Aumento real +' : 'Baja real −') + ${#numbers.formatDecimal(T(java.lang.Math).abs(real), 1, 'POINT', 1, 'COMMA')} + ' %')">Aumento real +1,7 %</span>
+      <strong class="app-tira-titulo" th:text="${veredicto.titulo}">Gastás 1,7 % más en términos reales que en Mayo 2026</strong>
+      <span class="app-tira-conteo" th:with="lecturas=${consejos.?[lectura and !veredicto].size()}, propuestas=${consejos.?[propuesta].size()}">
+        <span th:text="'· ' + ${lecturas} + (${lecturas == 1} ? ' lectura' : ' lecturas')">· 3 lecturas</span>
+        <span th:if="${propuestas > 0}" th:text="'· ' + ${propuestas} + (${propuestas == 1} ? ' propuesta' : ' propuestas')">· 1 propuesta</span>
+      </span>
+      <button type="button" class="btn btn-primary app-tira-boton" id="abrir-panel" aria-controls="panel-asistente" aria-expanded="false">
+        Ver análisis <span aria-hidden="true">→</span>
+      </button>
+    </th:block>
+    <p class="app-tira-vacia" th:if="${veredicto == null}">Todavía no tengo dos meses cerrados con gastos para comparar. Elegí un período más largo o seguí cargando gastos.</p>
+  </section>
+
+  <aside th:fragment="panel(consejos, periodo)" class="offcanvas offcanvas-end app-panel" tabindex="-1" id="panel-asistente"
+         aria-labelledby="panel-asistente-titulo" th:with="veredicto=${consejos.^[veredicto]}">
+    <div class="offcanvas-header app-panel-cabecera">
+      <img th:src="@{/img/isotipo-sobre-oscuro.svg}" width="28" height="28" alt="">
+      <h2 class="app-panel-titulo" id="panel-asistente-titulo">Tu asistente</h2>
+      <span class="app-panel-periodo" th:if="${periodoTexto != null}" th:text="${periodoTexto}">Mayo a Septiembre 2026</span>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+    </div>
+    <div class="offcanvas-body app-panel-cuerpo">
+
+      <!-- La síntesis de la IA tarda: se muestra el veredicto de las reglas y asistente.js pide el párrafo aparte -->
+      <section class="app-panel-seccion" th:if="${veredicto != null}">
+        <h3 class="app-consejos-titulo">En pocas palabras</h3>
+        <div class="app-sintesis" th:classappend="${sintesisPendiente} ? 'is-escribiendo'"
+             th:attr="data-sintesis-url=${sintesisPendiente} ? @{/asistente/sintesis(periodo=${periodo})} : null">
+          <p class="app-sintesis-texto is-recortada" id="veredicto-texto" th:text="${veredicto.textoParaMostrar}">Desde Mayo 2026 tus gastos subieron 9,4 %.</p>
+          <small class="app-sintesis-estado" role="status" th:if="${sintesisPendiente}">Tu asistente está escribiendo<span class="app-asistente-puntos" aria-hidden="true"></span></small>
+          <button type="button" class="app-enlace app-sintesis-leer" hidden aria-expanded="false">Leer todo</button>
+        </div>
+      </section>
+
+      <th:block th:with="lecturas=${consejos.?[lectura and !veredicto]}">
+        <section class="app-panel-seccion" th:unless="${#lists.isEmpty(lecturas)}">
+          <h3 class="app-consejos-titulo">Lo que veo</h3>
+          <div class="accordion app-lecturas" id="lecturas">
+            <article class="accordion-item app-lectura" th:each="l, it : ${lecturas}"
+                     th:id="'lectura-' + ${l.id}" th:classappend="'is-' + ${l.severidad.estilo}"
+                     th:data-mes="${l.mesSenialado}" th:data-categoria="${l.categoriaSenialada}">
+              <h4 class="accordion-header">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                        th:classappend="${!it.first} ? 'collapsed'"
+                        th:data-bs-target="'#lectura-cuerpo-' + ${l.id}"
+                        th:aria-expanded="${it.first}" th:aria-controls="'lectura-cuerpo-' + ${l.id}">
+                  <span class="app-numero" th:if="${l.ancla != null}" aria-hidden="true"></span>
+                  <span th:text="${l.titulo}">Gastos hormiga del período</span>
+                </button>
+              </h4>
+              <div th:id="'lectura-cuerpo-' + ${l.id}" class="accordion-collapse collapse" th:classappend="${it.first} ? 'show'" data-bs-parent="#lecturas">
+                <div class="accordion-body">
+                  <p class="app-lectura-texto" th:text="${l.texto}">Entre Mayo y Septiembre se te fueron $ 304.500 en gastos hormiga.</p>
+                  <button type="button" class="app-enlace app-ver-en-grafico" th:if="${l.mesSenialado != null}" th:data-mes="${l.mesSenialado}">Ver en el gráfico</button>
+                  <button type="button" class="app-enlace app-ver-en-tabla" th:if="${l.categoriaSenialada != null}" th:data-categoria="${l.categoriaSenialada}">Ver en la tabla</button>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+      </th:block>
+
+      <th:block th:with="propuestas=${consejos.?[propuesta]}">
+        <section class="app-panel-seccion" th:unless="${#lists.isEmpty(propuestas)}">
+          <h3 class="app-consejos-titulo">Lo que te propongo</h3>
+          <article class="app-propuesta" th:each="p : ${propuestas}" th:id="'consejo-' + ${p.id}"
+                   th:classappend="'is-' + ${p.severidad.estilo}">
+            <strong class="app-propuesta-titulo" th:text="${p.titulo}">Presupuesto de Alimentación</strong>
+            <p class="app-propuesta-montos" th:if="${p.aplicable}">
+              <s th:if="${montosActuales != null and montosActuales[p.categoria] != null}"
+                 th:text="'$ ' + ${#numbers.formatDecimal(montosActuales[p.categoria], 1, 'POINT', 0, 'COMMA')}">$ 180.000</s>
+              <span aria-hidden="true">→</span>
+              <strong th:text="'$ ' + ${#numbers.formatDecimal(p.montoSugerido, 1, 'POINT', 0, 'COMMA')}">$ 239.000</strong>
+            </p>
+            <p class="app-propuesta-texto" th:text="${p.texto}">Tu presupuesto de Alimentación es el mismo desde Octubre 2025.</p>
+            <div class="app-consejo-acciones">
+              <!-- Pide confirmación con el modal de fragments/confirmar (confirmar.js), no con el confirm() del navegador -->
+              <form th:if="${p.aplicable}" method="post"
+                    th:action="@{/asistente/aplicar/{id}(id=${p.id}, periodo=${periodo})}"
+                    th:with="actual=${montosActuales != null ? montosActuales[p.categoria] : null}"
+                    data-confirmar-titulo="Actualizar presupuesto"
+                    data-confirmar-boton="Actualizar"
+                    th:data-confirmar-texto="${actual != null} ? |Llevás el presupuesto de ${p.categoria} de $ ${#numbers.formatDecimal(actual, 1, 'POINT', 0, 'COMMA')} a $ ${#numbers.formatDecimal(p.montoSugerido, 1, 'POINT', 0, 'COMMA')} a partir de ${mesActualNombre}.| : |Llevás el presupuesto de ${p.categoria} a $ ${#numbers.formatDecimal(p.montoSugerido, 1, 'POINT', 0, 'COMMA')} a partir de ${mesActualNombre}.|">
+                <button type="submit" class="btn btn-primary btn-sm app-consejo-aplicar">Actualizar presupuesto</button>
+              </form>
+              <form method="post" th:action="@{/asistente/descartar/{id}(id=${p.id}, periodo=${periodo})}">
+                <button type="submit" class="btn btn-outline-secondary btn-sm app-consejo-descartar">Descartar</button>
+              </form>
+            </div>
+          </article>
+        </section>
+      </th:block>
+
+    </div>
+    <footer class="app-panel-pie">
+      Comparo el primer mes del período con el último cerrado; el mes en curso no cuenta.
+      <span th:if="${mesActualNombre != null}" th:text="'Se actualiza cuando cierra ' + ${mesActualNombre} + ' o sale el IPC.'">Se actualiza cuando cierra Octubre 2026 o sale el IPC.</span>
+    </footer>
+  </aside>
+
+</body>
+
+</html>
