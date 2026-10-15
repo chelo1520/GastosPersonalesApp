@@ -672,7 +672,7 @@ a:hover {
 }
 
 
-/* Botón "Es hormiga" / "No es hormiga": cambia la categoría entre prescindible y esencial */
+/* Botón "Marcar categoría como hormiga" / "Quitar categoría de hormiga": cambia la categoría entre prescindible y esencial */
 .app-hormiga-form {
   display: inline-block;
   margin: 0;
@@ -680,6 +680,19 @@ a:hover {
 
 .app-hormiga-boton {
   white-space: nowrap;
+}
+
+/* Nombre de la categoría con su botón hormiga al lado; si no entra, el botón baja */
+.app-gasto-categoria {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.app-gasto-categoria .app-hormiga-boton {
+  padding: 2px 8px;
+  font-size: 12px;
 }
 
 .app-gasto-mobile-categoria {

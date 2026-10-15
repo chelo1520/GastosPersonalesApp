@@ -28,7 +28,7 @@ public class ControladorCategoria {
     this.categoriaRepositorio = categoriaRepositorio;
   }
 
-  // Botón "No es hormiga": la categoría pasa a esencial y sus gastos dejan de contarse
+  // Botón "Quitar categoría de hormiga": la categoría pasa a esencial y sus gastos dejan de contarse
   @RequestMapping(path = "/categorias/{id}/no-es-hormiga", method = RequestMethod.POST)
   public ModelAndView marcarComoNoHormiga(
     @PathVariable("id") Long id,
@@ -38,7 +38,7 @@ public class ControladorCategoria {
     return marcarEsencial(id, true, volver, request);
   }
 
-  // Botón "Es hormiga": la categoría pasa a prescindible y sus gastos chicos y frecuentes se cuentan
+  // Botón "Marcar categoría como hormiga": la categoría pasa a prescindible y sus gastos chicos y frecuentes se cuentan
   @RequestMapping(path = "/categorias/{id}/es-hormiga", method = RequestMethod.POST)
   public ModelAndView marcarComoHormiga(
     @PathVariable("id") Long id,

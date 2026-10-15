@@ -8,7 +8,7 @@ public final class ResumenCategoria {
   private final Double porcentajeTotal;
   private final Double presupuesto;
   private final EstadoPresupuesto estado;
-  // Para el botón "No es hormiga" de la tarjeta de gastos hormiga; null en el resto
+  // Para el botón "Quitar categoría de hormiga" de la tarjeta de gastos hormiga; null en el resto
   private final Long categoriaId;
 
   // Sin presupuesto definido para la categoría

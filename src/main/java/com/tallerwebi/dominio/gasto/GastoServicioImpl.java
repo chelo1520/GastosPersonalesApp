@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 public class GastoServicioImpl implements GastoServicio {
 
   private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+  static final int MESES_HACIA_ATRAS = 12;
 
   private RepositorioGasto repositorioGasto;
   private ServicioPresupuesto servicioPresupuesto;
@@ -60,6 +61,13 @@ public class GastoServicioImpl implements GastoServicio {
 
   @Override
   public Alerta alertaDeRepeticion(Gasto gasto, Usuario usuario) {
+    // La alerta habla de "esta semana": un gasto cargado con fecha vieja no la dispara
+    LocalDate inicioDeLaSemana = LocalDate
+      .now(reloj)
+      .minusDays(CalculadoraAlertas.DIAS_ALERTA_REPETICION - 1);
+    if (gasto.getFecha().isBefore(inicioDeLaSemana)) {
+      return null;
+    }
     LocalDate desde = gasto.getFecha().minusDays(CalculadoraAlertas.DIAS_ALERTA_REPETICION - 1);
     List<Gasto> gastosDeLaSemana = repositorioGasto.obtenerGastosEntreFechas(
       usuario,
@@ -74,6 +82,10 @@ public class GastoServicioImpl implements GastoServicio {
   @Override
   public Alerta alertaDePresupuesto(Gasto gasto, Usuario usuario) {
     YearMonth mes = YearMonth.from(gasto.getFecha());
+    // Como las demás alertas, solo aplica al mes en curso: un mes que ya cerró no se avisa
+    if (!mes.equals(YearMonth.now(reloj))) {
+      return null;
+    }
     // Ya guardado: el total del mes incluye el gasto nuevo
     double gastadoDelMes = sumarGastos(usuario, mes.atDay(1), mes.atEndOfMonth());
     double presupuesto = servicioPresupuesto.totalDelMes(usuario, mes);
@@ -127,11 +139,10 @@ public class GastoServicioImpl implements GastoServicio {
     LocalDate fecha = gasto.getFecha();
     if (fecha == null || fecha.isBefore(minima) || fecha.isAfter(maxima)) {
       throw new GastoInvalidoExeption(
-        "La fecha debe estar dentro del mes actual (entre el " +
+        "La fecha debe estar entre el " +
         minima.format(FORMATO_FECHA) +
         " y el " +
-        maxima.format(FORMATO_FECHA) +
-        ")"
+        maxima.format(FORMATO_FECHA)
       );
     }
   }
@@ -161,7 +172,8 @@ public class GastoServicioImpl implements GastoServicio {
 
   @Override
   public LocalDate obtenerFechaMinimaPermitida() {
-    return YearMonth.now(reloj).atDay(1);
+    // Se pueden cargar gastos atrasados: hasta el mismo mes del año pasado
+    return YearMonth.now(reloj).minusMonths(MESES_HACIA_ATRAS).atDay(1);
   }
 
   @Override

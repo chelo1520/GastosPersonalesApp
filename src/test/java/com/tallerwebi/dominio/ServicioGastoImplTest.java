@@ -1,6 +1,7 @@
 package com.tallerwebi.dominio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -148,24 +149,54 @@ public class ServicioGastoImplTest {
   }
 
   @Test
-  void debeLanzarGastoInvalidoSinGuardarCuandoLaFechaEsDelMesAnterior() {
+  void debeGuardarElGastoCuandoLaFechaEsDeUnMesAnterior() {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
       HOY
     );
-    Gasto gasto = new Gasto(1000.00, LocalDate.of(2026, 9, 30), "Supermercado");
+    Gasto delMesPasado = new Gasto(1000.00, LocalDate.of(2026, 9, 30), "Supermercado");
+    Gasto delAnioPasado = new Gasto(1000.00, LocalDate.of(2025, 10, 1), "Supermercado");
+
+    gastoServicio.registrarGasto(delMesPasado, new Usuario());
+    gastoServicio.registrarGasto(delAnioPasado, new Usuario());
+
+    verify(repositorioGastoMock).guardar(delMesPasado);
+    verify(repositorioGastoMock).guardar(delAnioPasado);
+  }
+
+  @Test
+  void debeLanzarGastoInvalidoSinGuardarCuandoLaFechaEsDeHaceMasDeUnAnio() {
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
+    Gasto gasto = new Gasto(1000.00, LocalDate.of(2025, 9, 30), "Supermercado");
 
     GastoInvalidoExeption error = assertThrows(
       GastoInvalidoExeption.class,
       () -> gastoServicio.registrarGasto(gasto, new Usuario())
     );
 
-    assertEquals(
-      "La fecha debe estar dentro del mes actual (entre el 01/10/2026 y el 31/10/2026)",
-      error.getMessage()
-    );
+    assertEquals("La fecha debe estar entre el 01/10/2025 y el 31/10/2026", error.getMessage());
     verify(repositorioGastoMock, never()).guardar(gasto);
+  }
+
+  @Test
+  void noDebeAvisarPorElPresupuestoNiPorRepeticionCuandoElGastoEsDeUnMesAnterior() {
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
+    Usuario usuario = new Usuario();
+    Gasto atrasado = new Gasto(500000.0, LocalDate.of(2026, 9, 28), "Alquiler");
+    when(servicioPresupuestoMock.totalDelMes(any(), any())).thenReturn(550000.0);
+
+    assertNull(gastoServicio.alertaDePresupuesto(atrasado, usuario));
+    assertNull(gastoServicio.alertaDeRepeticion(atrasado, usuario));
+    verify(repositorioGastoMock, never()).obtenerGastosEntreFechas(any(), any(), any());
   }
 
   @Test
@@ -266,7 +297,7 @@ public class ServicioGastoImplTest {
   }
 
   @Test
-  void debeLanzarGastoInvalidoSinModificarCuandoLaNuevaFechaEstaFueraDelMesActual() {
+  void debeLanzarGastoInvalidoSinModificarCuandoLaNuevaFechaEsDeHaceMasDeUnAnio() {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
@@ -275,7 +306,7 @@ public class ServicioGastoImplTest {
     Usuario usuario = usuarioConId(1L);
     when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoDe(usuario));
 
-    Gasto datos = new Gasto(2500.00, LocalDate.of(2026, 9, 30), "Farmacia");
+    Gasto datos = new Gasto(2500.00, LocalDate.of(2025, 9, 30), "Farmacia");
 
     assertThrows(
       GastoInvalidoExeption.class,
@@ -389,14 +420,14 @@ public class ServicioGastoImplTest {
   }
 
   @Test
-  void debePermitirDesdeEl1HastaEl31DeOctubreCuandoHoyEs6DeOctubre() {
+  void debePermitirDesdeEl1DeOctubreDelAnioPasadoHastaEl31DeOctubreCuandoHoyEs6DeOctubre() {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
       HOY
     );
 
-    assertEquals(LocalDate.of(2026, 10, 1), gastoServicio.obtenerFechaMinimaPermitida());
+    assertEquals(LocalDate.of(2025, 10, 1), gastoServicio.obtenerFechaMinimaPermitida());
     assertEquals(LocalDate.of(2026, 10, 31), gastoServicio.obtenerFechaMaximaPermitida());
   }
 

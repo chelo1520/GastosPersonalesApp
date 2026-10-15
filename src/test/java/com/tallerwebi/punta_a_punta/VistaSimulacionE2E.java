@@ -108,7 +108,7 @@ public class VistaSimulacionE2E {
   @Test
   void deberiaMostrarSoloLosGastosDelMesAnteriorYSumarlosAlTotal() {
     LocalDate mesAnterior = LocalDate.now().minusMonths(1);
-    // El formulario solo acepta fechas del mes actual: los meses anteriores se cargan en la base
+    // Los gastos del mes anterior se cargan directo en la base para no depender del formulario
     dadoQueExisteEnLaBaseUnGasto(250000, mesAnterior.withDayOfMonth(5), "Alquiler");
     dadoQueExisteEnLaBaseUnGasto(80000, mesAnterior.withDayOfMonth(20), "Supermercado");
     dadoQueExisteEnLaBaseUnGasto(9000, mesAnterior.minusMonths(1), "Gasto de hace dos meses");

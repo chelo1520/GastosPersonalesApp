@@ -106,8 +106,8 @@ public class SimulacionIntegracionTest {
   }
 
   @Test
-  public void debeRechazarElGastoYDejarVaciaLaSimulacionCuandoSeRegistraConFechaDelMesAnterior() {
-    // Solo se pueden registrar gastos del mes actual
+  public void debeIncluirEnLaSimulacionElGastoRegistradoConFechaDelMesAnterior() {
+    // Se pueden cargar gastos atrasados: el del mes pasado entra en la base de la simulación
     Gasto gasto = new Gasto(25000.0, mesAnterior.withDayOfMonth(5), "Clases de guitarra");
     Categoria categoria = new Categoria();
     categoria.setNombre("Educación");
@@ -122,15 +122,11 @@ public class SimulacionIntegracionTest {
     );
     List<Gasto> gastos = gastosDeLaSimulacion();
 
-    assertEquals("registrar-gasto", resultado.getViewName());
-    assertTrue(
-      resultado
-        .getModel()
-        .get("error")
-        .toString()
-        .startsWith("La fecha debe estar dentro del mes actual")
+    assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
+    assertEquals(
+      List.of("Clases de guitarra"),
+      gastos.stream().map(Gasto::getDescripcion).toList()
     );
-    assertTrue(gastos.isEmpty());
   }
 
   @SuppressWarnings("unchecked")
