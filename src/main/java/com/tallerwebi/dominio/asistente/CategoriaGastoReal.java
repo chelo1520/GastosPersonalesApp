@@ -31,7 +31,7 @@ public final class CategoriaGastoReal {
     return (gastado / anterior - 1) * 100;
   }
 
-  // Descuenta la inflación: lo que varió "en serio", más allá de que los precios subieron
+  // Descuenta la inflación: lo que varió en términos reales, más allá de que los precios subieron
   static Double calcularVariacionReal(Double variacionNominal, Double ipc) {
     if (variacionNominal == null || ipc == null) {
       return null;

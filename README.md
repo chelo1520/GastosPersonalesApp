@@ -62,10 +62,14 @@ docker run --env-file .env --name tallerwebi-mysql -d -p 3306:3306 mysql
 $ mvn clean jetty:run
 # http://localhost:8080/gastitos
 ```
+Usuarios de demostración (contraseña `test`, como el usuario de prueba), que se recargan en cada arranque:
+`alto@gastitos.demo` (consumo alto) y `medio@gastitos.demo` (moderado) con presupuestos y gastos desde octubre
+de 2025 hasta el día de hoy, y `bajo@gastitos.demo` (muy bajo) solo desde septiembre de 2026. Ver `src/main/resources/demo.sql`.
 
-Usuarios de demostración (contraseña `test`, como el usuario de prueba), con presupuestos de todo 2026 y gastos hasta el día de hoy,
-que se recargan en cada arranque: `alto@gastitos.demo` (consumo alto), `medio@gastitos.demo` (moderado)
-y `bajo@gastitos.demo` (muy bajo). Ver `src/main/resources/demo.sql`.
+El asistente escribe con Claude una síntesis del período (un párrafo que conecta sus conclusiones)
+si existe la variable de entorno `ANTHROPIC_API_KEY` (en `.env`, nunca en el repo). Sin la variable,
+muestra el veredicto y los consejos con el texto de las reglas.
+El modelo es `claude-haiku-5-5`; se cambia con `ASISTENTE_MODELO` (por ejemplo `claude-opus-5-5`).
 
 ### Cargar un gasto desde un comprobante
 
