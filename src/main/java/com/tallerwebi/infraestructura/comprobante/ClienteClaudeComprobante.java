@@ -20,6 +20,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Base64;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -32,8 +34,12 @@ public class ClienteClaudeComprobante implements LectorComprobante {
   static final String MODELO = "claude-haiku-5-5";
   private static final String CAMPO_TIPO = "type";
   private static final String TIPO_TEXTO = "text";
-  private static final int MAX_TOKENS = 512;
+  // El JSON pedido ronda los 150 tokens; el margen cubre descripciones largas. El razonamiento del
+  // modelo viene activado por defecto y consume de este mismo tope, por eso se desactiva en el pedido.
+  private static final int MAX_TOKENS = 1024;
   private static final int HTTP_OK = 200;
+  private static final String FIN_NORMAL = "end_turn";
+  private static final Logger LOG = Logger.getLogger(ClienteClaudeComprobante.class.getName());
 
   private final String apiKey;
   private final HttpClient http;
@@ -58,6 +64,13 @@ public class ClienteClaudeComprobante implements LectorComprobante {
 
     HttpResponse<String> respuesta = enviar(crearPedido(imagen, tipoImagen, categorias));
     if (respuesta.statusCode() != HTTP_OK) {
+      if (LOG.isLoggable(Level.WARNING)) {
+        LOG.log(
+          Level.WARNING,
+          "La API de comprobantes respondió {0}: {1}",
+          new Object[] { respuesta.statusCode(), respuesta.body() }
+        );
+      }
       throw new LectorComprobanteNoDisponible();
     }
     return extraerDatos(respuesta.body());
@@ -75,9 +88,29 @@ public class ClienteClaudeComprobante implements LectorComprobante {
   }
 
   HttpRequest crearPedido(byte[] imagen, String tipoImagen, List<String> categorias) {
+    try {
+      return HttpRequest
+        .newBuilder(URI.create(URL_MENSAJES))
+        .timeout(Duration.ofSeconds(30))
+        .header("x-api-key", apiKey)
+        .header("anthropic-version", "2023-06-01")
+        .header("content-type", "application/json")
+        .POST(
+          HttpRequest.BodyPublishers.ofString(
+            json.writeValueAsString(crearCuerpo(imagen, tipoImagen, categorias))
+          )
+        )
+        .build();
+    } catch (JsonProcessingException e) {
+      throw new LectorComprobanteNoDisponible(e);
+    }
+  }
+
+  ObjectNode crearCuerpo(byte[] imagen, String tipoImagen, List<String> categorias) {
     ObjectNode pedido = json.createObjectNode();
     pedido.put("model", MODELO);
     pedido.put("max_tokens", MAX_TOKENS);
+    pedido.putObject("thinking").put(CAMPO_TIPO, "disabled");
 
     ArrayNode mensajes = pedido.putArray("messages");
     ObjectNode mensaje = mensajes.addObject();
@@ -94,19 +127,7 @@ public class ClienteClaudeComprobante implements LectorComprobante {
     ObjectNode bloqueTexto = contenido.addObject();
     bloqueTexto.put(CAMPO_TIPO, TIPO_TEXTO);
     bloqueTexto.put(TIPO_TEXTO, prompt(categorias));
-
-    try {
-      return HttpRequest
-        .newBuilder(URI.create(URL_MENSAJES))
-        .timeout(Duration.ofSeconds(30))
-        .header("x-api-key", apiKey)
-        .header("anthropic-version", "2023-06-01")
-        .header("content-type", "application/json")
-        .POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(pedido)))
-        .build();
-    } catch (JsonProcessingException e) {
-      throw new LectorComprobanteNoDisponible(e);
-    }
+    return pedido;
   }
 
   private String prompt(List<String> categorias) {
@@ -128,6 +149,7 @@ public class ClienteClaudeComprobante implements LectorComprobante {
   DatosComprobante extraerDatos(String cuerpo) {
     try {
       JsonNode raiz = json.readTree(cuerpo);
+      verificarQueLaRespuestaEsteCompleta(raiz);
       for (JsonNode bloque : raiz.path("content")) {
         if (TIPO_TEXTO.equals(bloque.path(CAMPO_TIPO).asText())) {
           return parsearDatos(json.readTree(bloque.path(TIPO_TEXTO).asText()));
@@ -137,6 +159,21 @@ public class ClienteClaudeComprobante implements LectorComprobante {
       throw new ComprobanteNoLegible(e);
     }
     throw new ComprobanteNoLegible();
+  }
+
+  /** Si el modelo se quedó sin tokens (stop_reason distinto de end_turn) el JSON viene cortado. */
+  private void verificarQueLaRespuestaEsteCompleta(JsonNode raiz) {
+    JsonNode motivo = raiz.path("stop_reason");
+    if (motivo.isTextual() && !FIN_NORMAL.equals(motivo.asText())) {
+      if (LOG.isLoggable(Level.WARNING)) {
+        LOG.log(
+          Level.WARNING,
+          "La respuesta del comprobante quedó incompleta: {0}",
+          motivo.asText()
+        );
+      }
+      throw new ComprobanteNoLegible();
+    }
   }
 
   private DatosComprobante parsearDatos(JsonNode datos) {
