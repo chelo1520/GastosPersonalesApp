@@ -16,6 +16,12 @@
         El importe debe ser mayor a cero.
       </div>
 
+      <div th:if="${mostrarComprobante}" class="mb-4">
+        <a class="btn btn-outline-primary" th:href="@{/registrar-gasto/comprobante}">
+          Cargar desde comprobante
+        </a>
+      </div>
+
       <form th:action="@{${accion}}" th:object="${gasto}" method="post">
         <div class="mb-3">
           <label for="importe" class="form-label">Importe <span class="app-requerido" aria-hidden="true">*</span></label>

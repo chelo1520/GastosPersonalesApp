@@ -1,5 +1,6 @@
 package com.tallerwebi.integracion.config;
 
+import com.tallerwebi.dominio.comprobante.LectorComprobante;
 import com.tallerwebi.dominio.indicadores.ClienteIndicadores;
 import com.tallerwebi.dominio.indicadores.CotizacionDolar;
 import com.tallerwebi.dominio.indicadores.InflacionMensual;
@@ -7,12 +8,15 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.web.multipart.MultipartResolver;
+import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -69,6 +73,17 @@ public class SpringWebTestConfig implements WebMvcConfigurer {
         return serie;
       }
     };
+  }
+
+  @Bean
+  @Primary
+  public LectorComprobante lectorComprobanteDePrueba() {
+    return Mockito.mock(LectorComprobante.class);
+  }
+
+  @Bean
+  public MultipartResolver multipartResolver() {
+    return new StandardServletMultipartResolver();
   }
 
   @Override

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head(${titulo})}"></head>
+
+<body>
+
+  <header th:replace="~{fragments/layout :: navbar(${seccion})}"></header>
+  <header th:replace="~{fragments/layout :: header-mobile(${titulo})}"></header>
+
+  <main class="app-main">
+    <section class="app-form-card" aria-labelledby="titulo-comprobante">
+      <h1 id="titulo-comprobante" class="h3 fw-bold mb-3 d-none d-md-block">Cargar desde comprobante</h1>
+
+      <div th:if="${error != null}" class="alert alert-danger" role="alert" th:text="${error}">
+        No se pudo procesar la imagen.
+      </div>
+
+      <p class="mb-2">Elegí una foto de un ticket, factura o comprobante de transferencia.</p>
+      <p class="alert alert-info" role="note">
+        La imagen se usa solo para extraer los datos y no se guarda. Se envía a Claude para analizarla.
+      </p>
+
+      <div class="d-flex flex-column flex-sm-row gap-3">
+        <form th:action="@{/registrar-gasto/comprobante}" method="post" enctype="multipart/form-data"
+          class="border rounded p-3 flex-fill">
+          <label for="foto-comprobante" class="form-label fw-semibold">Tomar foto</label>
+          <input id="foto-comprobante" name="imagen" type="file" class="form-control mb-3"
+            accept="image/jpeg,image/png" capture="environment">
+          <button type="submit" class="btn btn-primary w-100">Analizar foto</button>
+        </form>
+
+        <form th:action="@{/registrar-gasto/comprobante}" method="post" enctype="multipart/form-data"
+          class="border rounded p-3 flex-fill">
+          <label for="archivo-comprobante" class="form-label fw-semibold">Elegir de la galería</label>
+          <input id="archivo-comprobante" name="imagen" type="file" class="form-control mb-3"
+            accept="image/jpeg,image/png">
+          <button type="submit" class="btn btn-outline-primary w-100">Analizar imagen</button>
+        </form>
+      </div>
+
+      <div class="mt-4">
+        <a th:href="@{/registrar-gasto}" class="btn btn-link">Cargar el gasto a mano</a>
+      </div>
+    </section>
+  </main>
+
+  <script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+
+</html>
