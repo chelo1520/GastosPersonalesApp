@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.categoria.Categoria;
+import com.tallerwebi.dominio.comprobante.ConfianzaComprobante;
 import com.tallerwebi.dominio.comprobante.DatosComprobante;
 import com.tallerwebi.dominio.comprobante.LectorComprobante;
 import com.tallerwebi.integracion.config.HibernateTestConfig;
@@ -85,7 +86,15 @@ public class ComprobanteVistaTest {
     byte[] png = new byte[] { (byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
     when(lectorComprobante.leer(png, "image/png", java.util.List.of("Alimentación")))
       .thenReturn(
-        new DatosComprobante(12500.0, LocalDate.of(2026, 10, 12), "Almacén", "Alimentación")
+        new DatosComprobante(
+          12500.0,
+          LocalDate.of(2026, 10, 12),
+          "Almacén",
+          "Alimentación",
+          "Transferencia enviada",
+          "comprobante bancario",
+          new ConfianzaComprobante(true, false, true, true)
+        )
       );
     MockMultipartFile imagen = new MockMultipartFile("imagen", "ticket.png", "image/png", png);
 
@@ -96,6 +105,12 @@ public class ComprobanteVistaTest {
       .andExpect(status().isOk())
       .andExpect(content().string(containsString("Revisar y confirmar datos extraídos")))
       .andExpect(content().string(containsString("value=\"12500.0\"")))
+      .andExpect(content().string(containsString("Transferencia enviada")))
+      .andExpect(content().string(containsString("Detectado como")))
+      .andExpect(content().string(containsString("comprobante bancario")))
+      .andExpect(content().string(containsString("Revisá este importe")))
+      .andExpect(content().string(containsString("baja confianza")))
+      .andExpect(content().string(containsString("Sacar otra foto")))
       .andExpect(content().string(containsString("Confirmar y guardar")));
   }
 }

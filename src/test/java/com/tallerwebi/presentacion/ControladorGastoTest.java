@@ -8,6 +8,7 @@ import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.categoria.CategoriaRepositorio;
 import com.tallerwebi.dominio.comprobante.ComprobanteNoLegible;
+import com.tallerwebi.dominio.comprobante.ConfianzaComprobante;
 import com.tallerwebi.dominio.comprobante.DatosComprobante;
 import com.tallerwebi.dominio.comprobante.LectorComprobante;
 import com.tallerwebi.dominio.comprobante.LectorComprobanteNoDisponible;
@@ -139,7 +140,15 @@ public class ControladorGastoTest {
     MockMultipartFile imagen = new MockMultipartFile("imagen", "comprobante.png", "image/png", png);
     when(lectorComprobante.leer(png, "image/png", List.of("Alimentación")))
       .thenReturn(
-        new DatosComprobante(12500.0, LocalDate.of(2026, 10, 12), "Almacén", "Alimentación")
+        new DatosComprobante(
+          12500.0,
+          LocalDate.of(2026, 10, 12),
+          "Almacén",
+          "Alimentación",
+          "Compra",
+          "ticket",
+          new ConfianzaComprobante(false, false, false, false)
+        )
       );
 
     ModelAndView resultado = controladorGasto.procesarComprobante(imagen, request);
@@ -150,6 +159,11 @@ public class ControladorGastoTest {
     assertEquals(LocalDate.of(2026, 10, 12), gastoPropuesto.getFecha());
     assertEquals("Almacén", gastoPropuesto.getDescripcion());
     assertEquals(categoria, gastoPropuesto.getCategoria());
+    assertEquals(
+      "Compra",
+      ((DatosComprobante) resultado.getModel().get("datosComprobante")).tipoOperacion()
+    );
+    assertEquals(false, resultado.getModel().get("categoriaBajaConfianza"));
   }
 
   @Test
@@ -163,12 +177,21 @@ public class ControladorGastoTest {
     );
     when(lectorComprobante.leer(jpg, "image/jpeg", List.of("Alimentación")))
       .thenReturn(
-        new DatosComprobante(12500.0, LocalDate.of(2026, 10, 12), "Almacén", "Categoría inventada")
+        new DatosComprobante(
+          12500.0,
+          LocalDate.of(2026, 10, 12),
+          "Almacén",
+          "Categoría inventada",
+          "Compra",
+          "ticket",
+          new ConfianzaComprobante(false, false, false, false)
+        )
       );
 
     ModelAndView resultado = controladorGasto.procesarComprobante(imagen, request);
 
     assertNull(((Gasto) resultado.getModel().get("gasto")).getCategoria());
+    assertEquals(true, resultado.getModel().get("categoriaBajaConfianza"));
   }
 
   @Test
