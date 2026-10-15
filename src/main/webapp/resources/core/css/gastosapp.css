@@ -137,16 +137,6 @@ a:hover {
   margin-bottom: 20px;
 }
 
-.app-mvp-badge {
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--app-oscuro);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
-
 .app-registrar-link {
   white-space: nowrap;
 }

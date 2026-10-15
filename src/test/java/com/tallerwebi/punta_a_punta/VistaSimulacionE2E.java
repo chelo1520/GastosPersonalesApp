@@ -132,7 +132,7 @@ public class VistaSimulacionE2E {
     vistaLogin.escribirEMAIL("test@unlam.edu.ar");
     vistaLogin.escribirClave("test");
     vistaLogin.darClickEnIniciarSesion();
-    page.waitForURL("**/mostrar-gastos**");
+    page.waitForURL("**/home**");
   }
 
   private void dadoQueExisteEnLaBaseUnGasto(double importe, LocalDate fecha, String descripcion) {
