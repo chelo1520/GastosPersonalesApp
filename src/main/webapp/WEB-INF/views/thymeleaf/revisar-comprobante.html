@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head(${titulo})}"></head>
+
+<body>
+
+  <header th:replace="~{fragments/layout :: navbar(${seccion})}"></header>
+  <header th:replace="~{fragments/layout :: header-mobile(${titulo})}"></header>
+
+  <main class="app-main">
+    <section class="app-form-card" aria-labelledby="titulo-revision">
+      <h1 id="titulo-revision" class="h3 fw-bold mb-3 d-none d-md-block">
+        Revisar y confirmar datos extraídos del comprobante
+      </h1>
+      <p class="text-secondary">Revisá los datos propuestos y corregilos si hace falta antes de guardar.</p>
+
+      <form th:action="@{/registrar-gasto}" th:object="${gasto}" method="post">
+        <div class="mb-3">
+          <label for="importe" class="form-label">Importe <span class="app-requerido" aria-hidden="true">*</span></label>
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            <input id="importe" th:field="*{importe}" type="number" step="0.01" min="0.01"
+              inputmode="decimal" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label for="fecha" class="form-label">Fecha <span class="app-requerido" aria-hidden="true">*</span></label>
+            <input id="fecha" th:field="*{fecha}" type="date" class="form-control" required
+              th:min="${fechaMinima}" th:max="${fechaMaxima}">
+          </div>
+          <div class="col-md-6">
+            <label for="categoria" class="form-label">Categoría <span class="app-requerido" aria-hidden="true">*</span></label>
+            <select id="categoria" th:field="*{categoria.id}" class="form-select" required>
+              <option value="">Seleccioná una categoría</option>
+              <option th:each="categoria : ${categorias}" th:value="${categoria.id}"
+                th:text="${categoria.nombre}">Alimentación</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label for="descripcion" class="form-label">Comercio o destinatario
+            <span class="app-requerido" aria-hidden="true">*</span>
+          </label>
+          <input id="descripcion" th:field="*{descripcion}" type="text" maxlength="255"
+            class="form-control" required>
+        </div>
+
+        <div class="d-grid d-md-flex justify-content-md-end gap-2">
+          <a th:href="@{/registrar-gasto/comprobante}" class="btn btn-outline-secondary">Volver</a>
+          <button type="submit" class="btn btn-primary">Confirmar y guardar</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+
+</html>

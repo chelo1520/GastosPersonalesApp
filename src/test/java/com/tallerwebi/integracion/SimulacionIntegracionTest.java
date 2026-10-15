@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.categoria.CategoriaRepositorioImpl;
+import com.tallerwebi.dominio.comprobante.LectorComprobante;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicioImpl;
 import com.tallerwebi.dominio.gasto.RepositorioGastoImpl;
@@ -19,6 +20,7 @@ import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
@@ -56,7 +58,8 @@ public class SimulacionIntegracionTest {
       new ControladorGasto(
         new GastoServicioImpl(repositorioGasto, servicioPresupuesto),
         new CategoriaRepositorioImpl(sessionFactory),
-        servicioPresupuesto
+        servicioPresupuesto,
+        Mockito.mock(LectorComprobante.class)
       );
 
     usuario = guardarUsuario("lourdes@gmail.com");
