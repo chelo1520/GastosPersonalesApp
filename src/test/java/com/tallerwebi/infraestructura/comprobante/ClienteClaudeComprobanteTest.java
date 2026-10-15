@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.tallerwebi.dominio.comprobante.ComprobanteNoLegible;
+import com.tallerwebi.dominio.comprobante.ConfianzaComprobante;
 import com.tallerwebi.dominio.comprobante.DatosComprobante;
 import java.net.http.HttpClient;
 import java.time.LocalDate;
@@ -21,7 +22,7 @@ public class ClienteClaudeComprobanteTest {
     );
     String respuesta =
       """
-      {"content":[{"type":"text","text":"{\\"importe\\":12500.5,\\"fecha\\":\\"2026-10-12\\",\\"descripcion\\":\\"Almacén\\",\\"categoria\\":\\"Alimentación\\"}"}]}
+      {"content":[{"type":"text","text":"{\\"tipoOperacion\\":\\"Transferencia enviada\\",\\"tipoComprobante\\":\\"comprobante bancario\\",\\"importe\\":12500.5,\\"fecha\\":\\"2026-10-12\\",\\"descripcion\\":\\"Almacén\\",\\"categoria\\":\\"Alimentación\\",\\"confianza\\":{\\"importe\\":\\"alta\\",\\"fecha\\":\\"media\\",\\"descripcion\\":\\"baja\\",\\"categoria\\":\\"alta\\"}}"}]}
       """;
 
     DatosComprobante datos = cliente.extraerDatos(respuesta);
@@ -30,6 +31,9 @@ public class ClienteClaudeComprobanteTest {
     assertEquals(LocalDate.of(2026, 10, 12), datos.fecha());
     assertEquals("Almacén", datos.descripcion());
     assertEquals("Alimentación", datos.categoria());
+    assertEquals("Transferencia enviada", datos.tipoOperacion());
+    assertEquals("comprobante bancario", datos.tipoComprobante());
+    assertEquals(new ConfianzaComprobante(false, false, true, false), datos.confianza());
   }
 
   @Test
@@ -40,7 +44,7 @@ public class ClienteClaudeComprobanteTest {
     );
     String respuesta =
       """
-      {"content":[{"type":"text","text":"{\\"importe\\":null,\\"fecha\\":null,\\"descripcion\\":null}"}]}
+      {"content":[{"type":"text","text":"{\\"importe\\":null,\\"fecha\\":null,\\"descripcion\\":null,\\"tipoOperacion\\":\\"Ticket\\",\\"tipoComprobante\\":\\"ticket\\",\\"confianza\\":{}}"}]}
       """;
 
     assertThrows(ComprobanteNoLegible.class, () -> cliente.extraerDatos(respuesta));

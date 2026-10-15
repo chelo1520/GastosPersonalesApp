@@ -287,6 +287,11 @@ public class ControladorGasto {
     model.put(CLAVE_URL_CANCELAR, RUTA_COMPROBANTE);
     model.put("gasto", gasto);
     model.put("categorias", categorias);
+    model.put("datosComprobante", datos);
+    model.put(
+      "categoriaBajaConfianza",
+      categoriaSugerida == null || datos.confianza().categoriaBajaConfianza()
+    );
     model.put("fechaMinima", gastoServicio.obtenerFechaMinimaPermitida());
     model.put("fechaMaxima", gastoServicio.obtenerFechaMaximaPermitida());
     return new ModelAndView("revisar-comprobante", model);
