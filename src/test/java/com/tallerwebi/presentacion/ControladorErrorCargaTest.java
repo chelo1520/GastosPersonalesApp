@@ -25,10 +25,7 @@ public class ControladorErrorCargaTest {
     ModelAndView resultado = controlador.manejarErrorMultipart(error, request);
 
     assertEquals("cargar-comprobante", resultado.getViewName());
-    assertEquals(
-      "La imagen supera los 5 MB. Elegí otra imagen.",
-      resultado.getModel().get("error")
-    );
+    assertEquals("El archivo supera los 5 MB. Elegí otro.", resultado.getModel().get("error"));
   }
 
   @Test

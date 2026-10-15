@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tallerwebi.dominio.comprobante.ComprobanteNoLegible;
 import com.tallerwebi.dominio.comprobante.ConfianzaComprobante;
@@ -94,17 +95,32 @@ public class ClienteClaudeComprobanteTest {
 
     assertEquals("disabled", cuerpo.path("thinking").path("type").asText());
     assertTrue(cuerpo.path("max_tokens").asInt() >= 1024);
-    assertEquals(
-      "image/jpeg",
-      cuerpo
-        .path("messages")
-        .get(0)
-        .path("content")
-        .get(0)
-        .path("source")
-        .path("media_type")
-        .asText()
+    assertEquals("image", primerBloque(cuerpo).path("type").asText());
+    assertEquals("image/jpeg", primerBloque(cuerpo).path("source").path("media_type").asText());
+  }
+
+  @Test
+  public void debeMandarUnPdfComoDocumentoYNoComoImagen() {
+    ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
+      "clave",
+      mock(HttpClient.class)
     );
+
+    ObjectNode cuerpo = cliente.crearCuerpo(
+      new byte[] { 0x25, 0x50, 0x44, 0x46 },
+      "application/pdf",
+      java.util.List.of()
+    );
+
+    assertEquals("document", primerBloque(cuerpo).path("type").asText());
+    assertEquals(
+      "application/pdf",
+      primerBloque(cuerpo).path("source").path("media_type").asText()
+    );
+  }
+
+  private static JsonNode primerBloque(ObjectNode cuerpo) {
+    return cuerpo.path("messages").get(0).path("content").get(0);
   }
 
   @Test

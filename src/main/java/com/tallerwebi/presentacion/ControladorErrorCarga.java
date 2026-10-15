@@ -18,8 +18,8 @@ public class ControladorErrorCarga {
     }
 
     String mensaje = contieneLimiteExcedido(error)
-      ? "La imagen supera los 5 MB. Elegí otra imagen."
-      : "No se pudo recibir el archivo. Elegí otra imagen JPG o PNG.";
+      ? "El archivo supera los 5 MB. Elegí otro."
+      : "No se pudo recibir el archivo. Elegí otro JPG, PNG o PDF.";
     ModelAndView vista = new ModelAndView("cargar-comprobante");
     vista.addObject("titulo", "Desde comprobante");
     vista.addObject("seccion", "registrar");
