@@ -100,6 +100,8 @@
                 <th scope="col" class="text-end">% del total</th>
                 <th scope="col" class="text-end">Disponible</th>
                 <th scope="col">Estado</th>
+                <th scope="col" class="text-center"
+                    title="Tildada: sus gastos chicos y frecuentes se cuentan como gastos hormiga">¿Es hormiga?</th>
               </tr>
             </thead>
             <tbody>
@@ -128,6 +130,14 @@
                         th:classappend="'is-' + ${cat.estado.estilo}"
                         th:text="${#numbers.formatInteger(cat.porcentajeUsado, 1)} + ' %'">91 %</span>
                   <span th:unless="${cat.tienePresupuesto}">—</span>
+                </td>
+                <td class="text-center">
+                  <!-- Las categorías fijas (vivienda, salud...) son siempre esenciales: no se pueden tildar -->
+                  <th:block th:if="${cat.esHormiga != null}">
+                    <form th:replace="~{fragments/hormiga :: check(${cat.categoriaId}, ${cat.nombre}, ${cat.esHormiga}, '/home?mes=' + ${mesMostrado})}"></form>
+                  </th:block>
+                  <span th:if="${cat.esHormiga == null}" class="app-resumen-sin-presupuesto"
+                        th:title="${cat.categoriaId != null} ? 'Categoría fija: siempre es esencial'">—</span>
                 </td>
               </tr>
             </tbody>

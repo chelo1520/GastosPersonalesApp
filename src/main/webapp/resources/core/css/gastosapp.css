@@ -682,17 +682,15 @@ a:hover {
   white-space: nowrap;
 }
 
-/* Nombre de la categoría con su botón hormiga al lado; si no entra, el botón baja */
-.app-gasto-categoria {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 8px;
+/* Check "¿Es hormiga?" de la tabla de categorías del resumen */
+.app-hormiga-check {
+  display: inline-block;
+  margin: 0;
 }
 
-.app-gasto-categoria .app-hormiga-boton {
-  padding: 2px 8px;
-  font-size: 12px;
+.app-hormiga-check .form-check-input {
+  margin: 0;
+  cursor: pointer;
 }
 
 .app-gasto-mobile-categoria {
@@ -748,6 +746,8 @@ a:hover {
   z-index: 1080;
 }
 
-.modal-backdrop {
+/* Solo el fondo del modal de confirmación sube: si fuera para todos, quedaría encima de los
+   demás modales (z-index 1055) y taparía sus botones de cerrar */
+body:has(.app-confirmar.show) .modal-backdrop {
   z-index: 1070;
 }

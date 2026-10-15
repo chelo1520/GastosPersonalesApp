@@ -103,6 +103,28 @@ public class ControladorCategoriaTest {
   }
 
   @Test
+  public void debeVolverAlMismoMesDelResumenCuandoSeTildaElCheck() {
+    ModelAndView resultado = controladorCategoria.marcarComoHormiga(
+      7L,
+      "/home?mes=2026-09",
+      request
+    );
+
+    assertEquals("redirect:/home?mes=2026-09", resultado.getViewName());
+  }
+
+  @Test
+  public void debeVolverAlResumenCuandoElMesPedidoNoTieneFormatoDeMes() {
+    ModelAndView resultado = controladorCategoria.marcarComoHormiga(
+      7L,
+      "/home?mes=2026-09&x=https://otro-sitio.com",
+      request
+    );
+
+    assertEquals("redirect:/home", resultado.getViewName());
+  }
+
+  @Test
   public void noDebeModificarNadaCuandoLaCategoriaNoExiste() {
     ModelAndView resultado = controladorCategoria.marcarComoNoHormiga(99L, "/home", request);
 
