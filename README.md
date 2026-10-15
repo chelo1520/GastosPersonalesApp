@@ -73,38 +73,27 @@ En "Registrar gasto" se puede elegir una foto o una imagen JPG/PNG de hasta 5 MB
 a Claude para proponer el importe, la fecha, el comercio o destinatario y una categoría; no se guarda
 en Gastitos. Los datos se muestran para revisión y confirmación antes de registrar el gasto.
 
-#### Configuración en cada computadora
-
-Después de que el PR esté integrado, cada compañero que quiera usar esta función necesita su propia
-clave de Anthropic. No hace falta cambiar código ni agregar la clave al repositorio: Docker Compose
-la lee desde un archivo `.env` local, que no se comparte con `git pull`.
-
-La primera vez que configure el proyecto en una computadora (por ejemplo, después de clonarlo), desde
-la carpeta raíz ejecutá:
+Docker Compose lee las variables del archivo `.env` en la raíz del proyecto. Si todavía no tenés uno,
+crealo a partir de la plantilla:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Esto crea `.env` con la configuración local de la base de datos. Si ya existe, no repitas el comando:
-así evitás sobrescribir la configuración que ya tenés. Abrí `.env` y agregá la clave personal de
-Anthropic, sin comillas ni espacios alrededor del signo `=`:
+Agregá tu clave nueva en `.env`, sin comillas ni espacios alrededor del signo `=`:
 
 ```text
 ANTHROPIC_API_KEY=tu_clave_de_anthropic
 ```
 
-Guardá `.env` y, desde esa misma carpeta, iniciá o reconstruí la aplicación:
+Después iniciá o reconstruí la aplicación:
 
 ```powershell
 docker compose up --build
 ```
 
-Con eso la función queda habilitada. No es necesario definir además una variable de entorno manualmente
-en PowerShell. La configuración local permanece al hacer `git pull`; solo hay que repetir estos pasos
-en una computadora nueva o si se elimina el archivo `.env`. Cada compañero configura su propia clave.
-El archivo `.env` está excluido de Git: no lo agregues al PR ni compartas su contenido. Sin una clave,
-el resto de la aplicación sigue funcionando, pero no se pueden analizar comprobantes.
+El archivo `.env` está excluido de Git: no lo agregues al PR ni compartas su contenido. Si la clave no
+está configurada, se puede seguir registrando gastos manualmente.
 
 ## 2. Thymeleaf
 
