@@ -2,8 +2,11 @@ package com.tallerwebi.dominio.comprobante;
 
 import java.util.List;
 
-/** Extrae datos de una imagen de comprobante sin persistir la imagen. */
+/** Extrae datos de un comprobante (imagen JPG/PNG o PDF) sin persistir el archivo. */
 @FunctionalInterface
 public interface LectorComprobante {
-  DatosComprobante leer(byte[] imagen, String tipoImagen, List<String> categorias);
+  String TIPO_PDF = "application/pdf";
+
+  /** tipoArchivo es el media type detectado: image/jpeg, image/png o application/pdf. */
+  DatosComprobante leer(byte[] archivo, String tipoArchivo, List<String> categorias);
 }

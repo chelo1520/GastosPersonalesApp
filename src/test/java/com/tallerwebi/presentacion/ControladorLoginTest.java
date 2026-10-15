@@ -53,7 +53,7 @@ public class ControladorLoginTest {
   }
 
   @Test
-  public void debeGuardarElUsuarioEnSesionYRedirigirAMisGastosCuandoLasCredencialesSonCorrectas() {
+  public void debeGuardarElUsuarioEnSesionYRedirigirAlResumenCuandoLasCredencialesSonCorrectas() {
     // preparacion
     Usuario usuarioEncontradoMock = mock(Usuario.class);
     when(usuarioEncontradoMock.getRol()).thenReturn("ADMIN");
@@ -66,7 +66,7 @@ public class ControladorLoginTest {
     ModelAndView modelAndView = controladorLogin.validarLogin(datosLoginMock, requestMock);
 
     // validacion
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/mostrar-gastos"));
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/home"));
     verify(sessionMock, times(1)).setAttribute("USUARIO", usuarioEncontradoMock);
     verify(sessionMock, times(1)).setAttribute("ROL", usuarioEncontradoMock.getRol());
   }

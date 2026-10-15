@@ -40,6 +40,8 @@ public class ControladorGasto {
   private static final String CLAVE_SECCION = "seccion";
   private static final byte[] FIRMA_PNG = { (byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
   private static final byte[] FIRMA_JPEG = { (byte) 0xff, (byte) 0xd8, (byte) 0xff };
+  private static final byte[] FIRMA_PDF = { 0x25, 0x50, 0x44, 0x46 };
+  private static final String FORMATOS_ACEPTADOS = "JPG, PNG o PDF";
   private static final long MAX_IMAGEN_BYTES = 5L * 1024 * 1024;
   private static final String VISTA_COMPROBANTE = "cargar-comprobante";
   private final GastoServicio gastoServicio;
@@ -110,10 +112,10 @@ public class ControladorGasto {
       return new ModelAndView(REDIRECT_LOGIN);
     }
     if (imagen == null || imagen.isEmpty()) {
-      return vistaCargaComprobante("Elegí una imagen JPG o PNG para continuar.");
+      return vistaCargaComprobante("Elegí un archivo " + FORMATOS_ACEPTADOS + " para continuar.");
     }
     if (imagen.getSize() > MAX_IMAGEN_BYTES) {
-      return vistaCargaComprobante("La imagen supera los 5 MB. Elegí otra imagen.");
+      return vistaCargaComprobante("El archivo supera los 5 MB. Elegí otro.");
     }
 
     byte[] contenido;
@@ -123,9 +125,9 @@ public class ControladorGasto {
       return vistaCargaComprobante("No se pudo leer el archivo. Elegí otra imagen.");
     }
 
-    String tipoImagen = detectarTipoImagen(contenido);
-    if (tipoImagen == null) {
-      return vistaCargaComprobante("El archivo debe ser una imagen JPG o PNG de hasta 5 MB.");
+    String tipoArchivo = detectarTipoArchivo(contenido);
+    if (tipoArchivo == null) {
+      return vistaCargaComprobante("El archivo debe ser " + FORMATOS_ACEPTADOS + " de hasta 5 MB.");
     }
 
     try {
@@ -134,7 +136,7 @@ public class ControladorGasto {
         .stream()
         .map(categoria -> categoria.getNombre())
         .toList();
-      DatosComprobante datos = lectorComprobante.leer(contenido, tipoImagen, nombresCategorias);
+      DatosComprobante datos = lectorComprobante.leer(contenido, tipoArchivo, nombresCategorias);
       return vistaRevisionComprobante(datos, categorias);
     } catch (ComprobanteNoLegible | LectorComprobanteNoDisponible e) {
       return vistaCargaComprobante(e.getMessage());
@@ -297,12 +299,16 @@ public class ControladorGasto {
     return new ModelAndView("revisar-comprobante", model);
   }
 
-  private String detectarTipoImagen(byte[] imagen) {
-    if (empiezaCon(imagen, FIRMA_PNG)) {
+  // Se mira la firma del archivo, no la extensión ni el content-type que manda el navegador
+  private String detectarTipoArchivo(byte[] archivo) {
+    if (empiezaCon(archivo, FIRMA_PNG)) {
       return "image/png";
     }
-    if (empiezaCon(imagen, FIRMA_JPEG)) {
+    if (empiezaCon(archivo, FIRMA_JPEG)) {
       return "image/jpeg";
+    }
+    if (empiezaCon(archivo, FIRMA_PDF)) {
+      return LectorComprobante.TIPO_PDF;
     }
     return null;
   }

@@ -96,7 +96,7 @@ public class ControladorGastoTest {
   }
 
   @Test
-  public void debeRechazarUnaImagenQueNoSeaJpgNiPng() {
+  public void debeRechazarUnArchivoQueNoSeaJpgPngNiPdf() {
     MockMultipartFile imagen = new MockMultipartFile(
       "imagen",
       "comprobante.gif",
@@ -108,10 +108,27 @@ public class ControladorGastoTest {
 
     assertEquals("cargar-comprobante", resultado.getViewName());
     assertEquals(
-      "El archivo debe ser una imagen JPG o PNG de hasta 5 MB.",
+      "El archivo debe ser JPG, PNG o PDF de hasta 5 MB.",
       resultado.getModel().get("error")
     );
     verifyNoInteractions(lectorComprobante);
+  }
+
+  @Test
+  public void debeAceptarUnPdfYMandarloALeerComoTal() {
+    byte[] pdf = new byte[] { 0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x35 };
+    MockMultipartFile archivo = new MockMultipartFile(
+      "imagen",
+      "comprobante.pdf",
+      "application/pdf",
+      pdf
+    );
+    when(lectorComprobante.leer(pdf, "application/pdf", List.of("Alimentación")))
+      .thenReturn(datosDeEjemplo());
+
+    ModelAndView resultado = controladorGasto.procesarComprobante(archivo, request);
+
+    assertEquals("revisar-comprobante", resultado.getViewName());
   }
 
   @Test
@@ -127,10 +144,7 @@ public class ControladorGastoTest {
     ModelAndView resultado = controladorGasto.procesarComprobante(imagen, request);
 
     assertEquals("cargar-comprobante", resultado.getViewName());
-    assertEquals(
-      "La imagen supera los 5 MB. Elegí otra imagen.",
-      resultado.getModel().get("error")
-    );
+    assertEquals("El archivo supera los 5 MB. Elegí otro.", resultado.getModel().get("error"));
     verifyNoInteractions(lectorComprobante);
   }
 
@@ -512,5 +526,17 @@ public class ControladorGastoTest {
     ModelAndView mav = controladorGasto.mostrarSimulacion(request);
 
     assertEquals(400000.0, mav.getModel().get("presupuesto"));
+  }
+
+  private DatosComprobante datosDeEjemplo() {
+    return new DatosComprobante(
+      49999.0,
+      LocalDate.of(2026, 10, 15),
+      "YPF",
+      "Alimentación",
+      "Transferencia enviada",
+      "comprobante de pago",
+      new ConfianzaComprobante(false, false, false, false)
+    );
   }
 }

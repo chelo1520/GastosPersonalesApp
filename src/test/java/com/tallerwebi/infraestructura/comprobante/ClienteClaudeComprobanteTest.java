@@ -2,9 +2,12 @@ package com.tallerwebi.infraestructura.comprobante;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tallerwebi.dominio.comprobante.ComprobanteNoLegible;
 import com.tallerwebi.dominio.comprobante.ConfianzaComprobante;
 import com.tallerwebi.dominio.comprobante.DatosComprobante;
@@ -61,6 +64,63 @@ public class ClienteClaudeComprobanteTest {
       ComprobanteNoLegible.class,
       () -> cliente.extraerDatos("{\"content\":[{\"type\":\"text\",\"text\":\"No se leyó\"}]}")
     );
+  }
+
+  @Test
+  public void debeRechazarUnaRespuestaCortadaPorFaltaDeTokens() {
+    ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
+      "clave",
+      mock(HttpClient.class)
+    );
+    String respuesta =
+      """
+      {"stop_reason":"max_tokens","content":[{"type":"text","text":"{\"tipoOperacion\":\"Compra\",\"importe\":13350,\"fecha\":\"2026-10-12\",\"descripcion\":\"Super\",\"tipoComprobante\":\"ticket\",\"confianza\":{\"importe\":"}]}
+      """;
+
+    assertThrows(ComprobanteNoLegible.class, () -> cliente.extraerDatos(respuesta));
+  }
+
+  @Test
+  public void debePedirSinRazonamientoYConMargenDeTokensParaQueElJsonNoSeCorte() {
+    ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
+      "clave",
+      mock(HttpClient.class)
+    );
+
+    ObjectNode cuerpo = cliente.crearCuerpo(
+      new byte[] { 1 },
+      "image/jpeg",
+      java.util.List.of("Alimentación")
+    );
+
+    assertEquals("disabled", cuerpo.path("thinking").path("type").asText());
+    assertTrue(cuerpo.path("max_tokens").asInt() >= 1024);
+    assertEquals("image", primerBloque(cuerpo).path("type").asText());
+    assertEquals("image/jpeg", primerBloque(cuerpo).path("source").path("media_type").asText());
+  }
+
+  @Test
+  public void debeMandarUnPdfComoDocumentoYNoComoImagen() {
+    ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
+      "clave",
+      mock(HttpClient.class)
+    );
+
+    ObjectNode cuerpo = cliente.crearCuerpo(
+      new byte[] { 0x25, 0x50, 0x44, 0x46 },
+      "application/pdf",
+      java.util.List.of()
+    );
+
+    assertEquals("document", primerBloque(cuerpo).path("type").asText());
+    assertEquals(
+      "application/pdf",
+      primerBloque(cuerpo).path("source").path("media_type").asText()
+    );
+  }
+
+  private static JsonNode primerBloque(ObjectNode cuerpo) {
+    return cuerpo.path("messages").get(0).path("content").get(0);
   }
 
   @Test

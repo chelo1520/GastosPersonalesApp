@@ -84,9 +84,33 @@ a:hover {
   pointer-events: none;
 }
 
-.app-salir {
+.app-cuenta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 14px;
+}
+
+.app-cuenta a {
+  padding: 6px 10px;
+  border-radius: 8px;
   color: var(--app-texto-nav);
+}
+
+.app-cuenta a:hover {
+  color: #fff;
+}
+
+.app-cuenta a[aria-current="page"] {
+  background: var(--app-oscuro-activo);
+  color: #fff;
+  font-weight: 600;
+}
+
+.app-cuenta a + a::before {
+  content: "·";
+  margin-right: 10px;
+  opacity: 0.5;
 }
 
 /* Header mobile */
@@ -135,16 +159,6 @@ a:hover {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 20px;
-}
-
-.app-mvp-badge {
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--app-oscuro);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
 }
 
 .app-registrar-link {

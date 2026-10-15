@@ -1,6 +1,7 @@
 package com.tallerwebi.integracion;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -64,13 +65,13 @@ public class ComprobanteVistaTest {
   }
 
   @Test
-  public void debeMostrarLasOpcionesDeCamaraYGaleriaConElAvisoDePrivacidad() throws Exception {
+  public void debeMostrarLasOpcionesDeCamaraYGaleriaSinAvisosDeMas() throws Exception {
     mockMvc
       .perform(get("/registrar-gasto/comprobante").sessionAttr("USUARIO", usuario))
       .andExpect(status().isOk())
       .andExpect(content().string(containsString("Tomar foto")))
       .andExpect(content().string(containsString("Elegir de la galería")))
-      .andExpect(content().string(containsString("La imagen se usa solo para extraer los datos")));
+      .andExpect(content().string(not(containsString("La imagen se usa solo"))));
   }
 
   @Test
