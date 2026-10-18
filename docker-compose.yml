@@ -40,6 +40,11 @@ services:
       # Asistente con Claude (HU-15); sin la clave, los consejos salen con el texto de las reglas
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ASISTENTE_MODELO: ${ASISTENTE_MODELO:-}
+      # Recuperar contraseña: cuenta de Gmail y su "contraseña de aplicación" (no la de la cuenta).
+      # Sin ellas no se manda el mail. APP_URL es la dirección que va en el link del mail
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      APP_URL: ${APP_URL:-http://localhost:8080/gastitos}
 
 volumes:
   mysql_data:

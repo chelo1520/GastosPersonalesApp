@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head('Recuperar contraseña')}"></head>
+
+<body>
+
+  <!--
+    Modelo esperado:
+      enviado (Boolean): ya se pidió el mail; se muestra el aviso en lugar del formulario
+  -->
+  <main class="app-login">
+    <div class="app-login-card">
+
+      <div class="app-login-marca">
+        <img th:src="@{/img/isotipo.svg}" width="44" height="44" alt="">
+        <span>Gastitos</span>
+      </div>
+
+      <h1 class="app-acceso-titulo">¿Olvidaste tu contraseña?</h1>
+
+      <!-- El mismo aviso exista o no la cuenta: así no se puede averiguar qué emails están registrados -->
+      <div th:if="${enviado}" id="aviso-enviado" class="alert alert-success" role="status">
+        Si hay una cuenta con ese email, te mandamos un link para elegir una contraseña nueva.
+        Revisá tu casilla (y la carpeta de spam). El link vence en 1 hora.
+      </div>
+
+      <th:block th:unless="${enviado}">
+        <p class="app-acceso-bajada">Escribí el email de tu cuenta y te mandamos un link para elegir una nueva.</p>
+
+        <form action="#" th:action="@{/olvide-contrasena}" method="POST">
+          <div class="mb-4">
+            <label for="email" class="form-label">Email <span class="app-requerido" aria-hidden="true">*</span></label>
+            <input name="email" id="email" type="email" class="form-control" autocomplete="email" required />
+          </div>
+
+          <div class="d-grid">
+            <button id="btn-enviar-link" class="btn btn-primary" type="submit">Mandarme el link</button>
+          </div>
+        </form>
+      </th:block>
+
+      <p class="app-login-registro">
+        <a th:href="@{/login}">Volver a iniciar sesión</a>
+      </p>
+
+    </div>
+  </main>
+
+  <script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+
+</html>
