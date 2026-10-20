@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head('Nueva contraseña')}"></head>
+
+<body>
+
+  <!--
+    Modelo esperado:
+      token (String): el del link del mail, viaja oculto en el formulario
+      linkInvalido (Boolean): el link no existe, venció o ya se usó
+      error (String): la contraseña no cumple (corta o no coinciden)
+  -->
+  <main class="app-login">
+    <div class="app-login-card">
+
+      <div class="app-login-marca">
+        <img th:src="@{/img/isotipo.svg}" width="44" height="44" alt="">
+        <span>Gastitos</span>
+      </div>
+
+      <th:block th:if="${linkInvalido}">
+        <h1 class="app-acceso-titulo">El link ya no sirve</h1>
+        <div id="aviso-link-invalido" class="alert alert-danger" role="alert">
+          Venció o ya se usó. Pedí uno nuevo: vence 1 hora después de que te llega.
+        </div>
+        <div class="d-grid">
+          <a class="btn btn-primary" th:href="@{/olvide-contrasena}">Pedir otro link</a>
+        </div>
+      </th:block>
+
+      <th:block th:unless="${linkInvalido}">
+        <h1 class="app-acceso-titulo">Elegí una contraseña nueva</h1>
+        <p class="app-acceso-bajada">Después vas a ingresar con esta contraseña.</p>
+
+        <form action="#" th:action="@{/restablecer-contrasena}" method="POST">
+          <input type="hidden" name="token" th:value="${token}" />
+
+          <div class="mb-3">
+            <label for="password" class="form-label">Contraseña nueva <span class="app-requerido" aria-hidden="true">*</span></label>
+            <input name="password" id="password" type="password" class="form-control"
+              autocomplete="new-password" minlength="6" aria-describedby="password-requisitos" required />
+            <ul th:replace="~{fragments/contrasena :: requisitos}"></ul>
+          </div>
+
+          <div class="mb-4">
+            <label for="confirmacion" class="form-label">Repetí la contraseña <span class="app-requerido" aria-hidden="true">*</span></label>
+            <input name="confirmacion" id="confirmacion" type="password" class="form-control"
+              autocomplete="new-password" required aria-describedby="confirmacion-error" />
+            <div id="confirmacion-error" class="invalid-feedback">Las contraseñas no coinciden.</div>
+          </div>
+
+          <p th:if="${error != null}" class="alert alert-danger" th:text="${error}"></p>
+
+          <div class="d-grid">
+            <button id="btn-restablecer" class="btn btn-primary" type="submit" disabled>Guardar contraseña</button>
+          </div>
+        </form>
+      </th:block>
+
+      <p class="app-login-registro">
+        <a th:href="@{/login}">Volver a iniciar sesión</a>
+      </p>
+
+    </div>
+  </main>
+
+  <script th:replace="~{fragments/layout :: scripts}"></script>
+  <script type="module" th:src="@{/js/restablecer.js}" th:unless="${linkInvalido}"></script>
+</body>
+
+</html>

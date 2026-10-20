@@ -565,6 +565,67 @@ a:hover {
   color: var(--app-oscuro);
 }
 
+/* "¿Olvidaste tu contraseña?" debajo del campo de contraseña del login */
+.app-login-olvide {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+/* Requisitos de la contraseña nueva (fragments/contrasena): gris hasta que se cumplen, después check verde */
+.app-requisitos {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: var(--app-texto-suave);
+}
+
+.app-requisitos li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.app-requisitos li::before {
+  content: "";
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--app-borde-input);
+  border-radius: 50%;
+}
+
+.app-requisitos li.is-ok {
+  color: #15803d;
+}
+
+.app-requisitos li.is-ok::before {
+  content: "✓";
+  display: grid;
+  place-items: center;
+  border-color: #15803d;
+  background: #15803d;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.app-acceso-titulo {
+  margin-bottom: 4px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--app-oscuro);
+}
+
+.app-acceso-bajada {
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: var(--app-texto-suave);
+}
+
 .app-login-registro {
   margin-top: 20px;
   text-align: center;

@@ -1,5 +1,6 @@
 package com.tallerwebi.presentacion;
 
+import com.tallerwebi.dominio.ReglasDeContrasena;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
@@ -15,6 +16,8 @@ import org.springframework.web.servlet.ModelAndView;
 
 @Controller
 public class ControladorLogin {
+
+  private static final String VISTA_REGISTRO = "nuevo-usuario";
 
   private ServicioLogin servicioLogin;
 
@@ -52,24 +55,43 @@ public class ControladorLogin {
 
   @RequestMapping(path = "/registrarme", method = RequestMethod.POST)
   public ModelAndView registrarme(@ModelAttribute("usuario") Usuario usuario) {
-    Map<String, Object> model = new ModelMap();
+    // El formulario ya lo valida, pero el pedido puede llegar sin pasar por él
+    String errorDeDatos = validarDatosDeRegistro(usuario);
+    if (errorDeDatos != null) {
+      return volverAlRegistro(errorDeDatos);
+    }
     try {
       servicioLogin.registrar(usuario);
     } catch (UsuarioExistente e) {
-      model.put("error", "El usuario ya existe");
-      return new ModelAndView("nuevo-usuario", model);
+      return volverAlRegistro("El usuario ya existe");
     } catch (Exception e) {
-      model.put("error", "Error al registrar el nuevo usuario");
-      return new ModelAndView("nuevo-usuario", model);
+      return volverAlRegistro("Error al registrar el nuevo usuario");
     }
-    return new ModelAndView("redirect:/login");
+    // El login muestra "Tu cuenta ya está creada" con este parámetro
+    return new ModelAndView("redirect:/login?registrado");
+  }
+
+  private ModelAndView volverAlRegistro(String error) {
+    Map<String, Object> model = new ModelMap();
+    model.put("error", error);
+    return new ModelAndView(VISTA_REGISTRO, model);
+  }
+
+  private String validarDatosDeRegistro(Usuario usuario) {
+    if (usuario.getEmail() == null || !usuario.getEmail().contains("@")) {
+      return "Ingresá un email válido";
+    }
+    if (!ReglasDeContrasena.cumple(usuario.getPassword())) {
+      return ReglasDeContrasena.MENSAJE;
+    }
+    return null;
   }
 
   @RequestMapping(path = "/nuevo-usuario", method = RequestMethod.GET)
   public ModelAndView nuevoUsuario() {
     Map<String, Object> model = new ModelMap();
     model.put("usuario", new Usuario());
-    return new ModelAndView("nuevo-usuario", model);
+    return new ModelAndView(VISTA_REGISTRO, model);
   }
 
   @RequestMapping(path = "/", method = RequestMethod.GET)

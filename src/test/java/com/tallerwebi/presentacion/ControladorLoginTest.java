@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
 import static org.mockito.Mockito.*;
 
+import com.tallerwebi.dominio.ReglasDeContrasena;
 import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
@@ -28,6 +29,7 @@ public class ControladorLoginTest {
     datosLoginMock = new DatosLogin("dami@unlam.com", "123");
     usuarioMock = mock(Usuario.class);
     when(usuarioMock.getEmail()).thenReturn("dami@unlam.com");
+    when(usuarioMock.getPassword()).thenReturn("Secreta1!");
     requestMock = mock(HttpServletRequest.class);
     sessionMock = mock(HttpSession.class);
     servicioLoginMock = mock(ServicioLogin.class);
@@ -78,8 +80,52 @@ public class ControladorLoginTest {
     ModelAndView modelAndView = controladorLogin.registrarme(usuarioMock);
 
     // validacion
-    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login"));
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login?registrado"));
     verify(servicioLoginMock, times(1)).registrar(usuarioMock);
+  }
+
+  @Test
+  public void debeVolverAlFormularioSinRegistrarCuandoElEmailNoEsValido() throws UsuarioExistente {
+    when(usuarioMock.getEmail()).thenReturn("dami");
+
+    ModelAndView modelAndView = controladorLogin.registrarme(usuarioMock);
+
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("nuevo-usuario"));
+    assertThat(
+      modelAndView.getModel().get("error").toString(),
+      equalToIgnoringCase("Ingresá un email válido")
+    );
+    verify(servicioLoginMock, never()).registrar(any());
+  }
+
+  @Test
+  public void debeVolverAlFormularioSinRegistrarCuandoLaContrasenaEsCorta()
+    throws UsuarioExistente {
+    when(usuarioMock.getPassword()).thenReturn("123");
+
+    ModelAndView modelAndView = controladorLogin.registrarme(usuarioMock);
+
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("nuevo-usuario"));
+    assertThat(
+      modelAndView.getModel().get("error").toString(),
+      equalToIgnoringCase(ReglasDeContrasena.MENSAJE)
+    );
+    verify(servicioLoginMock, never()).registrar(any());
+  }
+
+  @Test
+  public void debeVolverAlFormularioSinRegistrarCuandoLaContrasenaNoTieneMayuscula()
+    throws UsuarioExistente {
+    when(usuarioMock.getPassword()).thenReturn("secreta123!");
+
+    ModelAndView modelAndView = controladorLogin.registrarme(usuarioMock);
+
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("nuevo-usuario"));
+    assertThat(
+      modelAndView.getModel().get("error").toString(),
+      equalToIgnoringCase(ReglasDeContrasena.MENSAJE)
+    );
+    verify(servicioLoginMock, never()).registrar(any());
   }
 
   @Test
