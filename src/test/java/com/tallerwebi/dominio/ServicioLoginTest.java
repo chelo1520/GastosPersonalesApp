@@ -37,13 +37,12 @@ public class ServicioLoginTest {
   }
 
   @Test
-  public void debeGuardarElUsuarioCuandoNoExisteUnoConEseEmailYPassword() throws UsuarioExistente {
+  public void debeGuardarElUsuarioCuandoNoExisteUnoConEseEmail() throws UsuarioExistente {
     // preparacion
     Usuario usuario = new Usuario();
     usuario.setEmail("nuevo@test.com");
     usuario.setPassword("123");
-    when(this.repositorioUsuarioMock.buscarUsuario(usuario.getEmail(), usuario.getPassword()))
-      .thenReturn(null);
+    when(this.repositorioUsuarioMock.buscar(usuario.getEmail())).thenReturn(null);
 
     // ejecucion
     this.servicioLogin.registrar(usuario);
@@ -58,11 +57,25 @@ public class ServicioLoginTest {
     Usuario usuario = new Usuario();
     usuario.setEmail("existe@test.com");
     usuario.setPassword("123");
-    when(this.repositorioUsuarioMock.buscarUsuario(usuario.getEmail(), usuario.getPassword()))
-      .thenReturn(new Usuario());
+    when(this.repositorioUsuarioMock.buscar(usuario.getEmail())).thenReturn(new Usuario());
 
     // ejecucion y validacion
     assertThrows(UsuarioExistente.class, () -> this.servicioLogin.registrar(usuario));
     verify(this.repositorioUsuarioMock, times(0)).guardar(usuario);
+  }
+
+  @Test
+  public void debeLanzarUsuarioExistenteCuandoElEmailYaEstaRegistradoConOtraContrasena() {
+    // preparacion
+    Usuario usuario = new Usuario();
+    usuario.setEmail("existe@test.com");
+    usuario.setPassword("otra-clave");
+    when(this.repositorioUsuarioMock.buscar("existe@test.com")).thenReturn(new Usuario());
+    when(this.repositorioUsuarioMock.buscarUsuario("existe@test.com", "otra-clave"))
+      .thenReturn(null);
+
+    // ejecucion y validacion
+    assertThrows(UsuarioExistente.class, () -> this.servicioLogin.registrar(usuario));
+    verify(this.repositorioUsuarioMock, never()).guardar(any());
   }
 }

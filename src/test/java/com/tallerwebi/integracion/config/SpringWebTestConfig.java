@@ -4,6 +4,7 @@ import com.tallerwebi.dominio.comprobante.LectorComprobante;
 import com.tallerwebi.dominio.indicadores.ClienteIndicadores;
 import com.tallerwebi.dominio.indicadores.CotizacionDolar;
 import com.tallerwebi.dominio.indicadores.InflacionMensual;
+import com.tallerwebi.dominio.recuperacion.EnviadorDeMail;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -79,6 +80,13 @@ public class SpringWebTestConfig implements WebMvcConfigurer {
   @Primary
   public LectorComprobante lectorComprobanteDePrueba() {
     return Mockito.mock(LectorComprobante.class);
+  }
+
+  // Los tests nunca mandan mails de verdad; el de recuperación lee el link de acá
+  @Bean
+  @Primary
+  public EnviadorDeMail enviadorDeMailDePrueba() {
+    return Mockito.mock(EnviadorDeMail.class);
   }
 
   @Bean

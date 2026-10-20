@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+  <!--
+    Requisitos de una contraseña nueva, debajo del campo. Cada uno se marca con un check verde
+    cuando se cumple (contrasena.js). Las reglas son las de ReglasDeContrasena.
+    El campo los referencia con aria-describedby="password-requisitos".
+  -->
+  <ul th:fragment="requisitos" id="password-requisitos" class="app-requisitos" aria-live="polite">
+    <li data-regla="largo">Al menos 6 caracteres</li>
+    <li data-regla="mayuscula">Una mayúscula</li>
+    <li data-regla="minuscula">Una minúscula</li>
+    <li data-regla="especial">Un carácter especial (! @ # $ % &amp; * . - _)</li>
+  </ul>
+
+</body>
+
+</html>

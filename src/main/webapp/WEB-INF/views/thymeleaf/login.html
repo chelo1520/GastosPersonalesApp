@@ -13,6 +13,16 @@
         <span>Gastitos</span>
       </div>
 
+      <!-- Llega desde el registro: la cuenta ya se creó -->
+      <p th:if="${param.registrado != null}" class="alert alert-success" role="status">
+        Tu cuenta ya está creada. Ingresá con tu email y contraseña.
+      </p>
+
+      <!-- Llega desde el link del mail: la contraseña ya se cambió -->
+      <p th:if="${param.restablecida != null}" class="alert alert-success" role="status">
+        Tu contraseña se cambió. Ingresá con la nueva.
+      </p>
+
       <form action="#" th:action="@{/validar-login}" method="POST" th:object="${datosLogin}">
 
         <div class="mb-3">
@@ -24,6 +34,7 @@
           <label for="password" class="form-label">Contraseña <span class="app-requerido" aria-hidden="true">*</span></label>
           <input th:field="*{password}" id="password" type="password" class="form-control"
             autocomplete="current-password" required />
+          <a id="link-olvide" class="app-login-olvide" th:href="@{/olvide-contrasena}">¿Olvidaste tu contraseña?</a>
         </div>
 
         <p th:if="${error != null}" class="alert alert-danger" th:text="${error}"></p>
