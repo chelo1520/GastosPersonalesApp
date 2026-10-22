@@ -113,8 +113,7 @@ public class ControladorPresupuesto {
 
     List<ResumenCategoria> filas = new ArrayList<>();
     for (Categoria categoria : categorias) {
-      ResumenCategoria fila = porNombre.remove(categoria.getNombre());
-      filas.add(fila != null ? fila : new ResumenCategoria(categoria.getNombre(), 0.0, 0.0));
+      filas.add(filaDe(categoria, porNombre.remove(categoria.getNombre())));
     }
     filas.addAll(porNombre.values());
 
@@ -134,6 +133,21 @@ public class ControladorPresupuesto {
     }
 
     return new ModelAndView("presupuestos", model);
+  }
+
+  // Con el id de la categoría, que usa el lápiz para editar el presupuesto de la fila
+  private static ResumenCategoria filaDe(Categoria categoria, ResumenCategoria delResumen) {
+    if (delResumen == null) {
+      return new ResumenCategoria(categoria.getNombre(), 0.0, 0.0, null, categoria.getId());
+    }
+    return new ResumenCategoria(
+      delResumen.getNombre(),
+      delResumen.getGastado(),
+      delResumen.getPorcentajeTotal(),
+      delResumen.getPresupuesto(),
+      categoria.getId(),
+      delResumen.getEsHormiga()
+    );
   }
 
   private YearMonth elegirMes(String mes) {

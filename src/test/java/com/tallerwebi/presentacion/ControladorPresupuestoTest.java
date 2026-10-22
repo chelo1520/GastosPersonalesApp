@@ -146,6 +146,31 @@ public class ControladorPresupuestoTest {
 
   @Test
   @SuppressWarnings("unchecked")
+  public void cadaFilaDebeLlevarElIdDeSuCategoriaParaEditarlaConElLapiz() {
+    ResumenCategoria conPresupuesto = new ResumenCategoria(
+      "Alimentación",
+      118400.0,
+      95.0,
+      130000.0
+    );
+    ResumenCategoria sinCategoria = new ResumenCategoria("Sin categoría", 5000.0, 5.0);
+    when(servicioResumenMock.obtenerResumen(usuario, OCTUBRE))
+      .thenReturn(
+        new ResumenMensual(123400.0, 130000.0, 6600.0, 94.9, List.of(conPresupuesto, sinCategoria))
+      );
+
+    ModelAndView mav = controlador.mostrarPresupuestos(null, requestMock);
+
+    List<ResumenCategoria> filas = (List<ResumenCategoria>) mav.getModel().get("filas");
+    assertThat(filas.get(0).getCategoriaId(), equalTo(1L));
+    assertThat(filas.get(0).getPresupuesto(), equalTo(130000.0));
+    assertThat(filas.get(1).getCategoriaId(), equalTo(2L));
+    // Los gastos sin categoría no tienen presupuesto que editar
+    assertThat(filas.get(2).getCategoriaId(), nullValue());
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
   public void debeAgregarAlFinalLosGastosSinCategoriaCuandoElResumenLosTrae() {
     ResumenCategoria sinCategoria = new ResumenCategoria("Sin categoría", 5000.0, 100.0);
     when(servicioResumenMock.obtenerResumen(usuario, OCTUBRE))

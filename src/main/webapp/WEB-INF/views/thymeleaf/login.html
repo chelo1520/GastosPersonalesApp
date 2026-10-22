@@ -23,6 +23,10 @@
         Tu contraseña se cambió. Ingresá con la nueva.
       </p>
 
+      <p th:if="${param.cuentaEliminada != null}" class="alert alert-success" role="status">
+        Tu cuenta y todos tus datos se eliminaron.
+      </p>
+
       <form action="#" th:action="@{/validar-login}" method="POST" th:object="${datosLogin}">
 
         <div class="mb-3">

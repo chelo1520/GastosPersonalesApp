@@ -73,3 +73,143 @@
     width: 100%;
   }
 }
+
+/* Filtro "Ocultar categorías sin presupuesto" */
+.app-presupuestos-ocultar {
+  margin-bottom: 12px;
+  color: var(--res-muted);
+  font-size: 0.9rem;
+}
+
+.app-presupuestos-vacio {
+  margin: 8px 0 12px;
+  color: var(--res-muted);
+}
+
+/* Lápiz para editar el presupuesto de la fila: solo el trazo, sin fondo */
+.app-presupuesto-ver {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.app-presupuesto-ver[hidden],
+.app-presupuesto-editar[hidden] {
+  display: none;
+}
+
+.app-presupuesto-lapiz {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--res-muted);
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.app-presupuesto-lapiz:hover {
+  color: var(--app-verde);
+}
+
+.app-presupuesto-lapiz:focus-visible {
+  color: var(--app-verde);
+  outline: 2px solid var(--app-verde);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.app-presupuesto-lapiz svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Edición: mismo campo "$ monto" que el formulario de abajo, en chico */
+.app-presupuesto-editar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.app-presupuesto-monto {
+  width: 110px;
+  flex-wrap: nowrap;
+}
+
+.app-presupuesto-monto .input-group-text,
+.app-presupuesto-monto .form-control {
+  font-family: var(--res-mono);
+  font-size: 0.9rem;
+}
+
+.app-presupuesto-monto .form-control {
+  text-align: right;
+}
+
+/* Misma altura que el texto de la fila, para que no salte al editar */
+.app-presupuesto-monto .input-group-text,
+.app-presupuesto-monto .form-control,
+.app-presupuesto-editar .btn {
+  height: 30px;
+  min-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.app-presupuesto-monto .input-group-text {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.app-presupuesto-editar .btn-primary {
+  padding-left: 12px;
+  padding-right: 12px;
+  font-size: 0.85rem;
+}
+
+/* Botones chicos, pegados a la derecha del campo */
+.app-presupuesto-editar {
+  width: 100%;
+  gap: 4px;
+}
+
+.app-presupuesto-monto .input-group-text,
+.app-presupuesto-monto .form-control {
+  height: 28px;
+  font-size: 0.85rem;
+}
+
+.app-presupuesto-monto .input-group-text {
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+.app-presupuesto-monto .form-control {
+  padding-left: 6px;
+  padding-right: 4px;
+}
+
+.app-presupuesto-editar .btn {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 0.75rem;
+  border-radius: 6px;
+}
+
+/* Cancelar: rojo suave, para distinguirlo de Guardar sin que grite */
+.app-presupuesto-editar .app-presupuesto-cancelar {
+  border: 1px solid #f3c7c7;
+  background: #fdecec;
+  color: #b42318;
+  text-decoration: none;
+}
+
+.app-presupuesto-editar .app-presupuesto-cancelar:hover,
+.app-presupuesto-editar .app-presupuesto-cancelar:focus-visible {
+  border-color: #eba5a5;
+  background: #fbdcdc;
+  color: #912018;
+}
