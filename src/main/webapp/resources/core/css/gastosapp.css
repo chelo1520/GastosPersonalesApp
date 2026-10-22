@@ -391,6 +391,77 @@ a:hover {
   color: var(--app-texto-suave);
 }
 
+/* Cambiar contraseña y eliminar cuenta: desplegables que se abren con un click */
+.app-perfil-card.app-perfil-seccion {
+  margin-top: 16px;
+  padding: 0;
+}
+
+.app-perfil-desplegable {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 28px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.app-perfil-desplegable::-webkit-details-marker {
+  display: none;
+}
+
+.app-perfil-desplegable:focus-visible {
+  outline: 2px solid var(--app-verde);
+  outline-offset: -2px;
+  border-radius: 14px;
+}
+
+.app-perfil-seccion-titulo {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.app-perfil-bajada {
+  display: block;
+  margin-top: 2px;
+  color: var(--app-texto-suave);
+  font-size: 13px;
+}
+
+.app-perfil-flecha {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--app-texto-suave);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.2s;
+}
+
+.app-perfil-seccion[open] .app-perfil-flecha {
+  transform: rotate(180deg);
+}
+
+.app-perfil-desplegable-contenido {
+  padding: 4px 28px 28px;
+}
+
+.app-perfil-form {
+  max-width: 420px;
+}
+
+.app-perfil-peligro {
+  border-color: #f1c9c9;
+}
+
+.app-perfil-peligro .app-perfil-seccion-titulo {
+  color: var(--app-error);
+}
+
 .app-mobile-nav {
   position: sticky;
   bottom: 0;
@@ -484,6 +555,14 @@ a:hover {
 
   .app-perfil-card {
     padding: 20px 16px;
+  }
+
+  .app-perfil-desplegable {
+    padding: 16px;
+  }
+
+  .app-perfil-desplegable-contenido {
+    padding: 4px 16px 20px;
   }
 
   .app-perfil-identidad {

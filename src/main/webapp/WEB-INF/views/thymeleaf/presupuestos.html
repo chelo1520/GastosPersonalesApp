@@ -39,6 +39,13 @@
 
     <!-- Tabla por categoría -->
     <section class="app-resumen-card app-presupuestos-tabla-card" aria-label="Presupuestos del mes">
+      <div class="form-check form-switch app-presupuestos-ocultar">
+        <input class="form-check-input" type="checkbox" role="switch" id="ocultar-sin-presupuesto">
+        <label class="form-check-label" for="ocultar-sin-presupuesto">Ocultar categorías sin presupuesto</label>
+      </div>
+      <p class="app-presupuestos-vacio" id="presupuestos-todo-oculto" hidden>
+        Ninguna categoría tiene presupuesto este mes. Definí uno abajo o desactivá el filtro.
+      </p>
       <div class="table-responsive">
         <table class="table app-resumen-tabla mb-0" id="tabla-presupuestos">
           <thead>
@@ -54,9 +61,31 @@
             <tr th:each="fila : ${filas}" th:classappend="${!fila.tienePresupuesto} ? 'app-presupuesto-sin-definir'">
               <td th:text="${fila.nombre}">Alimentación</td>
               <td class="text-end">
-                <span class="app-resumen-num" th:if="${fila.tienePresupuesto}"
-                      th:text="${#numbers.formatDecimal(fila.presupuesto, 1, 'POINT', 0, 'COMMA')}">130.000</span>
-                <span th:unless="${fila.tienePresupuesto}">Sin presupuesto</span>
+                <div class="app-presupuesto-ver">
+                  <span class="app-resumen-num" th:if="${fila.tienePresupuesto}"
+                        th:text="${#numbers.formatDecimal(fila.presupuesto, 1, 'POINT', 0, 'COMMA')}">130.000</span>
+                  <span th:unless="${fila.tienePresupuesto}">Sin presupuesto</span>
+                  <button type="button" class="app-presupuesto-lapiz" th:if="${fila.categoriaId != null}"
+                          th:attr="aria-label='Editar el presupuesto de ' + ${fila.nombre}"
+                          th:title="'Editar el presupuesto de ' + ${fila.nombre}">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.17 6.81a2.82 2.82 0 0 0-3.98-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"></path><path d="M15 5l4 4"></path></svg>
+                  </button>
+                </div>
+                <!-- Edición en la fila: guarda con el mismo POST que el formulario de abajo -->
+                <form th:if="${fila.categoriaId != null}" th:action="@{/presupuestos}" method="post"
+                      class="app-presupuesto-editar" hidden>
+                  <input type="hidden" name="categoriaId" th:value="${fila.categoriaId}">
+                  <input type="hidden" name="mes" th:value="${mes}">
+                  <div class="input-group input-group-sm app-presupuesto-monto">
+                    <span class="input-group-text">$</span>
+                    <input type="number" name="monto" step="0.01" min="0.01" inputmode="decimal" required
+                           class="form-control"
+                           th:value="${fila.presupuesto}"
+                           th:attr="aria-label='Monto del presupuesto de ' + ${fila.nombre}">
+                  </div>
+                  <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                  <button type="button" class="btn btn-sm btn-link app-presupuesto-cancelar">Cancelar</button>
+                </form>
               </td>
               <td class="app-resumen-num text-end"
                   th:text="${#numbers.formatDecimal(fila.gastado, 1, 'POINT', 0, 'COMMA')}">118.400</td>
@@ -143,6 +172,7 @@
     </a>
   </nav>
 
+  <script th:src="@{/js/presupuestos.js}" charset="utf-8"></script>
   <script th:replace="~{fragments/layout :: scripts}"></script>
 </body>
 

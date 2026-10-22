@@ -24,6 +24,10 @@
     titulo.textContent = form.dataset.confirmarTitulo || "¿Confirmás?";
     texto.textContent = form.dataset.confirmarTexto;
     botonSi.textContent = form.dataset.confirmarBoton || "Confirmar";
+    // data-confirmar-peligro: botón rojo para lo que no se puede deshacer
+    const peligro = form.dataset.confirmarPeligro !== undefined;
+    botonSi.classList.toggle("btn-danger", peligro);
+    botonSi.classList.toggle("btn-primary", !peligro);
     modal.show();
   });
 
