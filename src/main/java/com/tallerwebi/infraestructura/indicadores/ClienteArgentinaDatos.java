@@ -17,6 +17,7 @@ import java.time.OffsetDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -26,33 +27,38 @@ import org.springframework.stereotype.Component;
 @Component
 public class ClienteArgentinaDatos implements ClienteIndicadores {
 
-  static final String URL_DOLAR_HISTORICO =
-    "https://api.argentinadatos.com/v1/cotizaciones/dolares/oficial";
-  static final String URL_INFLACION =
-    "https://api.argentinadatos.com/v1/finanzas/indices/inflacion";
-  static final String URL_DOLAR_HOY = "https://dolarapi.com/v1/dolares/oficial";
   private static final int HTTP_OK = 200;
 
+  private final String urlDolarHistorico;
+  private final String urlInflacion;
+  private final String urlDolarHoy;
   private final HttpClient http;
   private final ObjectMapper json = new ObjectMapper();
 
-  public ClienteArgentinaDatos() {
+  public ClienteArgentinaDatos(
+    @Value("${api.indicadores.dolar-historico.url}") String urlDolarHistorico,
+    @Value("${api.indicadores.inflacion.url}") String urlInflacion,
+    @Value("${api.indicadores.dolar-hoy.url}") String urlDolarHoy
+  ) {
+    this.urlDolarHistorico = urlDolarHistorico;
+    this.urlInflacion = urlInflacion;
+    this.urlDolarHoy = urlDolarHoy;
     this.http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
   }
 
   @Override
   public List<CotizacionDolar> obtenerDolarOficialHistorico() {
-    return parsearDolares(obtener(URL_DOLAR_HISTORICO));
+    return parsearDolares(obtener(urlDolarHistorico));
   }
 
   @Override
   public CotizacionDolar obtenerDolarOficialDeHoy() {
-    return parsearDolarDeHoy(obtener(URL_DOLAR_HOY));
+    return parsearDolarDeHoy(obtener(urlDolarHoy));
   }
 
   @Override
   public List<InflacionMensual> obtenerInflacionMensual() {
-    return parsearInflacion(obtener(URL_INFLACION));
+    return parsearInflacion(obtener(urlInflacion));
   }
 
   // [{"casa":"oficial","compra":1485,"venta":1535,"fecha":"2026-10-13"}, ...]

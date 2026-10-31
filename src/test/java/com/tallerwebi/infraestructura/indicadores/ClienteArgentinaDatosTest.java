@@ -17,7 +17,11 @@ import org.junit.jupiter.api.Test;
 /** Parseo de respuestas grabadas de las APIs; no hay llamadas de red. */
 public class ClienteArgentinaDatosTest {
 
-  private final ClienteArgentinaDatos cliente = new ClienteArgentinaDatos();
+  private final ClienteArgentinaDatos cliente = new ClienteArgentinaDatos(
+    "http://dolar-historico.test",
+    "http://inflacion.test",
+    "http://dolar-hoy.test"
+  );
 
   @Test
   void debeParsearLaSerieDelDolarCuandoLaRespuestaTieneVariosDias() {

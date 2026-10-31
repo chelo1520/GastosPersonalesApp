@@ -30,7 +30,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class ClienteClaudeComprobante implements LectorComprobante {
 
-  static final String URL_MENSAJES = "https://api.anthropic.com/v1/messages";
   static final String MODELO = "claude-haiku-5-5";
   private static final String CAMPO_TIPO = "type";
   private static final String TIPO_TEXTO = "text";
@@ -43,16 +42,25 @@ public class ClienteClaudeComprobante implements LectorComprobante {
   private static final Logger LOG = Logger.getLogger(ClienteClaudeComprobante.class.getName());
 
   private final String apiKey;
+  private final String urlMensajes;
   private final HttpClient http;
   private final ObjectMapper json;
 
   @Autowired
-  public ClienteClaudeComprobante(@Value("${ANTHROPIC_API_KEY:}") String apiKey) {
-    this(apiKey, HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build());
+  public ClienteClaudeComprobante(
+    @Value("${ANTHROPIC_API_KEY:}") String apiKey,
+    @Value("${api.anthropic.mensajes.url}") String urlMensajes
+  ) {
+    this(
+      apiKey,
+      urlMensajes,
+      HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
+    );
   }
 
-  ClienteClaudeComprobante(String apiKey, HttpClient http) {
+  ClienteClaudeComprobante(String apiKey, String urlMensajes, HttpClient http) {
     this.apiKey = apiKey;
+    this.urlMensajes = urlMensajes;
     this.http = http;
     this.json = new ObjectMapper();
   }
@@ -91,7 +99,7 @@ public class ClienteClaudeComprobante implements LectorComprobante {
   HttpRequest crearPedido(byte[] archivo, String tipoArchivo, List<String> categorias) {
     try {
       return HttpRequest
-        .newBuilder(URI.create(URL_MENSAJES))
+        .newBuilder(URI.create(urlMensajes))
         .timeout(Duration.ofSeconds(30))
         .header("x-api-key", apiKey)
         .header("anthropic-version", "2023-06-01")

@@ -17,10 +17,13 @@ import org.junit.jupiter.api.Test;
 
 public class ClienteClaudeComprobanteTest {
 
+  private static final String URL_MENSAJES = "http://claude.test/v1/messages";
+
   @Test
   public void debeExtraerLosCamposDelJsonDevueltoPorClaude() {
     ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
       "clave",
+      URL_MENSAJES,
       mock(HttpClient.class)
     );
     String respuesta =
@@ -43,6 +46,7 @@ public class ClienteClaudeComprobanteTest {
   public void debeRechazarUnaRespuestaSinLosDatosObligatorios() {
     ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
       "clave",
+      URL_MENSAJES,
       mock(HttpClient.class)
     );
     String respuesta =
@@ -57,6 +61,7 @@ public class ClienteClaudeComprobanteTest {
   public void debeRechazarUnaRespuestaQueNoSeaJson() {
     ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
       "clave",
+      URL_MENSAJES,
       mock(HttpClient.class)
     );
 
@@ -70,6 +75,7 @@ public class ClienteClaudeComprobanteTest {
   public void debeRechazarUnaRespuestaCortadaPorFaltaDeTokens() {
     ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
       "clave",
+      URL_MENSAJES,
       mock(HttpClient.class)
     );
     String respuesta =
@@ -84,6 +90,7 @@ public class ClienteClaudeComprobanteTest {
   public void debePedirSinRazonamientoYConMargenDeTokensParaQueElJsonNoSeCorte() {
     ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
       "clave",
+      URL_MENSAJES,
       mock(HttpClient.class)
     );
 
@@ -103,6 +110,7 @@ public class ClienteClaudeComprobanteTest {
   public void debeMandarUnPdfComoDocumentoYNoComoImagen() {
     ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
       "clave",
+      URL_MENSAJES,
       mock(HttpClient.class)
     );
 
@@ -126,7 +134,7 @@ public class ClienteClaudeComprobanteTest {
   @Test
   public void noDebeLlamarAClaudeCuandoNoHayClaveConfigurada() {
     HttpClient http = mock(HttpClient.class);
-    ClienteClaudeComprobante cliente = new ClienteClaudeComprobante("", http);
+    ClienteClaudeComprobante cliente = new ClienteClaudeComprobante("", URL_MENSAJES, http);
 
     assertThrows(
       com.tallerwebi.dominio.comprobante.LectorComprobanteNoDisponible.class,
