@@ -373,17 +373,17 @@
   text-transform: uppercase;
 }
 
-/* En pocas palabras: la síntesis, recortada a 4 líneas con "Leer todo" */
+/* En pocas palabras: el resumen siempre a la vista; el detalle se despliega con "Contame más" */
 .app-sintesis-texto {
   margin: 0;
   line-height: 1.5;
+  font-weight: 500;
 }
 
-.app-sintesis-texto.is-recortada {
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.app-sintesis-detalle {
+  margin: 10px 0 0;
+  line-height: 1.5;
+  color: var(--res-muted);
 }
 
 .app-sintesis.is-escribiendo .app-sintesis-texto {
@@ -397,7 +397,7 @@
   font-size: 0.85rem;
 }
 
-.app-sintesis-leer {
+.app-sintesis-mas {
   margin-top: 6px;
 }
 

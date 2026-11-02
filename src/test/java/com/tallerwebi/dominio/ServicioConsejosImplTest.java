@@ -25,6 +25,7 @@ import com.tallerwebi.dominio.asistente.GastoReal;
 import com.tallerwebi.dominio.asistente.MesGastoReal;
 import com.tallerwebi.dominio.asistente.ServicioAsistente;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
+import com.tallerwebi.dominio.asistente.SintesisDelPeriodo;
 import com.tallerwebi.dominio.asistente.Veredicto;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.consejo.Consejo;
@@ -385,21 +386,27 @@ public class ServicioConsejosImplTest {
     );
     when(servicioAsistenteMock.sintetizar(any(), any()))
       .thenReturn(
-        " Subieron 30,0 % con 10,0 % de inflación: gastás 18,2 % más en términos reales. "
+        new SintesisDelPeriodo(
+          " Subieron 30,0 % con 10,0 % de inflación: gastás 18,2 % más en términos reales. ",
+          " Lo que más pesó fue Alimentación. "
+        )
       );
     conRepositorioQueRecuerda();
 
-    String sintesis = servicio.sintetizar(usuario, gastoReal);
+    SintesisDelPeriodo sintesis = servicio.sintetizar(usuario, gastoReal);
     List<Consejo> consejos = servicio.obtenerPendientes(usuario, gastoReal);
 
     assertThat(
-      sintesis,
+      sintesis.resumen(),
       equalTo("Subieron 30,0 % con 10,0 % de inflación: gastás 18,2 % más en términos reales.")
     );
+    assertThat(sintesis.detalle(), equalTo("Lo que más pesó fue Alimentación."));
     assertThat(consejos, hasSize(2));
     Consejo veredicto = consejos.get(0);
     assertThat(veredicto.getTipo(), equalTo(TipoConsejo.VEREDICTO_ROJO));
     assertThat(veredicto.getFirmaHechos(), not(nullValue()));
+    assertThat(veredicto.getTextoParaMostrar(), equalTo(sintesis.resumen()));
+    assertThat(veredicto.getDetalleRedactado(), equalTo("Lo que más pesó fue Alimentación."));
     Consejo propuesta = consejos.get(1);
     assertThat(propuesta.getTipo(), equalTo(TipoConsejo.PRESUPUESTO_DESACTUALIZADO));
     assertThat(propuesta.getTextoParaMostrar(), equalTo(propuesta.getTexto()));
@@ -412,14 +419,15 @@ public class ServicioConsejosImplTest {
       new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0)
     );
     String valida = "Subieron 30,0 %, inflación 10,0 %, 18,2 % más en términos reales.";
-    when(servicioAsistenteMock.sintetizar(any(), any())).thenReturn(valida);
+    when(servicioAsistenteMock.sintetizar(any(), any()))
+      .thenReturn(new SintesisDelPeriodo(valida, null));
     conRepositorioQueRecuerda();
     servicio.sintetizar(usuario, gastoReal);
 
-    String segundaVez = servicio.sintetizar(usuario, gastoReal);
+    SintesisDelPeriodo segundaVez = servicio.sintetizar(usuario, gastoReal);
     List<Consejo> consejos = servicio.obtenerPendientes(usuario, gastoReal);
 
-    assertThat(segundaVez, equalTo(valida));
+    assertThat(segundaVez, equalTo(new SintesisDelPeriodo(valida, null)));
     assertThat(consejos.get(0).getTextoParaMostrar(), equalTo(valida));
     assertThat(servicio.faltaLaSintesis(consejos), is(false));
     verify(servicioAsistenteMock, times(1)).sintetizar(any(), any());
@@ -431,14 +439,20 @@ public class ServicioConsejosImplTest {
       new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0)
     );
     when(servicioAsistenteMock.sintetizar(any(), any()))
-      .thenReturn("Subieron 35,0 % con 10,0 % de inflación: gastás 18,2 % más en términos reales.");
+      .thenReturn(
+        new SintesisDelPeriodo(
+          "Subieron 35,0 % con 10,0 % de inflación: gastás 18,2 % más en términos reales.",
+          "Detalle."
+        )
+      );
     conRepositorioQueRecuerda();
 
-    String sintesis = servicio.sintetizar(usuario, gastoReal);
+    SintesisDelPeriodo sintesis = servicio.sintetizar(usuario, gastoReal);
     List<Consejo> consejos = servicio.obtenerPendientes(usuario, gastoReal);
 
     assertThat(sintesis, nullValue());
-    assertThat(consejos.get(0).getTextoRedactado(), nullValue());
+    assertThat(consejos.get(0).getResumenRedactado(), nullValue());
+    assertThat(consejos.get(0).getDetalleRedactado(), nullValue());
     assertThat(consejos.get(0).getTextoParaMostrar(), containsString("subieron 30,0 %"));
   }
 
@@ -455,12 +469,13 @@ public class ServicioConsejosImplTest {
       "viejo",
       null
     );
-    guardado.redactar("Síntesis vieja.", "otra-firma");
+    guardado.redactar("Síntesis vieja.", "Detalle viejo.", "otra-firma");
     when(repositorioMock.obtenerDelMes(any(), any())).thenReturn(List.of(guardado));
 
     List<Consejo> consejos = servicio.obtenerPendientes(usuario, gastoReal);
 
-    assertThat(consejos.get(0).getTextoRedactado(), nullValue());
+    assertThat(consejos.get(0).getResumenRedactado(), nullValue());
+    assertThat(consejos.get(0).getDetalleRedactado(), nullValue());
     assertThat(consejos.get(0).getTextoParaMostrar(), containsString("Desde Mayo 2026"));
     verify(servicioAsistenteMock, never()).sintetizar(any(), any());
   }

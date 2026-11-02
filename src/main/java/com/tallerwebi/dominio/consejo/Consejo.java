@@ -168,21 +168,29 @@ public class Consejo {
       : null;
   }
 
-  public String getTextoRedactado() {
-    return sintesis == null ? null : sintesis.getTexto();
+  public String getResumenRedactado() {
+    return sintesis == null ? null : sintesis.getResumen();
+  }
+
+  public String getDetalleRedactado() {
+    return sintesis == null ? null : sintesis.getDetalle();
   }
 
   public String getFirmaHechos() {
     return sintesis == null ? null : sintesis.getFirma();
   }
 
-  public void redactar(String textoRedactado, String firmaHechos) {
-    this.sintesis = new Sintesis(textoRedactado, firmaHechos);
+  public void redactar(String resumen, String detalle, String firmaHechos) {
+    this.sintesis = new Sintesis(resumen, detalle, firmaHechos);
   }
 
-  // Lo que ve el usuario: en el veredicto, la síntesis del asistente si la hay; si no, los hechos tal cual
+  public void olvidarSintesis() {
+    redactar(null, null, null);
+  }
+
+  // Lo que ve el usuario: en el veredicto, el resumen del asistente si lo hay; si no, los hechos tal cual
   public String getTextoParaMostrar() {
-    return getTextoRedactado() != null ? getTextoRedactado() : getTexto();
+    return getResumenRedactado() != null ? getResumenRedactado() : getTexto();
   }
 
   // Los hechos que importan para la síntesis; si cambian, la síntesis vieja ya no sirve

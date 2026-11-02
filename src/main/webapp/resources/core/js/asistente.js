@@ -77,30 +77,35 @@
     }
   }
 
-  // ---- Síntesis en segundo plano: la página se arma con las reglas y acá se pide el párrafo ----
+  // ---- Síntesis en segundo plano: la página se arma con las reglas y acá se piden resumen y detalle ----
   const sintesis = document.querySelector(".app-sintesis");
   const parrafo = document.getElementById("veredicto-texto");
-  const leerTodo = document.querySelector(".app-sintesis-leer");
-  function revisarRecorte() {
-    if (!parrafo || !leerTodo) {
-      return;
+  const detalle = document.getElementById("veredicto-detalle");
+  const contameMas = document.querySelector(".app-sintesis-mas");
+  // "Contame más" solo tiene sentido si hay detalle (guardado o recién escrito)
+  function mostrarBotonSiHayDetalle() {
+    if (contameMas && detalle) {
+      contameMas.hidden = !detalle.textContent.trim();
     }
-    const recortado = parrafo.classList.contains("is-recortada");
-    leerTodo.hidden = recortado && parrafo.scrollHeight <= parrafo.clientHeight + 2;
   }
-  if (leerTodo && parrafo) {
-    leerTodo.addEventListener("click", () => {
-      const abierto = parrafo.classList.toggle("is-recortada") === false;
-      leerTodo.textContent = abierto ? "Ver menos" : "Leer todo";
-      leerTodo.setAttribute("aria-expanded", String(abierto));
+  if (contameMas && detalle) {
+    contameMas.addEventListener("click", () => {
+      const abierto = detalle.hidden;
+      detalle.hidden = !abierto;
+      contameMas.textContent = abierto ? "Ver menos" : "Contame más";
+      contameMas.setAttribute("aria-expanded", String(abierto));
     });
   }
+  mostrarBotonSiHayDetalle();
   if (sintesis && sintesis.dataset.sintesisUrl && parrafo) {
-    fetch(sintesis.dataset.sintesisUrl, { headers: { Accept: "text/plain" } })
-      .then((r) => (r.ok && r.status !== 204 ? r.text() : ""))
-      .then((texto) => {
-        if (texto && texto.trim()) {
-          parrafo.textContent = texto.trim();
+    fetch(sintesis.dataset.sintesisUrl, { headers: { Accept: "application/json" } })
+      .then((r) => (r.ok && r.status !== 204 ? r.json() : null))
+      .then((respuesta) => {
+        if (respuesta && respuesta.resumen && respuesta.resumen.trim()) {
+          parrafo.textContent = respuesta.resumen.trim();
+          if (detalle) {
+            detalle.textContent = (respuesta.detalle || "").trim();
+          }
         }
       })
       .catch(() => {})
@@ -110,11 +115,8 @@
         if (estado) {
           estado.remove();
         }
-        revisarRecorte();
+        mostrarBotonSiHayDetalle();
       });
-  }
-  if (panelEl) {
-    panelEl.addEventListener("shown.bs.offcanvas", revisarRecorte);
   }
 
   // ---- "Ver las N categorías" ----

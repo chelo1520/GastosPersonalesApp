@@ -81,7 +81,8 @@ public class RepositorioConsejoImplTest {
 
     Consejo leido = repositorio.buscarPorId(consejo.getId());
 
-    assertThat(leido.getTextoRedactado(), nullValue());
+    assertThat(leido.getResumenRedactado(), nullValue());
+    assertThat(leido.getDetalleRedactado(), nullValue());
     assertThat(leido.getFirmaHechos(), nullValue());
     assertThat(leido.getTextoParaMostrar(), equalTo("texto"));
     assertThat(leido.getTitulo(), equalTo("Presupuesto de Alimentación"));
@@ -91,7 +92,7 @@ public class RepositorioConsejoImplTest {
   @Test
   void debeLeerDesdeLaBaseLaSintesisYElAnclaGuardadas() {
     Consejo consejo = consejo(diego, OCTUBRE, "Alimentación").ancladoALaCategoria("Alimentación");
-    consejo.redactar("Síntesis guardada.", "firma-1");
+    consejo.redactar("Síntesis guardada.", "Detalle guardado.", "firma-1");
     repositorio.guardar(consejo);
     sessionFactory.getCurrentSession().flush();
     sessionFactory.getCurrentSession().clear();
@@ -99,6 +100,7 @@ public class RepositorioConsejoImplTest {
     Consejo leido = repositorio.buscarPorId(consejo.getId());
 
     assertThat(leido.getTextoParaMostrar(), equalTo("Síntesis guardada."));
+    assertThat(leido.getDetalleRedactado(), equalTo("Detalle guardado."));
     assertThat(leido.getFirmaHechos(), equalTo("firma-1"));
     assertThat(leido.getCategoriaSenialada(), equalTo("Alimentación"));
   }

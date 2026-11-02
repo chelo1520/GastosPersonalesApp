@@ -5,6 +5,7 @@ import com.tallerwebi.dominio.asistente.CategoriaGastoReal;
 import com.tallerwebi.dominio.asistente.GastoReal;
 import com.tallerwebi.dominio.asistente.ServicioAsistente;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
+import com.tallerwebi.dominio.asistente.SintesisDelPeriodo;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.excepcion.ConsejoNoEncontrado;
 import com.tallerwebi.dominio.indicadores.ServicioIndicadores;
@@ -117,10 +118,10 @@ public class ServicioConsejosImpl implements ServicioConsejos {
     Consejo veredicto = veredictoDe(paraMostrar);
     if (
       veredicto != null &&
-      veredicto.getTextoRedactado() != null &&
+      veredicto.getFirmaHechos() != null &&
       !firmaDelPeriodo(paraMostrar).equals(veredicto.getFirmaHechos())
     ) {
-      veredicto.redactar(null, null);
+      veredicto.olvidarSintesis();
       repositorioConsejo.modificar(veredicto);
     }
     return paraMostrar;
@@ -129,28 +130,40 @@ public class ServicioConsejosImpl implements ServicioConsejos {
   // Una sola síntesis del período, escrita por la IA sobre estos hechos y guardada en el veredicto;
   // se vuelve a pedir solo cuando cambian los hechos. Las demás tarjetas muestran el texto de las reglas
   @Override
-  public String sintetizar(Usuario usuario, GastoReal gastoReal) {
+  public SintesisDelPeriodo sintetizar(Usuario usuario, GastoReal gastoReal) {
     List<Consejo> paraMostrar = obtenerPendientes(usuario, gastoReal);
     Consejo veredicto = veredictoDe(paraMostrar);
     if (veredicto == null) {
       return null;
     }
-    if (veredicto.getTextoRedactado() == null) {
-      String sintesis = servicioAsistente.sintetizar(paraMostrar, gastoReal);
-      // Solo se acepta si repite los números del veredicto que calculó Java; si no, queda la regla
-      if (GuardaDeLaSintesis.respetaElVeredicto(sintesis, gastoReal.getVeredicto())) {
-        veredicto.redactar(sintesis.trim(), firmaDelPeriodo(paraMostrar));
+    // Sin resumen se vuelve a pedir; también las síntesis de un solo párrafo guardadas antes
+    if (veredicto.getResumenRedactado() == null) {
+      SintesisDelPeriodo sintesis = servicioAsistente.sintetizar(paraMostrar, gastoReal);
+      // El resumen reemplaza a la oración del veredicto: solo se acepta si repite sus números
+      if (
+        sintesis != null &&
+        GuardaDeLaSintesis.respetaElVeredicto(sintesis.resumen(), gastoReal.getVeredicto())
+      ) {
+        veredicto.redactar(
+          sintesis.resumen().trim(),
+          sintesis.detalle() == null || sintesis.detalle().isBlank()
+            ? null
+            : sintesis.detalle().trim(),
+          firmaDelPeriodo(paraMostrar)
+        );
         repositorioConsejo.modificar(veredicto);
       }
     }
-    return veredicto.getTextoRedactado();
+    return veredicto.getResumenRedactado() == null
+      ? null
+      : new SintesisDelPeriodo(veredicto.getResumenRedactado(), veredicto.getDetalleRedactado());
   }
 
   @Override
   public boolean faltaLaSintesis(List<Consejo> consejos) {
     Consejo veredicto = veredictoDe(consejos);
     return (
-      veredicto != null && veredicto.getTextoRedactado() == null && servicioAsistente.disponible()
+      veredicto != null && veredicto.getResumenRedactado() == null && servicioAsistente.disponible()
     );
   }
 
@@ -180,7 +193,7 @@ public class ServicioConsejosImpl implements ServicioConsejos {
         guardado.setMontoSugerido(calculado.getMontoSugerido());
         if (!guardado.isVeredicto()) {
           // Solo el veredicto lleva síntesis; una redacción vieja por tarjeta ya no se muestra
-          guardado.redactar(null, null);
+          guardado.olvidarSintesis();
         }
         repositorioConsejo.modificar(guardado);
         pendientes.add(guardado);

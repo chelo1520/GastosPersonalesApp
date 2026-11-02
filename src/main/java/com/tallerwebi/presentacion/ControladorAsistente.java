@@ -4,6 +4,7 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.asistente.CategoriaGastoReal;
 import com.tallerwebi.dominio.asistente.GastoReal;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
+import com.tallerwebi.dominio.asistente.SintesisDelPeriodo;
 import com.tallerwebi.dominio.asistente.Veredicto;
 import com.tallerwebi.dominio.consejo.Consejo;
 import com.tallerwebi.dominio.consejo.ServicioConsejos;
@@ -140,14 +141,14 @@ public class ControladorAsistente {
     return montos;
   }
 
-  // La síntesis del período como texto plano; 204 si no hay (sin clave, sin veredicto, sin red)
+  // La síntesis del período como JSON {resumen, detalle}; 204 si no hay (sin clave, sin veredicto, sin red)
   @RequestMapping(
     path = "/asistente/sintesis",
     method = RequestMethod.GET,
-    produces = "text/plain;charset=UTF-8"
+    produces = "application/json;charset=UTF-8"
   )
   @ResponseBody
-  public ResponseEntity<String> sintesis(
+  public ResponseEntity<SintesisDelPeriodo> sintesis(
     @RequestParam(value = PARAM_PERIODO, required = false) Integer periodo,
     HttpServletRequest request
   ) {
@@ -157,7 +158,7 @@ public class ControladorAsistente {
     }
     int meses = periodo != null && PERIODOS.contains(periodo) ? periodo : PERIODO_POR_DEFECTO;
     try {
-      String sintesis = servicioConsejos.sintetizar(
+      SintesisDelPeriodo sintesis = servicioConsejos.sintetizar(
         usuario,
         servicioGastoReal.calcular(usuario, meses)
       );

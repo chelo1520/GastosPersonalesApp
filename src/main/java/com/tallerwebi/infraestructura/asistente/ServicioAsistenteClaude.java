@@ -25,8 +25,9 @@ import org.springframework.stereotype.Component;
 
 /**
  * Síntesis del período con Claude: recibe las conclusiones ya calculadas por las reglas y devuelve
- * un solo párrafo que las conecta; nunca inventa cifras. Sin ANTHROPIC_API_KEY, con error o pasado
- * el tope diario, devuelve null y se muestra el veredicto de las reglas.
+ * un resumen de una o dos oraciones y un párrafo de detalle; nunca inventa cifras. Sin
+ * ANTHROPIC_API_KEY, con error o pasado el tope diario, devuelve null y se muestra el veredicto de
+ * las reglas.
  */
 @Component
 public class ServicioAsistenteClaude implements ServicioAsistente {
@@ -40,7 +41,8 @@ public class ServicioAsistenteClaude implements ServicioAsistente {
   static final int MAXIMO_LLAMADAS_POR_DIA = 200;
   // Holgado: con 800 el JSON de la síntesis llegó cortado
   private static final long MAX_TOKENS = 2000L;
-  // Largo de la columna donde se guarda la síntesis (Consejo.textoRedactado)
+  // Largo de las columnas donde se guarda la síntesis (Sintesis.resumen y Sintesis.detalle)
+  static final int LARGO_MAXIMO_RESUMEN = 300;
   static final int LARGO_MAXIMO = 1000;
   private static final int MAXIMO_CATEGORIAS_DE_CONTEXTO = 5;
 
@@ -49,15 +51,17 @@ public class ServicioAsistenteClaude implements ServicioAsistente {
     "JSON el contexto de un período (variación de los gastos, inflación, categorías del último mes " +
     "cerrado) y una lista de conclusiones ya calculadas por reglas, cada una con su familia " +
     "(LECTURA: qué pasó; PROPUESTA: qué se propone hacer), su severidad y un texto con los hechos. " +
-    "Escribí un solo párrafo, de tres a cinco oraciones, en español rioplatense con voseo, en tono " +
-    "cercano y directo, que le cuente al usuario cómo le fue en el período conectando esas " +
-    "conclusiones: empezá por el veredicto (cuánto subieron sus gastos, cuánto la inflación y cuánto " +
-    "cambió en términos reales, con esos tres números), seguí por lo más importante de las lecturas y, si hay " +
-    "propuestas, cerrá con lo que se propone hacer y su monto. Reglas: usá solo los hechos y números " +
-    "que recibís, sin inventar, redondear distinto ni agregar recomendaciones o conclusiones propias; " +
-    "no hace falta repetir todos los números, elegí los que hacen al relato; sin emojis, sin signos de " +
-    "exclamación, sin títulos ni listas; no repitas el nombre de la app. Respondé únicamente con el " +
-    "JSON pedido.";
+    "Escribí en español rioplatense con voseo, en tono cercano y directo, dos textos. " +
+    "\"resumen\": una o dos oraciones, de 30 palabras como máximo, que es lo único que el usuario ve " +
+    "de entrada; tiene que decir el veredicto con sus tres números (cuánto subieron sus gastos, " +
+    "cuánto la inflación y cuánto cambió en términos reales) y, si entra, lo más importante de las " +
+    "lecturas. \"detalle\": un párrafo de tres a cinco oraciones que se lee solo si el usuario pide " +
+    "más; no repitas el resumen: contá qué hay detrás (las lecturas que importan, qué categorías " +
+    "explican el cambio) y, si hay propuestas, cerrá con lo que se propone hacer y su monto. " +
+    "Reglas: usá solo los hechos y números que recibís, sin inventar, redondear distinto ni agregar " +
+    "recomendaciones o conclusiones propias; no hace falta repetir todos los números, elegí los que " +
+    "hacen al relato; sin emojis, sin signos de exclamación, sin títulos ni listas; no repitas el " +
+    "nombre de la app. Respondé únicamente con el JSON pedido.";
 
   private static final Logger LOG = Logger.getLogger(ServicioAsistenteClaude.class.getName());
 
@@ -89,16 +93,12 @@ public class ServicioAsistenteClaude implements ServicioAsistente {
   }
 
   @Override
-  public String sintetizar(List<Consejo> consejos, GastoReal contexto) {
+  public SintesisDelPeriodo sintetizar(List<Consejo> consejos, GastoReal contexto) {
     if (!conClave || consejos.isEmpty() || !hayCupoHoy()) {
       return null;
     }
     try {
-      SintesisDelPeriodo sintesis = consultar(armarHechos(consejos, contexto));
-      if (sintesis == null || sintesis.texto() == null || sintesis.texto().isBlank()) {
-        return null;
-      }
-      return recortarAlLargoDeLaColumna(sintesis.texto().trim());
+      return acomodar(consultar(armarHechos(consejos, contexto)));
     } catch (RuntimeException e) {
       // Sin red, clave inválida, respuesta rara: se muestra el veredicto de las reglas
       if (LOG.isLoggable(Level.WARNING)) {
@@ -108,13 +108,27 @@ public class ServicioAsistenteClaude implements ServicioAsistente {
     }
   }
 
+  // Sin resumen no hay síntesis; el detalle es opcional. Cada uno se recorta al largo de su columna
+  static SintesisDelPeriodo acomodar(SintesisDelPeriodo sintesis) {
+    if (sintesis == null || sintesis.resumen() == null || sintesis.resumen().isBlank()) {
+      return null;
+    }
+    String detalle = sintesis.detalle() == null || sintesis.detalle().isBlank()
+      ? null
+      : recortarAlLargoDeLaColumna(sintesis.detalle().trim(), LARGO_MAXIMO);
+    return new SintesisDelPeriodo(
+      recortarAlLargoDeLaColumna(sintesis.resumen().trim(), LARGO_MAXIMO_RESUMEN),
+      detalle
+    );
+  }
+
   // Si el modelo se extiende de más, se corta en el último punto que entra en la columna
-  static String recortarAlLargoDeLaColumna(String texto) {
-    if (texto.length() <= LARGO_MAXIMO) {
+  static String recortarAlLargoDeLaColumna(String texto, int largoMaximo) {
+    if (texto.length() <= largoMaximo) {
       return texto;
     }
-    int ultimoPunto = texto.lastIndexOf('.', LARGO_MAXIMO - 1);
-    return ultimoPunto > 0 ? texto.substring(0, ultimoPunto + 1) : texto.substring(0, LARGO_MAXIMO);
+    int ultimoPunto = texto.lastIndexOf('.', largoMaximo - 1);
+    return ultimoPunto > 0 ? texto.substring(0, ultimoPunto + 1) : texto.substring(0, largoMaximo);
   }
 
   // Lo que ve el modelo: hechos agregados, sin email ni gastos individuales
