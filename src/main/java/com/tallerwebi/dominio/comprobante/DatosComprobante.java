@@ -1,24 +1,28 @@
 package com.tallerwebi.dominio.comprobante;
 
-import java.time.LocalDate;
+import java.util.List;
 
 /**
- * Datos propuestos a partir de un comprobante, pendientes de confirmación de la persona.
+ * Datos propuestos a partir de un comprobante, pendientes de confirmación de la persona. Un ticket
+ * con productos de varias categorías trae un gasto por categoría; un resumen de tarjeta, un gasto
+ * por consumo; cualquier otro comprobante, un solo gasto.
  *
- * @param importe importe detectado
- * @param fecha fecha detectada
- * @param descripcion comercio o destinatario detectado
- * @param categoria nombre de categoría sugerido
  * @param tipoOperacion operación identificada en el comprobante
  * @param tipoComprobante tipo de documento identificado
- * @param confianza confianza estimada para cada dato extraído
+ * @param total importe total pagado según el comprobante, o null si no figura
+ * @param gastos gastos propuestos, al menos uno
  */
 public record DatosComprobante(
-  Double importe,
-  LocalDate fecha,
-  String descripcion,
-  String categoria,
   String tipoOperacion,
   String tipoComprobante,
-  ConfianzaComprobante confianza
-) {}
+  Double total,
+  List<GastoDelComprobante> gastos
+) {
+  public DatosComprobante {
+    gastos = List.copyOf(gastos);
+  }
+
+  public double sumaDeLosGastos() {
+    return gastos.stream().mapToDouble(GastoDelComprobante::importe).sum();
+  }
+}

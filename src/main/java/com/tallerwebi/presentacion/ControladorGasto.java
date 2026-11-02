@@ -17,6 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,10 @@ public class ControladorGasto {
   private static final String REDIRECT_MOSTRAR_GASTOS = "redirect:/mostrar-gastos";
   private static final String RUTA_REGISTRAR_GASTO = "/registrar-gasto";
   private static final String RUTA_COMPROBANTE = RUTA_REGISTRAR_GASTO + "/comprobante";
+  private static final String RUTA_CONFIRMAR_COMPROBANTE = RUTA_COMPROBANTE + "/confirmar";
+  private static final String CLAVE_CONFIRMACION = "confirmacion";
+  private static final String CLAVE_ALERTA_PRESUPUESTO = "alertaPresupuesto";
+  private static final int UN_SOLO_GASTO = 1;
   private static final String CLAVE_TITULO = "titulo";
   private static final String CLAVE_URL_CANCELAR = "urlCancelar";
   private static final String CLAVE_SECCION = "seccion";
@@ -137,10 +142,64 @@ public class ControladorGasto {
         .map(categoria -> categoria.getNombre())
         .toList();
       DatosComprobante datos = lectorComprobante.leer(contenido, tipoArchivo, nombresCategorias);
-      return vistaRevisionComprobante(datos, categorias);
+      return vistaRevisionComprobante(ConfirmacionComprobante.de(datos, categorias), null);
     } catch (ComprobanteNoLegible | LectorComprobanteNoDisponible e) {
       return vistaCargaComprobante(e.getMessage());
     }
+  }
+
+  // Guarda los gastos que la persona dejó tildados en la revisión: todos o ninguno
+  @RequestMapping(path = RUTA_CONFIRMAR_COMPROBANTE, method = RequestMethod.POST)
+  public ModelAndView confirmarComprobante(
+    @ModelAttribute(CLAVE_CONFIRMACION) ConfirmacionComprobante confirmacion,
+    HttpServletRequest request,
+    RedirectAttributes redirectAttributes
+  ) {
+    Usuario usuario = SesionUsuario.obtener(request);
+    if (usuario == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+
+    List<Gasto> gastos;
+    try {
+      gastos = gastosElegidos(confirmacion);
+      gastoServicio.registrarGastos(gastos, usuario);
+    } catch (GastoInvalidoExeption e) {
+      return vistaRevisionComprobante(confirmacion, e.getMessage());
+    }
+
+    if (gastos.size() == UN_SOLO_GASTO) {
+      agregarAlertas(gastos.get(0), usuario, redirectAttributes);
+    } else {
+      // Sin alerta de repetición: los gastos de un mismo comprobante se dispararían entre sí
+      Alerta alertaPresupuesto = gastoServicio.alertaDePresupuesto(gastos, usuario);
+      if (alertaPresupuesto != null) {
+        redirectAttributes.addFlashAttribute(CLAVE_ALERTA_PRESUPUESTO, alertaPresupuesto);
+      }
+    }
+    return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);
+  }
+
+  // Los tildados, cada uno con una categoría existente
+  private List<Gasto> gastosElegidos(ConfirmacionComprobante confirmacion) {
+    List<Gasto> gastos = new ArrayList<>();
+    for (GastoPropuesto propuesto : confirmacion.getGastos()) {
+      if (propuesto.isIncluir()) {
+        Categoria categoria = propuesto.getCategoriaId() == null
+          ? null
+          : categoriaRepositorio.buscarPorId(propuesto.getCategoriaId());
+        if (categoria == null) {
+          throw new GastoInvalidoExeption(
+            "Elegí una categoría para \"" + propuesto.getDescripcion() + "\"."
+          );
+        }
+        gastos.add(propuesto.aGasto(categoria));
+      }
+    }
+    if (gastos.isEmpty()) {
+      throw new GastoInvalidoExeption("Elegí al menos un gasto para guardar.");
+    }
+    return gastos;
   }
 
   @RequestMapping(path = RUTA_REGISTRAR_GASTO, method = RequestMethod.POST)
@@ -164,6 +223,11 @@ public class ControladorGasto {
       return vistaRegistrarGasto(gasto, e.getMessage());
     }
 
+    agregarAlertas(gasto, usuario, redirectAttributes);
+    return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);
+  }
+
+  private void agregarAlertas(Gasto gasto, Usuario usuario, RedirectAttributes redirectAttributes) {
     // Se muestra una sola vez, en la lista, después de guardar
     Alerta alerta = gastoServicio.alertaDeRepeticion(gasto, usuario);
     if (alerta != null) {
@@ -172,10 +236,8 @@ public class ControladorGasto {
     // Pop-up, también una sola vez: solo con el gasto que cruza el 80 % o el 100 %
     Alerta alertaPresupuesto = gastoServicio.alertaDePresupuesto(gasto, usuario);
     if (alertaPresupuesto != null) {
-      redirectAttributes.addFlashAttribute("alertaPresupuesto", alertaPresupuesto);
+      redirectAttributes.addFlashAttribute(CLAVE_ALERTA_PRESUPUESTO, alertaPresupuesto);
     }
-
-    return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);
   }
 
   @RequestMapping(path = "/modificar-gasto/{id}", method = RequestMethod.GET)
@@ -271,31 +333,20 @@ public class ControladorGasto {
   }
 
   private ModelAndView vistaRevisionComprobante(
-    DatosComprobante datos,
-    List<Categoria> categorias
+    ConfirmacionComprobante confirmacion,
+    String error
   ) {
-    Gasto gasto = new Gasto(datos.importe(), datos.fecha(), datos.descripcion());
-    Categoria categoriaSugerida = categorias
-      .stream()
-      .filter(categoria -> datos.categoria() != null)
-      .filter(categoria -> categoria.getNombre().equalsIgnoreCase(datos.categoria().trim()))
-      .findFirst()
-      .orElse(null);
-    gasto.setCategoria(categoriaSugerida);
-
     Map<String, Object> model = new ModelMap();
     model.put(CLAVE_TITULO, "Revisar comprobante");
     model.put(CLAVE_SECCION, "registrar");
     model.put(CLAVE_URL_CANCELAR, RUTA_COMPROBANTE);
-    model.put("gasto", gasto);
-    model.put("categorias", categorias);
-    model.put("datosComprobante", datos);
-    model.put(
-      "categoriaBajaConfianza",
-      categoriaSugerida == null || datos.confianza().categoriaBajaConfianza()
-    );
+    model.put(CLAVE_CONFIRMACION, confirmacion);
+    model.put("categorias", categoriaRepositorio.obtenerTodas());
     model.put("fechaMinima", gastoServicio.obtenerFechaMinimaPermitida());
     model.put("fechaMaxima", gastoServicio.obtenerFechaMaximaPermitida());
+    if (error != null) {
+      model.put("error", error);
+    }
     return new ModelAndView("revisar-comprobante", model);
   }
 

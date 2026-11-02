@@ -10,6 +10,7 @@ import com.tallerwebi.dominio.categoria.CategoriaRepositorio;
 import com.tallerwebi.dominio.comprobante.ComprobanteNoLegible;
 import com.tallerwebi.dominio.comprobante.ConfianzaComprobante;
 import com.tallerwebi.dominio.comprobante.DatosComprobante;
+import com.tallerwebi.dominio.comprobante.GastoDelComprobante;
 import com.tallerwebi.dominio.comprobante.LectorComprobante;
 import com.tallerwebi.dominio.comprobante.LectorComprobanteNoDisponible;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
@@ -154,30 +155,140 @@ public class ControladorGastoTest {
     MockMultipartFile imagen = new MockMultipartFile("imagen", "comprobante.png", "image/png", png);
     when(lectorComprobante.leer(png, "image/png", List.of("Alimentación")))
       .thenReturn(
-        new DatosComprobante(
-          12500.0,
-          LocalDate.of(2026, 10, 12),
-          "Almacén",
-          "Alimentación",
-          "Compra",
-          "ticket",
-          new ConfianzaComprobante(false, false, false, false)
+        comprobante(
+          new GastoDelComprobante(
+            12500.0,
+            LocalDate.of(2026, 10, 12),
+            "Almacén",
+            null,
+            "Alimentación",
+            new ConfianzaComprobante(false, false, false, false)
+          )
         )
       );
 
     ModelAndView resultado = controladorGasto.procesarComprobante(imagen, request);
 
     assertEquals("revisar-comprobante", resultado.getViewName());
-    Gasto gastoPropuesto = (Gasto) resultado.getModel().get("gasto");
-    assertEquals(12500.0, gastoPropuesto.getImporte());
-    assertEquals(LocalDate.of(2026, 10, 12), gastoPropuesto.getFecha());
-    assertEquals("Almacén", gastoPropuesto.getDescripcion());
-    assertEquals(categoria, gastoPropuesto.getCategoria());
-    assertEquals(
-      "Compra",
-      ((DatosComprobante) resultado.getModel().get("datosComprobante")).tipoOperacion()
+    ConfirmacionComprobante confirmacion = confirmacionDe(resultado);
+    assertEquals("Compra", confirmacion.getTipoOperacion());
+    GastoPropuesto propuesto = confirmacion.getGastos().get(0);
+    assertEquals(12500.0, propuesto.getImporte());
+    assertEquals(LocalDate.of(2026, 10, 12), propuesto.getFecha());
+    assertEquals("Almacén", propuesto.getDescripcion());
+    assertEquals(1L, propuesto.getCategoriaId());
+    assertTrue(propuesto.isIncluir());
+    assertFalse(propuesto.isRevisarCategoria());
+  }
+
+  @Test
+  public void debeProponerUnGastoPorCadaCategoriaDelTicket() {
+    byte[] png = new byte[] { (byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
+    MockMultipartFile imagen = new MockMultipartFile("imagen", "ticket.png", "image/png", png);
+    when(lectorComprobante.leer(png, "image/png", List.of("Alimentación")))
+      .thenReturn(
+        comprobante(
+          gastoLeido(6300.0, "Leche, pan", "Alimentación"),
+          gastoLeido(3500.0, "Caramelos, alfajores", "Café y snacks")
+        )
+      );
+
+    ConfirmacionComprobante confirmacion = confirmacionDe(
+      controladorGasto.procesarComprobante(imagen, request)
     );
-    assertEquals(false, resultado.getModel().get("categoriaBajaConfianza"));
+
+    assertEquals(2, confirmacion.getGastos().size());
+    assertEquals("Leche, pan", confirmacion.getGastos().get(0).getDetalle());
+    assertEquals(1L, confirmacion.getGastos().get(0).getCategoriaId());
+    // "Café y snacks" no está entre las categorías del test: la elige la persona
+    assertNull(confirmacion.getGastos().get(1).getCategoriaId());
+    assertTrue(confirmacion.getGastos().get(1).isRevisarCategoria());
+    assertEquals(9800.0, confirmacion.getSumaIncluida());
+    assertFalse(confirmacion.isSumaDistintaDelTotal());
+  }
+
+  @Test
+  public void debeGuardarSoloLosGastosTildadosDelComprobante() {
+    ConfirmacionComprobante confirmacion = confirmacionCon(
+      propuesto(6300.0, "Supermercado", 1L, true),
+      propuesto(3500.0, "Supermercado", 1L, false),
+      propuesto(8000.0, "Peluquería", 1L, true)
+    );
+
+    ModelAndView resultado = controladorGasto.confirmarComprobante(
+      confirmacion,
+      request,
+      redirectAttributes
+    );
+
+    assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
+    @SuppressWarnings("unchecked")
+    org.mockito.ArgumentCaptor<List<Gasto>> guardados = org.mockito.ArgumentCaptor.forClass(
+      List.class
+    );
+    verify(gastoServicio).registrarGastos(guardados.capture(), eq(usuario));
+    assertEquals(2, guardados.getValue().size());
+    assertEquals(6300.0, guardados.getValue().get(0).getImporte());
+    assertEquals("Peluquería", guardados.getValue().get(1).getDescripcion());
+    assertEquals(categoria, guardados.getValue().get(1).getCategoria());
+    // Varios gastos juntos: sin alerta de repetición (se dispararían entre sí)
+    verify(gastoServicio, never()).alertaDeRepeticion(any(), any());
+    verify(gastoServicio).alertaDePresupuesto(guardados.getValue(), usuario);
+  }
+
+  @Test
+  public void debeVolverALaRevisionSiNoHayNingunGastoTildado() {
+    ConfirmacionComprobante confirmacion = confirmacionCon(
+      propuesto(6300.0, "Supermercado", 1L, false)
+    );
+
+    ModelAndView resultado = controladorGasto.confirmarComprobante(
+      confirmacion,
+      request,
+      redirectAttributes
+    );
+
+    assertEquals("revisar-comprobante", resultado.getViewName());
+    assertEquals("Elegí al menos un gasto para guardar.", resultado.getModel().get("error"));
+    verify(gastoServicio, never()).registrarGastos(any(), any());
+  }
+
+  @Test
+  public void debeVolverALaRevisionSiUnGastoTildadoNoTieneCategoria() {
+    ConfirmacionComprobante confirmacion = confirmacionCon(
+      propuesto(6300.0, "Supermercado", 1L, true),
+      propuesto(3500.0, "Kiosco", null, true)
+    );
+
+    ModelAndView resultado = controladorGasto.confirmarComprobante(
+      confirmacion,
+      request,
+      redirectAttributes
+    );
+
+    assertEquals("revisar-comprobante", resultado.getViewName());
+    assertEquals("Elegí una categoría para \"Kiosco\".", resultado.getModel().get("error"));
+    assertSame(confirmacion, resultado.getModel().get("confirmacion"));
+    verify(gastoServicio, never()).registrarGastos(any(), any());
+  }
+
+  @Test
+  public void debeVolverALaRevisionConElErrorSiUnGastoEsInvalido() {
+    ConfirmacionComprobante confirmacion = confirmacionCon(
+      propuesto(6300.0, "Supermercado", 1L, true)
+    );
+    doThrow(new GastoInvalidoExeption("El importe debe ser mayor a cero"))
+      .when(gastoServicio)
+      .registrarGastos(any(), eq(usuario));
+
+    ModelAndView resultado = controladorGasto.confirmarComprobante(
+      confirmacion,
+      request,
+      redirectAttributes
+    );
+
+    assertEquals("revisar-comprobante", resultado.getViewName());
+    assertEquals("El importe debe ser mayor a cero", resultado.getModel().get("error"));
   }
 
   @Test
@@ -190,22 +301,13 @@ public class ControladorGastoTest {
       jpg
     );
     when(lectorComprobante.leer(jpg, "image/jpeg", List.of("Alimentación")))
-      .thenReturn(
-        new DatosComprobante(
-          12500.0,
-          LocalDate.of(2026, 10, 12),
-          "Almacén",
-          "Categoría inventada",
-          "Compra",
-          "ticket",
-          new ConfianzaComprobante(false, false, false, false)
-        )
-      );
+      .thenReturn(comprobante(gastoLeido(12500.0, null, "Categoría inventada")));
 
     ModelAndView resultado = controladorGasto.procesarComprobante(imagen, request);
 
-    assertNull(((Gasto) resultado.getModel().get("gasto")).getCategoria());
-    assertEquals(true, resultado.getModel().get("categoriaBajaConfianza"));
+    GastoPropuesto propuesto = confirmacionDe(resultado).getGastos().get(0);
+    assertNull(propuesto.getCategoriaId());
+    assertTrue(propuesto.isRevisarCategoria());
   }
 
   @Test
@@ -529,14 +631,51 @@ public class ControladorGastoTest {
   }
 
   private DatosComprobante datosDeEjemplo() {
-    return new DatosComprobante(
-      49999.0,
+    return comprobante(gastoLeido(49999.0, null, "Alimentación"));
+  }
+
+  // El total es la suma de los gastos, como en un comprobante bien leído
+  private DatosComprobante comprobante(GastoDelComprobante... gastos) {
+    double total = 0;
+    for (GastoDelComprobante gastoLeido : gastos) {
+      total += gastoLeido.importe();
+    }
+    return new DatosComprobante("Compra", "ticket", total, List.of(gastos));
+  }
+
+  private GastoDelComprobante gastoLeido(Double importe, String detalle, String categoria) {
+    return new GastoDelComprobante(
+      importe,
       LocalDate.of(2026, 10, 15),
-      "YPF",
-      "Alimentación",
-      "Transferencia enviada",
-      "comprobante de pago",
+      "Supermercado",
+      detalle,
+      categoria,
       new ConfianzaComprobante(false, false, false, false)
     );
+  }
+
+  private ConfirmacionComprobante confirmacionDe(ModelAndView vista) {
+    return (ConfirmacionComprobante) vista.getModel().get("confirmacion");
+  }
+
+  private ConfirmacionComprobante confirmacionCon(GastoPropuesto... gastos) {
+    ConfirmacionComprobante confirmacion = new ConfirmacionComprobante();
+    confirmacion.setGastos(new java.util.ArrayList<>(List.of(gastos)));
+    return confirmacion;
+  }
+
+  private GastoPropuesto propuesto(
+    Double importe,
+    String descripcion,
+    Long categoriaId,
+    boolean incluir
+  ) {
+    GastoPropuesto propuesto = new GastoPropuesto();
+    propuesto.setImporte(importe);
+    propuesto.setFecha(LocalDate.of(2026, 10, 15));
+    propuesto.setDescripcion(descripcion);
+    propuesto.setCategoriaId(categoriaId);
+    propuesto.setIncluir(incluir);
+    return propuesto;
   }
 }

@@ -905,3 +905,49 @@ a:hover {
 body:has(.app-confirmar.show) .modal-backdrop {
   z-index: 1070;
 }
+
+/* Revisión de un comprobante: una tarjeta por gasto propuesto */
+.app-gasto-propuesto {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--app-borde);
+  border-radius: 12px;
+}
+
+.app-gasto-propuesto-titulo {
+  float: none;
+  width: auto;
+  margin-bottom: 4px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.app-gasto-propuesto-incluir {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.app-gasto-propuesto-incluir .form-check-input {
+  margin-top: 0;
+}
+
+.app-gasto-propuesto-detalle {
+  margin-bottom: 12px;
+  color: var(--app-texto-suave);
+  font-size: 0.9rem;
+}
+
+/* Destildado: se ve atenuado y no se guarda */
+.app-gasto-propuesto.is-excluido .app-gasto-propuesto-campos,
+.app-gasto-propuesto.is-excluido .app-gasto-propuesto-detalle {
+  opacity: 0.45;
+}
+
+.app-comprobante-suma {
+  padding: 12px 16px;
+  border: 1px dashed var(--app-borde-input);
+  border-radius: 12px;
+}

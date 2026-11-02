@@ -60,6 +60,34 @@ public class GastoServicioImpl implements GastoServicio {
   }
 
   @Override
+  public void registrarGastos(List<Gasto> gastos, Usuario usuario) {
+    // Primero se validan todos: así un gasto inválido no deja guardados a medias los anteriores.
+    // Con varios, el error dice de cuál se trata
+    for (Gasto gasto : gastos) {
+      validar(gasto, gastos.size() == 1 ? "" : gasto.getDescripcion() + ": ");
+    }
+    for (Gasto gasto : gastos) {
+      gasto.setUsuario(usuario);
+      repositorioGasto.guardar(gasto);
+    }
+  }
+
+  @Override
+  public Alerta alertaDePresupuesto(List<Gasto> gastos, Usuario usuario) {
+    YearMonth mesActual = YearMonth.now(reloj);
+    double importeDelMes = gastos
+      .stream()
+      .filter(gasto -> YearMonth.from(gasto.getFecha()).equals(mesActual))
+      .mapToDouble(Gasto::getImporte)
+      .sum();
+    if (importeDelMes <= 0) {
+      return null;
+    }
+    // Los gastos del mes en curso cuentan como uno solo: lo que se suma de golpe al mes
+    return alertaDePresupuesto(new Gasto(importeDelMes, mesActual.atDay(1), null), usuario);
+  }
+
+  @Override
   public Alerta alertaDeRepeticion(Gasto gasto, Usuario usuario) {
     // La alerta habla de "esta semana": un gasto cargado con fecha vieja no la dispara
     LocalDate inicioDeLaSemana = LocalDate
@@ -130,8 +158,12 @@ public class GastoServicioImpl implements GastoServicio {
   }
 
   private void validar(Gasto gasto) {
+    validar(gasto, "");
+  }
+
+  private void validar(Gasto gasto, String prefijoDelError) {
     if (gasto.getImporte() == null || gasto.getImporte() <= 0) {
-      throw new GastoInvalidoExeption("El importe debe ser mayor a cero");
+      throw new GastoInvalidoExeption(prefijoDelError + "El importe debe ser mayor a cero");
     }
 
     LocalDate minima = obtenerFechaMinimaPermitida();
@@ -139,6 +171,7 @@ public class GastoServicioImpl implements GastoServicio {
     LocalDate fecha = gasto.getFecha();
     if (fecha == null || fecha.isBefore(minima) || fecha.isAfter(maxima)) {
       throw new GastoInvalidoExeption(
+        prefijoDelError +
         "La fecha debe estar entre el " +
         minima.format(FORMATO_FECHA) +
         " y el " +

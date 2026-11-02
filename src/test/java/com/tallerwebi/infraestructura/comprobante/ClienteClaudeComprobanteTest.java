@@ -1,16 +1,19 @@
 package com.tallerwebi.infraestructura.comprobante;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tallerwebi.dominio.comprobante.ComprobanteNoLegible;
 import com.tallerwebi.dominio.comprobante.ConfianzaComprobante;
 import com.tallerwebi.dominio.comprobante.DatosComprobante;
+import com.tallerwebi.dominio.comprobante.GastoDelComprobante;
 import java.net.http.HttpClient;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
@@ -26,35 +29,106 @@ public class ClienteClaudeComprobanteTest {
       URL_MENSAJES,
       mock(HttpClient.class)
     );
-    String respuesta =
+    String respuesta = respuestaDeClaude(
       """
-      {"content":[{"type":"text","text":"{\\"tipoOperacion\\":\\"Transferencia enviada\\",\\"tipoComprobante\\":\\"comprobante bancario\\",\\"importe\\":12500.5,\\"fecha\\":\\"2026-10-12\\",\\"descripcion\\":\\"Almacén\\",\\"categoria\\":\\"Alimentación\\",\\"confianza\\":{\\"importe\\":\\"alta\\",\\"fecha\\":\\"media\\",\\"descripcion\\":\\"baja\\",\\"categoria\\":\\"alta\\"}}"}]}
-      """;
+      {"tipoOperacion":"Transferencia enviada","tipoComprobante":"comprobante bancario",
+       "total":12500.5,"gastos":[
+         {"importe":12500.5,"fecha":"2026-10-12","descripcion":"Almacén","detalle":null,
+          "categoria":"Alimentación",
+          "confianza":{"importe":"alta","fecha":"media","descripcion":"baja","categoria":"alta"}}]}
+      """
+    );
 
     DatosComprobante datos = cliente.extraerDatos(respuesta);
 
-    assertEquals(12500.5, datos.importe());
-    assertEquals(LocalDate.of(2026, 10, 12), datos.fecha());
-    assertEquals("Almacén", datos.descripcion());
-    assertEquals("Alimentación", datos.categoria());
     assertEquals("Transferencia enviada", datos.tipoOperacion());
     assertEquals("comprobante bancario", datos.tipoComprobante());
-    assertEquals(new ConfianzaComprobante(false, false, true, false), datos.confianza());
+    assertEquals(12500.5, datos.total());
+    assertEquals(1, datos.gastos().size());
+    GastoDelComprobante gasto = datos.gastos().get(0);
+    assertEquals(12500.5, gasto.importe());
+    assertEquals(LocalDate.of(2026, 10, 12), gasto.fecha());
+    assertEquals("Almacén", gasto.descripcion());
+    assertNull(gasto.detalle());
+    assertEquals("Alimentación", gasto.categoria());
+    assertEquals(new ConfianzaComprobante(false, false, true, false), gasto.confianza());
   }
 
   @Test
-  public void debeRechazarUnaRespuestaSinLosDatosObligatorios() {
+  public void debeSepararUnTicketEnUnGastoPorCategoria() {
     ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
       "clave",
       URL_MENSAJES,
       mock(HttpClient.class)
     );
-    String respuesta =
+    String respuesta = respuestaDeClaude(
       """
-      {"content":[{"type":"text","text":"{\\"importe\\":null,\\"fecha\\":null,\\"descripcion\\":null,\\"tipoOperacion\\":\\"Ticket\\",\\"tipoComprobante\\":\\"ticket\\",\\"confianza\\":{}}"}]}
-      """;
+      {"tipoOperacion":"Compra","tipoComprobante":"ticket de supermercado","total":9800,"gastos":[
+        {"importe":6300,"fecha":"2026-10-30","descripcion":"Supermercado Día","detalle":"Leche, pan",
+         "categoria":"Alimentación","confianza":{"importe":"alta","fecha":"alta","descripcion":"alta","categoria":"alta"}},
+        {"importe":3500,"fecha":"2026-10-30","descripcion":"Supermercado Día","detalle":"Caramelos, alfajores",
+         "categoria":"Café y snacks","confianza":{"importe":"alta","fecha":"alta","descripcion":"alta","categoria":"media"}}]}
+      """
+    );
+
+    DatosComprobante datos = cliente.extraerDatos(respuesta);
+
+    assertEquals(2, datos.gastos().size());
+    assertEquals("Leche, pan", datos.gastos().get(0).detalle());
+    assertEquals("Café y snacks", datos.gastos().get(1).categoria());
+    assertEquals(9800.0, datos.sumaDeLosGastos());
+  }
+
+  @Test
+  public void debeDescartarLosRenglonesIlegiblesYPedirRevisarLaFechaQueFalta() {
+    ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
+      "clave",
+      URL_MENSAJES,
+      mock(HttpClient.class)
+    );
+    String respuesta = respuestaDeClaude(
+      """
+      {"tipoOperacion":"Consumos","tipoComprobante":"resumen de tarjeta","total":null,"gastos":[
+        {"importe":null,"fecha":"2026-10-02","descripcion":"Ilegible","confianza":{}},
+        {"importe":8000,"fecha":null,"descripcion":"Peluquería Sol","categoria":"Estética y cuidado personal",
+         "confianza":{"importe":"alta","fecha":"alta","descripcion":"alta","categoria":"alta"}}]}
+      """
+    );
+
+    DatosComprobante datos = cliente.extraerDatos(respuesta);
+
+    assertNull(datos.total());
+    assertEquals(1, datos.gastos().size());
+    assertEquals("Peluquería Sol", datos.gastos().get(0).descripcion());
+    assertNull(datos.gastos().get(0).fecha());
+    assertTrue(datos.gastos().get(0).confianza().fechaBajaConfianza());
+  }
+
+  @Test
+  public void debeRechazarUnaRespuestaSinNingunGastoLegible() {
+    ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
+      "clave",
+      URL_MENSAJES,
+      mock(HttpClient.class)
+    );
+    String respuesta = respuestaDeClaude(
+      """
+      {"tipoOperacion":"Ticket","tipoComprobante":"ticket","total":null,"gastos":[
+        {"importe":null,"fecha":null,"descripcion":null,"confianza":{}}]}
+      """
+    );
 
     assertThrows(ComprobanteNoLegible.class, () -> cliente.extraerDatos(respuesta));
+  }
+
+  // La respuesta de la API trae el JSON pedido como texto dentro de un bloque "text"
+  private static String respuestaDeClaude(String jsonPedido) {
+    ObjectMapper json = new ObjectMapper();
+    ObjectNode raiz = json.createObjectNode();
+    ObjectNode bloque = raiz.putArray("content").addObject();
+    bloque.put("type", "text");
+    bloque.put("text", jsonPedido);
+    return raiz.toString();
   }
 
   @Test
