@@ -1,11 +1,14 @@
 package com.tallerwebi.infraestructura.comprobante;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,165 +17,98 @@ import com.tallerwebi.dominio.comprobante.ComprobanteNoLegible;
 import com.tallerwebi.dominio.comprobante.ConfianzaComprobante;
 import com.tallerwebi.dominio.comprobante.DatosComprobante;
 import com.tallerwebi.dominio.comprobante.GastoDelComprobante;
+import com.tallerwebi.dominio.comprobante.LectorComprobante;
+import com.tallerwebi.dominio.comprobante.LectorComprobanteNoDisponible;
 import java.net.http.HttpClient;
-import java.time.LocalDate;
+import java.net.http.HttpResponse;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+/** Armado del pedido y lectura de la respuesta de la API; el HttpClient y el parser son mocks. */
 public class ClienteClaudeComprobanteTest {
 
   private static final String URL_MENSAJES = "http://claude.test/v1/messages";
+  private static final byte[] ARCHIVO = new byte[] { 1 };
 
-  @Test
-  public void debeExtraerLosCamposDelJsonDevueltoPorClaude() {
-    ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
-      "clave",
-      URL_MENSAJES,
-      mock(HttpClient.class)
-    );
-    String respuesta = respuestaDeClaude(
-      """
-      {"tipoOperacion":"Transferencia enviada","tipoComprobante":"comprobante bancario",
-       "total":12500.5,"gastos":[
-         {"importe":12500.5,"fecha":"2026-10-12","descripcion":"Almacén","detalle":null,
-          "categoria":"Alimentación",
-          "confianza":{"importe":"alta","fecha":"media","descripcion":"baja","categoria":"alta"}}]}
-      """
-    );
+  private HttpClient http;
+  private ParserComprobante parser;
+  private ClienteClaudeComprobante cliente;
 
-    DatosComprobante datos = cliente.extraerDatos(respuesta);
-
-    assertEquals("Transferencia enviada", datos.tipoOperacion());
-    assertEquals("comprobante bancario", datos.tipoComprobante());
-    assertEquals(12500.5, datos.total());
-    assertEquals(1, datos.gastos().size());
-    GastoDelComprobante gasto = datos.gastos().get(0);
-    assertEquals(12500.5, gasto.importe());
-    assertEquals(LocalDate.of(2026, 10, 12), gasto.fecha());
-    assertEquals("Almacén", gasto.descripcion());
-    assertNull(gasto.detalle());
-    assertEquals("Alimentación", gasto.categoria());
-    assertEquals(new ConfianzaComprobante(false, false, true, false), gasto.confianza());
+  @BeforeEach
+  public void init() {
+    http = mock(HttpClient.class);
+    parser = mock(ParserComprobante.class);
+    cliente = new ClienteClaudeComprobante("clave", URL_MENSAJES, parser, http);
   }
 
   @Test
-  public void debeSepararUnTicketEnUnGastoPorCategoria() {
-    ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
-      "clave",
-      URL_MENSAJES,
-      mock(HttpClient.class)
+  public void debeDevolverLoQueLeeElParserDelJsonQueEscribioElModelo() throws Exception {
+    DatosComprobante datos = new DatosComprobante(
+      "Compra",
+      "ticket",
+      null,
+      List.of(
+        new GastoDelComprobante(
+          100.0,
+          null,
+          "Kiosco",
+          null,
+          null,
+          new ConfianzaComprobante(false, true, false, true)
+        )
+      )
     );
-    String respuesta = respuestaDeClaude(
-      """
-      {"tipoOperacion":"Compra","tipoComprobante":"ticket de supermercado","total":9800,"gastos":[
-        {"importe":6300,"fecha":"2026-10-30","descripcion":"Supermercado Día","detalle":"Leche, pan",
-         "categoria":"Alimentación","confianza":{"importe":"alta","fecha":"alta","descripcion":"alta","categoria":"alta"}},
-        {"importe":3500,"fecha":"2026-10-30","descripcion":"Supermercado Día","detalle":"Caramelos, alfajores",
-         "categoria":"Café y snacks","confianza":{"importe":"alta","fecha":"alta","descripcion":"alta","categoria":"media"}}]}
-      """
-    );
+    respondeLaApi(200, sobre("{\"gastos\":[]}"));
+    when(parser.parsear("{\"gastos\":[]}")).thenReturn(datos);
+    LectorComprobante lector = cliente;
 
-    DatosComprobante datos = cliente.extraerDatos(respuesta);
-
-    assertEquals(2, datos.gastos().size());
-    assertEquals("Leche, pan", datos.gastos().get(0).detalle());
-    assertEquals("Café y snacks", datos.gastos().get(1).categoria());
-    assertEquals(9800.0, datos.sumaDeLosGastos());
+    assertSame(datos, lector.leer(ARCHIVO, "image/png", List.of()));
   }
 
   @Test
-  public void debeDescartarLosRenglonesIlegiblesYPedirRevisarLaFechaQueFalta() {
-    ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
-      "clave",
-      URL_MENSAJES,
-      mock(HttpClient.class)
-    );
-    String respuesta = respuestaDeClaude(
-      """
-      {"tipoOperacion":"Consumos","tipoComprobante":"resumen de tarjeta","total":null,"gastos":[
-        {"importe":null,"fecha":"2026-10-02","descripcion":"Ilegible","confianza":{}},
-        {"importe":8000,"fecha":null,"descripcion":"Peluquería Sol","categoria":"Estética y cuidado personal",
-         "confianza":{"importe":"alta","fecha":"alta","descripcion":"alta","categoria":"alta"}}]}
-      """
-    );
+  public void noDebeLlamarAClaudeCuandoNoHayClaveConfigurada() {
+    LectorComprobante sinClave = new ClienteClaudeComprobante("", URL_MENSAJES, parser, http);
 
-    DatosComprobante datos = cliente.extraerDatos(respuesta);
-
-    assertNull(datos.total());
-    assertEquals(1, datos.gastos().size());
-    assertEquals("Peluquería Sol", datos.gastos().get(0).descripcion());
-    assertNull(datos.gastos().get(0).fecha());
-    assertTrue(datos.gastos().get(0).confianza().fechaBajaConfianza());
+    assertThrows(
+      LectorComprobanteNoDisponible.class,
+      () -> sinClave.leer(ARCHIVO, "image/png", List.of())
+    );
+    verifyNoInteractions(http, parser);
   }
 
   @Test
-  public void debeRechazarUnaRespuestaSinNingunGastoLegible() {
-    ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
-      "clave",
-      URL_MENSAJES,
-      mock(HttpClient.class)
-    );
-    String respuesta = respuestaDeClaude(
-      """
-      {"tipoOperacion":"Ticket","tipoComprobante":"ticket","total":null,"gastos":[
-        {"importe":null,"fecha":null,"descripcion":null,"confianza":{}}]}
-      """
-    );
+  public void debeAvisarQueNoEstaDisponibleCuandoLaApiNoRespondeOk() throws Exception {
+    respondeLaApi(529, "{\"error\":\"overloaded\"}");
 
-    assertThrows(ComprobanteNoLegible.class, () -> cliente.extraerDatos(respuesta));
+    assertThrows(
+      LectorComprobanteNoDisponible.class,
+      () -> cliente.leer(ARCHIVO, "image/png", List.of())
+    );
+    verifyNoInteractions(parser);
   }
 
-  // La respuesta de la API trae el JSON pedido como texto dentro de un bloque "text"
-  private static String respuestaDeClaude(String jsonPedido) {
-    ObjectMapper json = new ObjectMapper();
-    ObjectNode raiz = json.createObjectNode();
-    ObjectNode bloque = raiz.putArray("content").addObject();
-    bloque.put("type", "text");
-    bloque.put("text", jsonPedido);
-    return raiz.toString();
+  @Test
+  public void debeRechazarUnaRespuestaSinBloqueDeTexto() {
+    assertThrows(ComprobanteNoLegible.class, () -> cliente.textoDelModelo("{\"content\":[]}"));
   }
 
   @Test
   public void debeRechazarUnaRespuestaQueNoSeaJson() {
-    ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
-      "clave",
-      URL_MENSAJES,
-      mock(HttpClient.class)
-    );
-
-    assertThrows(
-      ComprobanteNoLegible.class,
-      () -> cliente.extraerDatos("{\"content\":[{\"type\":\"text\",\"text\":\"No se leyó\"}]}")
-    );
+    assertThrows(ComprobanteNoLegible.class, () -> cliente.textoDelModelo("<html>error</html>"));
   }
 
   @Test
   public void debeRechazarUnaRespuestaCortadaPorFaltaDeTokens() {
-    ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
-      "clave",
-      URL_MENSAJES,
-      mock(HttpClient.class)
-    );
     String respuesta =
-      """
-      {"stop_reason":"max_tokens","content":[{"type":"text","text":"{\"tipoOperacion\":\"Compra\",\"importe\":13350,\"fecha\":\"2026-10-12\",\"descripcion\":\"Super\",\"tipoComprobante\":\"ticket\",\"confianza\":{\"importe\":"}]}
-      """;
+      "{\"stop_reason\":\"max_tokens\",\"content\":[{\"type\":\"text\",\"text\":\"{\\\"gastos\\\":[\"}]}";
 
-    assertThrows(ComprobanteNoLegible.class, () -> cliente.extraerDatos(respuesta));
+    assertThrows(ComprobanteNoLegible.class, () -> cliente.textoDelModelo(respuesta));
   }
 
   @Test
   public void debePedirSinRazonamientoYConMargenDeTokensParaQueElJsonNoSeCorte() {
-    ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
-      "clave",
-      URL_MENSAJES,
-      mock(HttpClient.class)
-    );
-
-    ObjectNode cuerpo = cliente.crearCuerpo(
-      new byte[] { 1 },
-      "image/jpeg",
-      java.util.List.of("Alimentación")
-    );
+    ObjectNode cuerpo = cliente.crearCuerpo(ARCHIVO, "image/jpeg", List.of("Alimentación"));
 
     assertEquals("disabled", cuerpo.path("thinking").path("type").asText());
     assertTrue(cuerpo.path("max_tokens").asInt() >= 1024);
@@ -182,16 +118,10 @@ public class ClienteClaudeComprobanteTest {
 
   @Test
   public void debeMandarUnPdfComoDocumentoYNoComoImagen() {
-    ClienteClaudeComprobante cliente = new ClienteClaudeComprobante(
-      "clave",
-      URL_MENSAJES,
-      mock(HttpClient.class)
-    );
-
     ObjectNode cuerpo = cliente.crearCuerpo(
       new byte[] { 0x25, 0x50, 0x44, 0x46 },
       "application/pdf",
-      java.util.List.of()
+      List.of()
     );
 
     assertEquals("document", primerBloque(cuerpo).path("type").asText());
@@ -201,19 +131,34 @@ public class ClienteClaudeComprobanteTest {
     );
   }
 
-  private static JsonNode primerBloque(ObjectNode cuerpo) {
-    return cuerpo.path("messages").get(0).path("content").get(0);
+  @Test
+  public void debePedirLaSeparacionPorCategoriaYPorConsumoEnElPrompt() {
+    ObjectNode cuerpo = cliente.crearCuerpo(ARCHIVO, "image/png", List.of("Alimentación"));
+    String prompt = cuerpo.path("messages").get(0).path("content").get(1).path("text").asText();
+
+    assertTrue(prompt.contains("un gasto por categoría"));
+    assertTrue(prompt.contains("un gasto por cada consumo"));
+    assertTrue(prompt.contains("[\"Alimentación\"]"));
   }
 
-  @Test
-  public void noDebeLlamarAClaudeCuandoNoHayClaveConfigurada() {
-    HttpClient http = mock(HttpClient.class);
-    ClienteClaudeComprobante cliente = new ClienteClaudeComprobante("", URL_MENSAJES, http);
+  private void respondeLaApi(int estado, String cuerpo) throws Exception {
+    @SuppressWarnings("unchecked")
+    HttpResponse<String> respuesta = mock(HttpResponse.class);
+    when(respuesta.statusCode()).thenReturn(estado);
+    when(respuesta.body()).thenReturn(cuerpo);
+    doReturn(respuesta).when(http).send(any(), any());
+  }
 
-    assertThrows(
-      com.tallerwebi.dominio.comprobante.LectorComprobanteNoDisponible.class,
-      () -> cliente.leer(new byte[] { 1 }, "image/png", java.util.List.of())
-    );
-    verifyNoInteractions(http);
+  // La API devuelve el JSON pedido como texto dentro de un bloque "text"
+  private static String sobre(String jsonDelModelo) {
+    ObjectNode raiz = new ObjectMapper().createObjectNode();
+    ObjectNode bloque = raiz.putArray("content").addObject();
+    bloque.put("type", "text");
+    bloque.put("text", jsonDelModelo);
+    return raiz.toString();
+  }
+
+  private static JsonNode primerBloque(ObjectNode cuerpo) {
+    return cuerpo.path("messages").get(0).path("content").get(0);
   }
 }

@@ -1,5 +1,6 @@
 package com.tallerwebi.dominio.consejo;
 
+import com.tallerwebi.dominio.NombreDeMes;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.asistente.CategoriaGastoReal;
 import com.tallerwebi.dominio.asistente.Diagnostico;
@@ -8,7 +9,6 @@ import com.tallerwebi.dominio.asistente.GastoReal;
 import com.tallerwebi.dominio.asistente.MesGastoReal;
 import com.tallerwebi.dominio.asistente.Veredicto;
 import java.time.YearMonth;
-import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -80,7 +80,7 @@ public class LecturasDelPeriodo {
     String texto = String.format(
       ARGENTINA,
       "Desde %s tus gastos %s. La inflación fue %.1f %%: %s",
-      nombreDeMes(veredicto.getDesde()),
+      NombreDeMes.de(veredicto.getDesde()),
       movimiento,
       veredicto.getInflacionAcumulada(),
       cierre
@@ -94,7 +94,7 @@ public class LecturasDelPeriodo {
       Math.abs(real) < DIFERENCIA_MINIMA
         ? "lo mismo"
         : String.format(ARGENTINA, "%.1f %% %s", Math.abs(real), real > 0 ? MAS : MENOS),
-      nombreDeMes(veredicto.getDesde())
+      NombreDeMes.de(veredicto.getDesde())
     );
     return new Consejo(
       usuario,
@@ -133,11 +133,11 @@ public class LecturasDelPeriodo {
       String.format(
         ARGENTINA,
         "%s costó $ %,.0f en pesos de hoy, %.1f %% %s que %s.",
-        nombreDeMes(ultimo.getMes()),
+        NombreDeMes.de(ultimo.getMes()),
         ultimo.getGastadoEnPesosDeHoy(),
         Math.abs(real),
         mejor ? MENOS : MAS,
-        nombreDeMes(anterior.getMes())
+        NombreDeMes.de(anterior.getMes())
       )
     );
     int racha = racha(cerrados);
@@ -155,7 +155,7 @@ public class LecturasDelPeriodo {
     String titulo = String.format(
       ARGENTINA,
       "%s costó %.1f %% %s en términos reales",
-      nombreDeMes(ultimo.getMes()),
+      NombreDeMes.de(ultimo.getMes()),
       Math.abs(real),
       mejor ? MENOS : MAS
     );
@@ -213,10 +213,10 @@ public class LecturasDelPeriodo {
       "%s fue lo que más %s en %s descontada la inflación: %.1f %% %s que en %s ($ %,.0f contra $ %,.0f).",
       elegida.getNombre(),
       baja ? "bajó" : "subió",
-      nombreDeMes(ultimo),
+      NombreDeMes.de(ultimo),
       Math.abs(elegida.getVariacionReal()),
       baja ? MENOS : MAS,
-      nombreDeMes(ultimo.minusMonths(1)),
+      NombreDeMes.de(ultimo.minusMonths(1)),
       elegida.getGastado(),
       elegida.getGastadoAnterior()
     );
@@ -278,8 +278,8 @@ public class LecturasDelPeriodo {
       "En %d de %d categorías gastaste en %s lo mismo que en %s en términos reales: lo que cambió fue el precio, no tus hábitos.",
       conLaInflacion,
       comparables,
-      nombreDeMes(ultimo),
-      nombreDeMes(ultimo.minusMonths(1))
+      NombreDeMes.de(ultimo),
+      NombreDeMes.de(ultimo.minusMonths(1))
     );
     String titulo = String.format(
       ARGENTINA,
@@ -299,7 +299,7 @@ public class LecturasDelPeriodo {
       return null;
     }
     double porcentaje = (acumulado.total() / acumulado.presupuesto()) * 100;
-    String periodo = nombreDeMes(acumulado.desde()) + " y " + nombreDeMes(acumulado.hasta());
+    String periodo = NombreDeMes.de(acumulado.desde()) + " y " + NombreDeMes.de(acumulado.hasta());
     if (acumulado.total() <= 0) {
       String texto = String.format(
         ARGENTINA,
@@ -353,7 +353,7 @@ public class LecturasDelPeriodo {
       String.format(
         ARGENTINA,
         ", con el pico en %s ($ %,.0f).",
-        nombreDeMes(acumulado.pico().getMes()),
+        NombreDeMes.de(acumulado.pico().getMes()),
         acumulado.pico().getHormiga()
       )
     );
@@ -441,10 +441,5 @@ public class LecturasDelPeriodo {
       return meses < 1 ? "casi un mes" : "un mes";
     }
     return String.format(ARGENTINA, "%d meses", Math.round(meses));
-  }
-
-  static String nombreDeMes(YearMonth mes) {
-    String nombre = mes.getMonth().getDisplayName(TextStyle.FULL, ARGENTINA);
-    return Character.toUpperCase(nombre.charAt(0)) + nombre.substring(1) + " " + mes.getYear();
   }
 }

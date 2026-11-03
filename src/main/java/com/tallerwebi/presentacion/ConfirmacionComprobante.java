@@ -11,9 +11,6 @@ import java.util.List;
  */
 public class ConfirmacionComprobante {
 
-  // Diferencia (en pesos) a partir de la cual la suma de los gastos "no coincide" con el total
-  static final double TOLERANCIA_TOTAL = 1.0;
-
   private String tipoOperacion;
   private String tipoComprobante;
   private Double total;
@@ -30,19 +27,6 @@ public class ConfirmacionComprobante {
       confirmacion.gastos.add(GastoPropuesto.de(gasto, categorias));
     }
     return confirmacion;
-  }
-
-  public double getSumaIncluida() {
-    return gastos
-      .stream()
-      .filter(GastoPropuesto::isIncluir)
-      .mapToDouble(gasto -> gasto.getImporte() == null ? 0 : gasto.getImporte())
-      .sum();
-  }
-
-  // Avisa si lo elegido no suma lo que dice el comprobante (un renglón mal leído o que falta)
-  public boolean isSumaDistintaDelTotal() {
-    return total != null && Math.abs(getSumaIncluida() - total) >= TOLERANCIA_TOTAL;
   }
 
   public String getTipoOperacion() {

@@ -43,7 +43,7 @@ public class RepositorioGastoImpl implements RepositorioGasto {
   }
 
   @Override
-  public List<Gasto> BuscarGastosPorUsuario(Usuario usuario) {
+  public List<Gasto> buscarGastosPorUsuario(Usuario usuario) {
     String hql = "FROM Gasto WHERE usuario = :usuario";
     Query<Gasto> query = sessionFactory.getCurrentSession().createQuery(hql, Gasto.class);
 

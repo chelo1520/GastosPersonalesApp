@@ -124,9 +124,7 @@ public class ComprobanteVistaTest {
       .andExpect(content().string(containsString("Revisá este importe")))
       .andExpect(content().string(containsString("baja confianza")))
       .andExpect(content().string(containsString("Sacar otra foto")))
-      .andExpect(content().string(containsString("Confirmar y guardar")))
-      // Un solo gasto: sin tilde para excluirlo
-      .andExpect(content().string(not(containsString("app-incluir"))));
+      .andExpect(content().string(containsString("Confirmar y guardar")));
   }
 
   @Test
@@ -151,13 +149,11 @@ public class ComprobanteVistaTest {
         multipart("/registrar-gasto/comprobante").file(imagen).sessionAttr("USUARIO", usuario)
       )
       .andExpect(status().isOk())
-      .andExpect(content().string(containsString("Lo separé en 2 gastos")))
       .andExpect(content().string(containsString("Leche, pan")))
       .andExpect(content().string(containsString("Caramelos, alfajores")))
       .andExpect(content().string(containsString("name=\"gastos[1].importe\"")))
-      .andExpect(content().string(containsString("app-incluir")))
-      .andExpect(content().string(containsString("Total del comprobante")))
-      .andExpect(content().string(containsString("Confirmar y guardar los elegidos")));
+      .andExpect(content().string(containsString("name=\"gastos[1].incluir\"")))
+      .andExpect(content().string(containsString("Total del comprobante")));
   }
 
   @Test

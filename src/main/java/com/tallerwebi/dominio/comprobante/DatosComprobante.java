@@ -21,8 +21,4 @@ public record DatosComprobante(
   public DatosComprobante {
     gastos = List.copyOf(gastos);
   }
-
-  public double sumaDeLosGastos() {
-    return gastos.stream().mapToDouble(GastoDelComprobante::importe).sum();
-  }
 }

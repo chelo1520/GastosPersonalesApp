@@ -6,9 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tallerwebi.dominio.comprobante.ComprobanteNoLegible;
-import com.tallerwebi.dominio.comprobante.ConfianzaComprobante;
 import com.tallerwebi.dominio.comprobante.DatosComprobante;
-import com.tallerwebi.dominio.comprobante.GastoDelComprobante;
 import com.tallerwebi.dominio.comprobante.LectorComprobante;
 import com.tallerwebi.dominio.comprobante.LectorComprobanteNoDisponible;
 import java.io.IOException;
@@ -17,61 +15,63 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 /**
- * Cliente de Claude para proponer gastos a partir de un comprobante: uno por categoría en un ticket,
- * uno por consumo en un resumen de tarjeta, o uno solo en cualquier otro caso.
+ * Lee un comprobante con Claude: uno por categoría en un ticket, uno por consumo en un resumen de
+ * tarjeta, o uno solo en cualquier otro caso. Esta clase hace la llamada a la API; la lectura del
+ * JSON que escribe el modelo la hace ParserComprobante.
  */
 @Component
 public class ClienteClaudeComprobante implements LectorComprobante {
 
   static final String MODELO = "claude-haiku-5-5";
-  // Un resumen de tarjeta largo se corta acá; el resto se carga a mano
-  static final int MAXIMO_DE_GASTOS = 40;
-  // Largo de las columnas de texto del gasto
-  private static final int LARGO_MAXIMO_TEXTO = 255;
   private static final String CAMPO_TIPO = "type";
   private static final String TIPO_TEXTO = "text";
   // Cada gasto del JSON ronda los 100 tokens, así que un resumen con 40 consumos pide unos 4.000; el
   // tope es solo un techo, no se cobra lo que no se usa. El razonamiento del modelo viene activado
   // por defecto y consume de este mismo tope, por eso se desactiva en el pedido.
-  private static final int MAX_TOKENS = 8192;
-  private static final int HTTP_OK = 200;
+  static final int MAX_TOKENS = 8192;
   private static final String FIN_NORMAL = "end_turn";
   private static final Logger LOG = Logger.getLogger(ClienteClaudeComprobante.class.getName());
 
   private final String apiKey;
   private final String urlMensajes;
+  private final ParserComprobante parser;
   private final HttpClient http;
-  private final ObjectMapper json;
+  private final ObjectMapper json = new ObjectMapper();
 
   @Autowired
   public ClienteClaudeComprobante(
     @Value("${ANTHROPIC_API_KEY:}") String apiKey,
-    @Value("${api.anthropic.mensajes.url}") String urlMensajes
+    @Value("${api.anthropic.mensajes.url}") String urlMensajes,
+    ParserComprobante parser
   ) {
     this(
       apiKey,
       urlMensajes,
+      parser,
       HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
     );
   }
 
-  ClienteClaudeComprobante(String apiKey, String urlMensajes, HttpClient http) {
+  ClienteClaudeComprobante(
+    String apiKey,
+    String urlMensajes,
+    ParserComprobante parser,
+    HttpClient http
+  ) {
     this.apiKey = apiKey;
     this.urlMensajes = urlMensajes;
+    this.parser = parser;
     this.http = http;
-    this.json = new ObjectMapper();
   }
 
   @Override
@@ -79,9 +79,13 @@ public class ClienteClaudeComprobante implements LectorComprobante {
     if (apiKey == null || apiKey.isBlank()) {
       throw new LectorComprobanteNoDisponible();
     }
+    return parser.parsear(pedirDatos(archivo, tipoArchivo, categorias));
+  }
 
+  // Devuelve el JSON que escribió el modelo, sin interpretarlo
+  private String pedirDatos(byte[] archivo, String tipoArchivo, List<String> categorias) {
     HttpResponse<String> respuesta = enviar(crearPedido(archivo, tipoArchivo, categorias));
-    if (respuesta.statusCode() != HTTP_OK) {
+    if (respuesta.statusCode() != HttpStatus.OK.value()) {
       if (LOG.isLoggable(Level.WARNING)) {
         LOG.log(
           Level.WARNING,
@@ -91,7 +95,7 @@ public class ClienteClaudeComprobante implements LectorComprobante {
       }
       throw new LectorComprobanteNoDisponible();
     }
-    return extraerDatos(respuesta.body());
+    return textoDelModelo(respuesta.body());
   }
 
   private HttpResponse<String> enviar(HttpRequest pedido) {
@@ -137,7 +141,10 @@ public class ClienteClaudeComprobante implements LectorComprobante {
 
     // Un PDF viaja como bloque "document"; una foto, como bloque "image". El resto es igual.
     ObjectNode bloqueArchivo = contenido.addObject();
-    bloqueArchivo.put(CAMPO_TIPO, TIPO_PDF.equals(tipoArchivo) ? "document" : "image");
+    bloqueArchivo.put(
+      CAMPO_TIPO,
+      LectorComprobante.TIPO_PDF.equals(tipoArchivo) ? "document" : "image"
+    );
     ObjectNode fuente = bloqueArchivo.putObject("source");
     fuente.put(CAMPO_TIPO, "base64");
     fuente.put("media_type", tipoArchivo);
@@ -174,20 +181,22 @@ public class ClienteClaudeComprobante implements LectorComprobante {
     "fecha", "descripcion" y "categoria", cada uno con el valor "alta", "media" o "baja". Evaluá
     la confianza según la legibilidad de cada dato; no inventes datos.
     Categorías permitidas: %s
-    """.formatted(MAXIMO_DE_GASTOS, json.valueToTree(categorias).toString());
+    """.formatted(ParserComprobante.MAXIMO_DE_GASTOS, json.valueToTree(categorias).toString());
   }
 
-  DatosComprobante extraerDatos(String cuerpo) {
+  // La API devuelve el JSON pedido como texto, dentro del primer bloque "text" de "content"
+  String textoDelModelo(String cuerpo) {
+    JsonNode raiz;
     try {
-      JsonNode raiz = json.readTree(cuerpo);
-      verificarQueLaRespuestaEsteCompleta(raiz);
-      for (JsonNode bloque : raiz.path("content")) {
-        if (TIPO_TEXTO.equals(bloque.path(CAMPO_TIPO).asText())) {
-          return parsearDatos(json.readTree(bloque.path(TIPO_TEXTO).asText()));
-        }
-      }
+      raiz = json.readTree(cuerpo);
     } catch (JsonProcessingException e) {
       throw new ComprobanteNoLegible(e);
+    }
+    verificarQueLaRespuestaEsteCompleta(raiz);
+    for (JsonNode bloque : raiz.path("content")) {
+      if (TIPO_TEXTO.equals(bloque.path(CAMPO_TIPO).asText())) {
+        return bloque.path(TIPO_TEXTO).asText();
+      }
     }
     throw new ComprobanteNoLegible();
   }
@@ -205,121 +214,5 @@ public class ClienteClaudeComprobante implements LectorComprobante {
       }
       throw new ComprobanteNoLegible();
     }
-  }
-
-  private DatosComprobante parsearDatos(JsonNode datos) {
-    JsonNode tipoOperacion = datos.path("tipoOperacion");
-    JsonNode tipoComprobante = datos.path("tipoComprobante");
-    validarTipoDetectado(tipoOperacion);
-    validarTipoDetectado(tipoComprobante);
-
-    List<GastoDelComprobante> gastos = new ArrayList<>();
-    for (JsonNode gasto : datos.path("gastos")) {
-      GastoDelComprobante leido = parsearGasto(gasto);
-      if (leido != null && gastos.size() < MAXIMO_DE_GASTOS) {
-        gastos.add(leido);
-      }
-    }
-    if (gastos.isEmpty()) {
-      throw new ComprobanteNoLegible();
-    }
-    JsonNode total = datos.path("total");
-    return new DatosComprobante(
-      validarDescripcion(tipoOperacion.asText()),
-      validarDescripcion(tipoComprobante.asText()),
-      esImporteValido(total) ? total.asDouble() : null,
-      gastos
-    );
-  }
-
-  // Un renglón sin importe o sin comercio se descarta: la revisión compara la suma con el total
-  // del comprobante, así que la diferencia queda a la vista. Sin fecha, la completa la persona
-  private GastoDelComprobante parsearGasto(JsonNode gasto) {
-    JsonNode importe = gasto.path("importe");
-    JsonNode descripcion = gasto.path("descripcion");
-    if (!esImporteValido(importe) || !esTextoValido(descripcion)) {
-      return null;
-    }
-    ConfianzaComprobante confianza = confianza(gasto.path("confianza"));
-    LocalDate fecha = fecha(gasto.path("fecha"));
-    if (fecha == null) {
-      confianza =
-        new ConfianzaComprobante(
-          confianza.importeBajaConfianza(),
-          true,
-          confianza.descripcionBajaConfianza(),
-          confianza.categoriaBajaConfianza()
-        );
-    }
-    JsonNode detalle = gasto.path("detalle");
-    return new GastoDelComprobante(
-      importe.asDouble(),
-      fecha,
-      descripcion.asText().trim(),
-      esTextoValido(detalle) ? detalle.asText().trim() : null,
-      categoriaSugerida(gasto.path("categoria")),
-      confianza
-    );
-  }
-
-  private LocalDate fecha(JsonNode fecha) {
-    if (!fecha.isTextual()) {
-      return null;
-    }
-    try {
-      return LocalDate.parse(fecha.asText());
-    } catch (DateTimeParseException e) {
-      return null;
-    }
-  }
-
-  private boolean esTextoValido(JsonNode texto) {
-    return (
-      texto.isTextual() &&
-      !texto.asText().isBlank() &&
-      texto.asText().trim().length() <= LARGO_MAXIMO_TEXTO
-    );
-  }
-
-  private void validarTipoDetectado(JsonNode tipo) {
-    if (!tipo.isTextual() || tipo.asText().isBlank()) {
-      throw new ComprobanteNoLegible();
-    }
-  }
-
-  private ConfianzaComprobante confianza(JsonNode confianza) {
-    return new ConfianzaComprobante(
-      esBajaConfianza(confianza.path("importe")),
-      esBajaConfianza(confianza.path("fecha")),
-      esBajaConfianza(confianza.path("descripcion")),
-      esBajaConfianza(confianza.path("categoria"))
-    );
-  }
-
-  private boolean esBajaConfianza(JsonNode nivel) {
-    if (!nivel.isTextual()) {
-      return true;
-    }
-    String valor = nivel.asText();
-    return (
-      "baja".equalsIgnoreCase(valor) ||
-      (!"alta".equalsIgnoreCase(valor) && !"media".equalsIgnoreCase(valor))
-    );
-  }
-
-  private String validarDescripcion(String descripcion) {
-    String descripcionNormalizada = descripcion.trim();
-    if (descripcionNormalizada.isEmpty() || descripcionNormalizada.length() > LARGO_MAXIMO_TEXTO) {
-      throw new ComprobanteNoLegible();
-    }
-    return descripcionNormalizada;
-  }
-
-  private String categoriaSugerida(JsonNode categoria) {
-    return categoria.isTextual() ? categoria.asText() : null;
-  }
-
-  private boolean esImporteValido(JsonNode importe) {
-    return importe.isNumber() && Double.isFinite(importe.asDouble()) && importe.asDouble() > 0;
   }
 }

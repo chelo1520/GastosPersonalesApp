@@ -133,16 +133,6 @@ public class ServicioAsistenteClaudeTest {
   }
 
   @Test
-  void debeCambiarLaFirmaCuandoCambianLosHechosDelConsejo() {
-    presupuesto.redactar("Síntesis", null, presupuesto.firmaDeLosHechos());
-    String firmaAnterior = presupuesto.getFirmaHechos();
-
-    presupuesto.setMontoSugerido(230000.0);
-
-    assertThat(presupuesto.firmaDeLosHechos(), not(equalTo(firmaAnterior)));
-  }
-
-  @Test
   void debeUsarHaiku55SalvoQueSeIndiqueOtroModelo() {
     assertThat(sinClave.modeloEnUso(), equalTo("claude-haiku-5-5"));
     assertThat(

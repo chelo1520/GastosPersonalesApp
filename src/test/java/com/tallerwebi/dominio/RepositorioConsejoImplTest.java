@@ -72,7 +72,6 @@ public class RepositorioConsejoImplTest {
 
   @Test
   void debeLeerDesdeLaBaseUnConsejoSinSintesisSinRomper() {
-    // Sin síntesis, Hibernate deja el embebido en null al leer: el consejo tiene que seguir funcionando
     Consejo consejo = consejo(diego, OCTUBRE, "Alimentación")
       .conTitulo("Presupuesto de Alimentación");
     repositorio.guardar(consejo);
@@ -86,7 +85,6 @@ public class RepositorioConsejoImplTest {
     assertThat(leido.getFirmaHechos(), nullValue());
     assertThat(leido.getTextoParaMostrar(), equalTo("texto"));
     assertThat(leido.getTitulo(), equalTo("Presupuesto de Alimentación"));
-    assertThat(leido.firmaDeLosHechos(), equalTo(consejo.firmaDeLosHechos()));
   }
 
   @Test

@@ -945,9 +945,3 @@ body:has(.app-confirmar.show) .modal-backdrop {
 .app-gasto-propuesto.is-excluido .app-gasto-propuesto-detalle {
   opacity: 0.45;
 }
-
-.app-comprobante-suma {
-  padding: 12px 16px;
-  border: 1px dashed var(--app-borde-input);
-  border-radius: 12px;
-}

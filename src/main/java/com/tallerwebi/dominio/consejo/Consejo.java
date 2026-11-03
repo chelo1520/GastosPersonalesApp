@@ -43,7 +43,8 @@ public class Consejo {
   // Categoría a la que refiere (null si es un consejo general; en el veredicto, el período)
   private String categoria;
 
-  // Hibernate deja un embebido en null cuando todas sus columnas son null: los getters lo contemplan
+  // Agrupados en embebidos para no pasar el máximo de campos por clase (PMD). Hibernate deja un
+  // embebido en null cuando todas sus columnas son null: los getters lo contemplan
   @Embedded
   private Hechos hechos = new Hechos();
 
@@ -191,11 +192,6 @@ public class Consejo {
   // Lo que ve el usuario: en el veredicto, el resumen del asistente si lo hay; si no, los hechos tal cual
   public String getTextoParaMostrar() {
     return getResumenRedactado() != null ? getResumenRedactado() : getTexto();
-  }
-
-  // Los hechos que importan para la síntesis; si cambian, la síntesis vieja ya no sirve
-  public String firmaDeLosHechos() {
-    return Integer.toHexString((getTexto() + "|" + montoSugerido).hashCode());
   }
 
   public boolean isAplicable() {

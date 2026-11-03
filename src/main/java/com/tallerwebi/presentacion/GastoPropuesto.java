@@ -8,8 +8,8 @@ import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
 
 /**
- * Un renglón de la revisión del comprobante: el gasto que se propone, si se incluye y qué datos
- * conviene revisar. Viaja en el formulario, así que las marcas de revisión van como campos ocultos.
+ * Un renglón de la revisión del comprobante. La persona edita los datos del gasto y si se incluye;
+ * el detalle y las marcas de "revisar" solo se muestran (no vuelven en el formulario).
  */
 public class GastoPropuesto {
 
@@ -43,8 +43,8 @@ public class GastoPropuesto {
     propuesto.importe = leido.importe();
     propuesto.fecha = leido.fecha();
     propuesto.descripcion = leido.descripcion();
-    propuesto.detalle = leido.detalle();
     propuesto.categoriaId = categoriaSugerida;
+    propuesto.detalle = leido.detalle();
     propuesto.revisarImporte = leido.confianza().importeBajaConfianza();
     propuesto.revisarFecha = leido.confianza().fechaBajaConfianza();
     propuesto.revisarDescripcion = leido.confianza().descripcionBajaConfianza();
@@ -103,39 +103,19 @@ public class GastoPropuesto {
     return detalle;
   }
 
-  public void setDetalle(String detalle) {
-    this.detalle = detalle;
-  }
-
   public boolean isRevisarImporte() {
     return revisarImporte;
-  }
-
-  public void setRevisarImporte(boolean revisarImporte) {
-    this.revisarImporte = revisarImporte;
   }
 
   public boolean isRevisarFecha() {
     return revisarFecha;
   }
 
-  public void setRevisarFecha(boolean revisarFecha) {
-    this.revisarFecha = revisarFecha;
-  }
-
   public boolean isRevisarDescripcion() {
     return revisarDescripcion;
   }
 
-  public void setRevisarDescripcion(boolean revisarDescripcion) {
-    this.revisarDescripcion = revisarDescripcion;
-  }
-
   public boolean isRevisarCategoria() {
     return revisarCategoria;
-  }
-
-  public void setRevisarCategoria(boolean revisarCategoria) {
-    this.revisarCategoria = revisarCategoria;
   }
 }

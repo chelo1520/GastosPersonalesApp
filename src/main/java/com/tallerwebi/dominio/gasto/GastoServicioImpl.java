@@ -26,9 +26,9 @@ public class GastoServicioImpl implements GastoServicio {
   private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
   static final int MESES_HACIA_ATRAS = 12;
 
-  private RepositorioGasto repositorioGasto;
-  private ServicioPresupuesto servicioPresupuesto;
-  private Clock reloj;
+  private final RepositorioGasto repositorioGasto;
+  private final ServicioPresupuesto servicioPresupuesto;
+  private final Clock reloj;
   private final CalculadoraAlertas calculadoraAlertas = new CalculadoraAlertas();
 
   @Autowired
@@ -182,20 +182,16 @@ public class GastoServicioImpl implements GastoServicio {
 
   @Override
   public List<Gasto> obtenerGastos(Usuario usuario) {
-    return repositorioGasto.BuscarGastosPorUsuario(usuario);
+    return repositorioGasto.buscarGastosPorUsuario(usuario);
   }
 
   @Override
   public Double sumarGastos(Usuario usuario, LocalDate desde, LocalDate hasta) {
-    List<Gasto> gastos = repositorioGasto.obtenerGastosEntreFechas(usuario, desde, hasta);
-
-    Double total = 0.0;
-
-    for (Gasto gasto : gastos) {
-      total += gasto.getImporte();
-    }
-
-    return total;
+    return repositorioGasto
+      .obtenerGastosEntreFechas(usuario, desde, hasta)
+      .stream()
+      .mapToDouble(Gasto::getImporte)
+      .sum();
   }
 
   @Override

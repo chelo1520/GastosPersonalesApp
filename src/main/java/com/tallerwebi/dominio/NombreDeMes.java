@@ -1,4 +1,4 @@
-package com.tallerwebi.presentacion;
+package com.tallerwebi.dominio;
 
 import java.time.YearMonth;
 import java.time.format.TextStyle;
@@ -7,17 +7,17 @@ import java.util.Locale;
 /**
  * Nombre de un mes para mostrar en pantalla, ej. "Octubre 2026" o, corto, "Oct 2026"
  */
-final class NombreDeMes {
+public final class NombreDeMes {
 
   private static final Locale ARGENTINA = Locale.of("es", "AR");
 
   private NombreDeMes() {}
 
-  static String de(YearMonth mes) {
+  public static String de(YearMonth mes) {
     return nombre(mes, TextStyle.FULL) + " " + mes.getYear();
   }
 
-  static String corto(YearMonth mes) {
+  public static String corto(YearMonth mes) {
     return nombre(mes, TextStyle.SHORT).replace(".", "") + " " + mes.getYear();
   }
 
