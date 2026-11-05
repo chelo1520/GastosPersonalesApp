@@ -12,6 +12,7 @@ import static org.hamcrest.Matchers.nullValue;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.asistente.CategoriaGastoReal;
 import com.tallerwebi.dominio.asistente.GastoReal;
+import com.tallerwebi.dominio.asistente.SintesisDelPeriodo;
 import com.tallerwebi.dominio.asistente.Veredicto;
 import com.tallerwebi.dominio.consejo.Consejo;
 import com.tallerwebi.dominio.consejo.TipoConsejo;
@@ -48,11 +49,11 @@ public class ServicioAsistenteClaudeTest {
 
   @Test
   void noDebeSintetizarNiEstarDisponibleCuandoNoHayClave() {
-    String sintesis = sinClave.sintetizar(List.of(veredicto, presupuesto), null);
+    SintesisDelPeriodo sintesis = sinClave.sintetizar(List.of(veredicto, presupuesto), null);
 
     assertThat(sinClave.disponible(), is(false));
     assertThat(sintesis, nullValue());
-    assertThat(veredicto.getTextoRedactado(), nullValue());
+    assertThat(veredicto.getResumenRedactado(), nullValue());
   }
 
   @Test
@@ -84,21 +85,51 @@ public class ServicioAsistenteClaudeTest {
     String oracion = "Esta es una oración de la síntesis que ocupa lugar. ";
     String larga = oracion.repeat(30).trim();
 
-    String recortada = ServicioAsistenteClaude.recortarAlLargoDeLaColumna(larga);
+    String recortada = ServicioAsistenteClaude.recortarAlLargoDeLaColumna(
+      larga,
+      ServicioAsistenteClaude.LARGO_MAXIMO
+    );
 
     assertThat(recortada.length(), lessThanOrEqualTo(ServicioAsistenteClaude.LARGO_MAXIMO));
     assertThat(recortada, endsWith("."));
-    assertThat(ServicioAsistenteClaude.recortarAlLargoDeLaColumna("Corta."), equalTo("Corta."));
+    assertThat(
+      ServicioAsistenteClaude.recortarAlLargoDeLaColumna(
+        "Corta.",
+        ServicioAsistenteClaude.LARGO_MAXIMO
+      ),
+      equalTo("Corta.")
+    );
   }
 
   @Test
-  void debeCambiarLaFirmaCuandoCambianLosHechosDelConsejo() {
-    presupuesto.redactar("Síntesis", presupuesto.firmaDeLosHechos());
-    String firmaAnterior = presupuesto.getFirmaHechos();
+  void debeRecortarElResumenYElDetalleCadaUnoAlLargoDeSuColumna() {
+    String oracion = "Esta es una oración de la síntesis que ocupa lugar. ";
 
-    presupuesto.setMontoSugerido(230000.0);
+    SintesisDelPeriodo acomodada = ServicioAsistenteClaude.acomodar(
+      new SintesisDelPeriodo(oracion.repeat(10), oracion.repeat(30))
+    );
 
-    assertThat(presupuesto.firmaDeLosHechos(), not(equalTo(firmaAnterior)));
+    assertThat(
+      acomodada.resumen().length(),
+      lessThanOrEqualTo(ServicioAsistenteClaude.LARGO_MAXIMO_RESUMEN)
+    );
+    assertThat(acomodada.resumen(), endsWith("."));
+    assertThat(
+      acomodada.detalle().length(),
+      lessThanOrEqualTo(ServicioAsistenteClaude.LARGO_MAXIMO)
+    );
+  }
+
+  @Test
+  void debeDescartarLaSintesisSinResumenYAceptarlaSinDetalle() {
+    assertThat(
+      ServicioAsistenteClaude.acomodar(new SintesisDelPeriodo(" ", "Detalle.")),
+      nullValue()
+    );
+    assertThat(
+      ServicioAsistenteClaude.acomodar(new SintesisDelPeriodo(" Resumen. ", "  ")),
+      equalTo(new SintesisDelPeriodo("Resumen.", null))
+    );
   }
 
   @Test

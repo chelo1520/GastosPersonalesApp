@@ -77,9 +77,7 @@ public class ServicioGastoRealImpl implements ServicioGastoReal {
       meses,
       veredicto(cerrados, ipcPorMes),
       ultimoCerrado,
-      ultimoCerrado == null
-        ? List.of()
-        : categorias(usuario, ultimoCerrado, ipcPorMes.get(ultimoCerrado)),
+      ultimoCerrado == null ? List.of() : categoriasDelMes(usuario, ultimoCerrado),
       servicioIndicadores.ultimaActualizacion(),
       servicioIndicadores.datosActualizados()
     );
@@ -134,30 +132,28 @@ public class ServicioGastoRealImpl implements ServicioGastoReal {
       return null;
     }
     double variacionNominal = (ultimo.getGastado() / primero.getGastado() - 1) * 100;
-    double acumulada = 1.0;
+    // La inflación que separa al primer mes del último: la de los meses posteriores al primero
+    List<InflacionMensual> inflacion = new ArrayList<>();
     for (
       YearMonth mes = primero.getMes().plusMonths(1);
       !mes.isAfter(ultimo.getMes());
       mes = mes.plusMonths(1)
     ) {
-      acumulada *= 1 + ipcPorMes.get(mes).getPorcentaje() / 100;
+      inflacion.add(ipcPorMes.get(mes));
     }
     return new Veredicto(
       primero.getMes(),
       ultimo.getMes(),
       variacionNominal,
-      (acumulada - 1) * 100
+      InflacionMensual.acumulada(inflacion)
     );
   }
 
-  // Último mes cerrado contra el anterior, categoría por categoría, descontando el IPC del mes
-  private List<CategoriaGastoReal> categorias(
-    Usuario usuario,
-    YearMonth ultimoCerrado,
-    InflacionMensual ipcDelMes
-  ) {
-    Map<String, Double> actual = gastadoPorCategoria(usuario, ultimoCerrado);
-    Map<String, Double> anterior = gastadoPorCategoria(usuario, ultimoCerrado.minusMonths(1));
+  @Override
+  public List<CategoriaGastoReal> categoriasDelMes(Usuario usuario, YearMonth mes) {
+    InflacionMensual ipcDelMes = servicioIndicadores.inflacionMensual(mes);
+    Map<String, Double> actual = gastadoPorCategoria(usuario, mes);
+    Map<String, Double> anterior = gastadoPorCategoria(usuario, mes.minusMonths(1));
 
     Set<String> nombres = new LinkedHashSet<>(actual.keySet());
     nombres.addAll(anterior.keySet());

@@ -7,26 +7,16 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.categoria.CategoriaRepositorio;
-import com.tallerwebi.dominio.comprobante.ComprobanteNoLegible;
-import com.tallerwebi.dominio.comprobante.ConfianzaComprobante;
-import com.tallerwebi.dominio.comprobante.DatosComprobante;
-import com.tallerwebi.dominio.comprobante.LectorComprobante;
-import com.tallerwebi.dominio.comprobante.LectorComprobanteNoDisponible;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
-import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
-import java.time.YearMonth;
-import java.time.format.TextStyle;
 import java.util.List;
-import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
@@ -35,8 +25,6 @@ public class ControladorGastoTest {
 
   private GastoServicio gastoServicio;
   private CategoriaRepositorio categoriaRepositorio;
-  private ServicioPresupuesto servicioPresupuesto;
-  private LectorComprobante lectorComprobante;
   private ControladorGasto controladorGasto;
 
   private Usuario usuario;
@@ -50,16 +38,8 @@ public class ControladorGastoTest {
   public void init() {
     gastoServicio = mock(GastoServicio.class);
     categoriaRepositorio = mock(CategoriaRepositorio.class);
-    servicioPresupuesto = mock(ServicioPresupuesto.class);
-    lectorComprobante = mock(LectorComprobante.class);
 
-    controladorGasto =
-      new ControladorGasto(
-        gastoServicio,
-        categoriaRepositorio,
-        servicioPresupuesto,
-        lectorComprobante
-      );
+    controladorGasto = new ControladorGasto(gastoServicio, categoriaRepositorio);
     categoria = new Categoria();
     categoria.setId(1L);
     categoria.setNombre("Alimentación");
@@ -75,163 +55,6 @@ public class ControladorGastoTest {
 
     gasto = new Gasto(15000.0, LocalDate.of(2026, 9, 26), "Supermercado");
     gasto.setCategoria(categoria);
-  }
-
-  @Test
-  public void debeMostrarLaPantallaDeCargaDeComprobanteAlUsuarioAutenticado() {
-    ModelAndView resultado = controladorGasto.mostrarCargaComprobante(request);
-
-    assertEquals("cargar-comprobante", resultado.getViewName());
-    assertEquals("Desde comprobante", resultado.getModel().get("titulo"));
-  }
-
-  @Test
-  public void debeRedirigirALoginCuandoSeIntentaCargarUnComprobanteSinSesion() {
-    when(session.getAttribute("USUARIO")).thenReturn(null);
-
-    assertEquals(
-      "redirect:/login",
-      controladorGasto.mostrarCargaComprobante(request).getViewName()
-    );
-  }
-
-  @Test
-  public void debeRechazarUnArchivoQueNoSeaJpgPngNiPdf() {
-    MockMultipartFile imagen = new MockMultipartFile(
-      "imagen",
-      "comprobante.gif",
-      "image/gif",
-      new byte[] { 1, 2, 3, 4 }
-    );
-
-    ModelAndView resultado = controladorGasto.procesarComprobante(imagen, request);
-
-    assertEquals("cargar-comprobante", resultado.getViewName());
-    assertEquals(
-      "El archivo debe ser JPG, PNG o PDF de hasta 5 MB.",
-      resultado.getModel().get("error")
-    );
-    verifyNoInteractions(lectorComprobante);
-  }
-
-  @Test
-  public void debeAceptarUnPdfYMandarloALeerComoTal() {
-    byte[] pdf = new byte[] { 0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x35 };
-    MockMultipartFile archivo = new MockMultipartFile(
-      "imagen",
-      "comprobante.pdf",
-      "application/pdf",
-      pdf
-    );
-    when(lectorComprobante.leer(pdf, "application/pdf", List.of("Alimentación")))
-      .thenReturn(datosDeEjemplo());
-
-    ModelAndView resultado = controladorGasto.procesarComprobante(archivo, request);
-
-    assertEquals("revisar-comprobante", resultado.getViewName());
-  }
-
-  @Test
-  public void debeRechazarUnaImagenQueSupereLos5Mb() {
-    byte[] contenido = new byte[5 * 1024 * 1024 + 1];
-    MockMultipartFile imagen = new MockMultipartFile(
-      "imagen",
-      "comprobante.png",
-      "image/png",
-      contenido
-    );
-
-    ModelAndView resultado = controladorGasto.procesarComprobante(imagen, request);
-
-    assertEquals("cargar-comprobante", resultado.getViewName());
-    assertEquals("El archivo supera los 5 MB. Elegí otro.", resultado.getModel().get("error"));
-    verifyNoInteractions(lectorComprobante);
-  }
-
-  @Test
-  public void debeMostrarLosDatosExtraidosParaRevisarAntesDeGuardar() {
-    byte[] png = new byte[] { (byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
-    MockMultipartFile imagen = new MockMultipartFile("imagen", "comprobante.png", "image/png", png);
-    when(lectorComprobante.leer(png, "image/png", List.of("Alimentación")))
-      .thenReturn(
-        new DatosComprobante(
-          12500.0,
-          LocalDate.of(2026, 10, 12),
-          "Almacén",
-          "Alimentación",
-          "Compra",
-          "ticket",
-          new ConfianzaComprobante(false, false, false, false)
-        )
-      );
-
-    ModelAndView resultado = controladorGasto.procesarComprobante(imagen, request);
-
-    assertEquals("revisar-comprobante", resultado.getViewName());
-    Gasto gastoPropuesto = (Gasto) resultado.getModel().get("gasto");
-    assertEquals(12500.0, gastoPropuesto.getImporte());
-    assertEquals(LocalDate.of(2026, 10, 12), gastoPropuesto.getFecha());
-    assertEquals("Almacén", gastoPropuesto.getDescripcion());
-    assertEquals(categoria, gastoPropuesto.getCategoria());
-    assertEquals(
-      "Compra",
-      ((DatosComprobante) resultado.getModel().get("datosComprobante")).tipoOperacion()
-    );
-    assertEquals(false, resultado.getModel().get("categoriaBajaConfianza"));
-  }
-
-  @Test
-  public void debePermitirElegirLaCategoriaCuandoLaSugeridaNoCoincideConUnaExistente() {
-    byte[] jpg = new byte[] { (byte) 0xff, (byte) 0xd8, (byte) 0xff };
-    MockMultipartFile imagen = new MockMultipartFile(
-      "imagen",
-      "comprobante.jpg",
-      "image/jpeg",
-      jpg
-    );
-    when(lectorComprobante.leer(jpg, "image/jpeg", List.of("Alimentación")))
-      .thenReturn(
-        new DatosComprobante(
-          12500.0,
-          LocalDate.of(2026, 10, 12),
-          "Almacén",
-          "Categoría inventada",
-          "Compra",
-          "ticket",
-          new ConfianzaComprobante(false, false, false, false)
-        )
-      );
-
-    ModelAndView resultado = controladorGasto.procesarComprobante(imagen, request);
-
-    assertNull(((Gasto) resultado.getModel().get("gasto")).getCategoria());
-    assertEquals(true, resultado.getModel().get("categoriaBajaConfianza"));
-  }
-
-  @Test
-  public void debeOfrecerCargaManualCuandoClaudeNoPuedeLeerLaImagen() {
-    byte[] png = new byte[] { (byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
-    MockMultipartFile imagen = new MockMultipartFile("imagen", "ticket.png", "image/png", png);
-    when(lectorComprobante.leer(png, "image/png", List.of("Alimentación")))
-      .thenThrow(new ComprobanteNoLegible());
-
-    ModelAndView resultado = controladorGasto.procesarComprobante(imagen, request);
-
-    assertEquals("cargar-comprobante", resultado.getViewName());
-    assertTrue(((String) resultado.getModel().get("error")).contains("cargá el gasto a mano"));
-  }
-
-  @Test
-  public void debeMostrarUnaAlternativaManualCuandoNoEstaConfiguradoElServicioDeLectura() {
-    byte[] png = new byte[] { (byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
-    MockMultipartFile imagen = new MockMultipartFile("imagen", "ticket.png", "image/png", png);
-    when(lectorComprobante.leer(png, "image/png", List.of("Alimentación")))
-      .thenThrow(new LectorComprobanteNoDisponible());
-
-    ModelAndView resultado = controladorGasto.procesarComprobante(imagen, request);
-
-    assertEquals("cargar-comprobante", resultado.getViewName());
-    assertTrue(((String) resultado.getModel().get("error")).contains("cargar el gasto a mano"));
   }
 
   @Test
@@ -445,22 +268,6 @@ public class ControladorGastoTest {
   }
 
   @Test
-  public void debeMostrarTotal45000CuandoLosGastosEntreLasFechasSuman45000() {
-    LocalDate desde = LocalDate.of(2026, 9, 1);
-    LocalDate hasta = LocalDate.of(2026, 9, 30);
-
-    when(gastoServicio.sumarGastos(usuario, desde, hasta)).thenReturn(45000.0);
-
-    ModelAndView resultado = controladorGasto.sumarGastos(request, desde, hasta);
-
-    assertEquals("sumar-gastos", resultado.getViewName());
-
-    assertEquals(45000.0, resultado.getModel().get("total"));
-
-    verify(gastoServicio).sumarGastos(usuario, desde, hasta);
-  }
-
-  @Test
   public void debeRedirigirALoginSinConsultarElServicioCuandoNoHayUsuarioEnSesion() {
     when(session.getAttribute("USUARIO")).thenReturn(null);
 
@@ -472,12 +279,6 @@ public class ControladorGastoTest {
     assertEquals(
       "redirect:/login",
       controladorGasto.registrarGasto(gasto, request, redirectAttributes).getViewName()
-    );
-    assertEquals(
-      "redirect:/login",
-      controladorGasto
-        .sumarGastos(request, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30))
-        .getViewName()
     );
 
     verifyNoInteractions(gastoServicio);
@@ -496,47 +297,7 @@ public class ControladorGastoTest {
       "redirect:/login",
       controladorGasto.registrarGasto(gasto, request, redirectAttributes).getViewName()
     );
-    assertEquals(
-      "redirect:/login",
-      controladorGasto
-        .sumarGastos(request, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30))
-        .getViewName()
-    );
 
     verifyNoInteractions(gastoServicio);
-  }
-
-  @Test
-  public void debeUsarElPresupuestoDelMesSimuladoCuandoEstaDefinido() {
-    YearMonth mesActual = YearMonth.now();
-    when(servicioPresupuesto.totalDelMes(usuario, mesActual.plusMonths(1))).thenReturn(480000.0);
-    when(servicioPresupuesto.totalDelMes(usuario, mesActual)).thenReturn(400000.0);
-
-    ModelAndView mav = controladorGasto.mostrarSimulacion(request);
-
-    assertEquals(480000.0, mav.getModel().get("presupuesto"));
-  }
-
-  @Test
-  public void debeUsarElPresupuestoDelMesActualCuandoElMesSimuladoNoTieneNingunoDefinido() {
-    YearMonth mesActual = YearMonth.now();
-    when(servicioPresupuesto.totalDelMes(usuario, mesActual.plusMonths(1))).thenReturn(0.0);
-    when(servicioPresupuesto.totalDelMes(usuario, mesActual)).thenReturn(400000.0);
-
-    ModelAndView mav = controladorGasto.mostrarSimulacion(request);
-
-    assertEquals(400000.0, mav.getModel().get("presupuesto"));
-  }
-
-  private DatosComprobante datosDeEjemplo() {
-    return new DatosComprobante(
-      49999.0,
-      LocalDate.of(2026, 10, 15),
-      "YPF",
-      "Alimentación",
-      "Transferencia enviada",
-      "comprobante de pago",
-      new ConfianzaComprobante(false, false, false, false)
-    );
   }
 }

@@ -1,7 +1,5 @@
 package com.tallerwebi.infraestructura.indicadores;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tallerwebi.dominio.excepcion.IndicadoresNoDisponibles;
 import com.tallerwebi.dominio.indicadores.ClienteIndicadores;
 import com.tallerwebi.dominio.indicadores.CotizacionDolar;
@@ -12,90 +10,73 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.YearMonth;
-import java.util.ArrayList;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 /**
- * Cliente HTTP de ArgentinaDatos (dólar histórico e inflación) y DolarApi (dólar de hoy).
- * Ambas son gratuitas, sin clave y devuelven JSON (decisión TEC-08).
+ * Indicadores de ArgentinaDatos (dólar histórico e inflación) y DolarApi (dólar de hoy). Ambas son
+ * gratuitas, sin clave y devuelven JSON (decisión TEC-08). Esta clase hace la llamada HTTP; la
+ * lectura de la respuesta la hace ParserIndicadores.
  */
 @Component
 public class ClienteArgentinaDatos implements ClienteIndicadores {
 
-  static final String URL_DOLAR_HISTORICO =
-    "https://api.argentinadatos.com/v1/cotizaciones/dolares/oficial";
-  static final String URL_INFLACION =
-    "https://api.argentinadatos.com/v1/finanzas/indices/inflacion";
-  static final String URL_DOLAR_HOY = "https://dolarapi.com/v1/dolares/oficial";
-  private static final int HTTP_OK = 200;
-
+  private final String urlDolarHistorico;
+  private final String urlInflacion;
+  private final String urlDolarHoy;
+  private final ParserIndicadores parser;
   private final HttpClient http;
-  private final ObjectMapper json = new ObjectMapper();
 
-  public ClienteArgentinaDatos() {
-    this.http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+  @Autowired
+  public ClienteArgentinaDatos(
+    @Value("${api.indicadores.dolar-historico.url}") String urlDolarHistorico,
+    @Value("${api.indicadores.inflacion.url}") String urlInflacion,
+    @Value("${api.indicadores.dolar-hoy.url}") String urlDolarHoy,
+    ParserIndicadores parser
+  ) {
+    this(
+      urlDolarHistorico,
+      urlInflacion,
+      urlDolarHoy,
+      parser,
+      HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()
+    );
+  }
+
+  ClienteArgentinaDatos(
+    String urlDolarHistorico,
+    String urlInflacion,
+    String urlDolarHoy,
+    ParserIndicadores parser,
+    HttpClient http
+  ) {
+    this.urlDolarHistorico = urlDolarHistorico;
+    this.urlInflacion = urlInflacion;
+    this.urlDolarHoy = urlDolarHoy;
+    this.parser = parser;
+    this.http = http;
   }
 
   @Override
   public List<CotizacionDolar> obtenerDolarOficialHistorico() {
-    return parsearDolares(obtener(URL_DOLAR_HISTORICO));
+    return parser.parsearDolares(consultar(urlDolarHistorico));
   }
 
   @Override
   public CotizacionDolar obtenerDolarOficialDeHoy() {
-    return parsearDolarDeHoy(obtener(URL_DOLAR_HOY));
+    return parser.parsearDolarDeHoy(consultar(urlDolarHoy));
   }
 
   @Override
   public List<InflacionMensual> obtenerInflacionMensual() {
-    return parsearInflacion(obtener(URL_INFLACION));
+    return parser.parsearInflacion(consultar(urlInflacion));
   }
 
-  // [{"casa":"oficial","compra":1485,"venta":1535,"fecha":"2026-10-13"}, ...]
-  List<CotizacionDolar> parsearDolares(String cuerpo) {
-    List<CotizacionDolar> cotizaciones = new ArrayList<>();
-    for (JsonNode nodo : leer(cuerpo)) {
-      cotizaciones.add(
-        new CotizacionDolar(
-          LocalDate.parse(nodo.get("fecha").asText()),
-          nodo.get("compra").asDouble(),
-          nodo.get("venta").asDouble()
-        )
-      );
-    }
-    return cotizaciones;
-  }
-
-  // {"moneda":"USD","casa":"oficial","compra":1485,"venta":1535,"fechaActualizacion":"2026-10-13T15:00:00.000Z"}
-  CotizacionDolar parsearDolarDeHoy(String cuerpo) {
-    JsonNode nodo = leer(cuerpo);
-    LocalDate fecha = OffsetDateTime.parse(nodo.get("fechaActualizacion").asText()).toLocalDate();
-    return new CotizacionDolar(fecha, nodo.get("compra").asDouble(), nodo.get("venta").asDouble());
-  }
-
-  // [{"fecha":"2026-08-31","valor":1.7}, ...]: un registro por mes, fechado el último día
-  List<InflacionMensual> parsearInflacion(String cuerpo) {
-    List<InflacionMensual> meses = new ArrayList<>();
-    for (JsonNode nodo : leer(cuerpo)) {
-      YearMonth mes = YearMonth.from(LocalDate.parse(nodo.get("fecha").asText()));
-      meses.add(new InflacionMensual(mes, nodo.get("valor").asDouble(), false));
-    }
-    return meses;
-  }
-
-  private JsonNode leer(String cuerpo) {
-    try {
-      return json.readTree(cuerpo);
-    } catch (IOException e) {
-      throw new IndicadoresNoDisponibles("Respuesta inválida de la API de indicadores", e);
-    }
-  }
-
-  private String obtener(String url) {
+  // Devuelve el JSON crudo, sin interpretarlo
+  private String consultar(String url) {
     HttpRequest pedido = HttpRequest
       .newBuilder(URI.create(url))
       .timeout(Duration.ofSeconds(10))
@@ -104,7 +85,7 @@ public class ClienteArgentinaDatos implements ClienteIndicadores {
       .build();
     try {
       HttpResponse<String> respuesta = http.send(pedido, HttpResponse.BodyHandlers.ofString());
-      if (respuesta.statusCode() != HTTP_OK) {
+      if (respuesta.statusCode() != HttpStatus.OK.value()) {
         throw new IndicadoresNoDisponibles(url + " respondió " + respuesta.statusCode());
       }
       return respuesta.body();

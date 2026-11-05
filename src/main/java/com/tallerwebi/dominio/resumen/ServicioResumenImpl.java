@@ -13,8 +13,10 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,9 +30,9 @@ public class ServicioResumenImpl implements ServicioResumen {
 
   static final String SIN_CATEGORIA = "Sin categoría";
 
-  private RepositorioGasto repositorioGasto;
-  private ServicioPresupuesto servicioPresupuesto;
-  private Clock reloj;
+  private final RepositorioGasto repositorioGasto;
+  private final ServicioPresupuesto servicioPresupuesto;
+  private final Clock reloj;
   private final CalculadoraGastosHormiga calculadoraHormiga = new CalculadoraGastosHormiga();
   private final CalculadoraAlertas calculadoraAlertas = new CalculadoraAlertas();
 
@@ -105,32 +107,22 @@ public class ServicioResumenImpl implements ServicioResumen {
     Map<String, Double> presupuestoPorCategoria,
     Map<String, Categoria> categoriaPorNombre
   ) {
+    // Las categorías con gastos y también las que solo tienen presupuesto (con gastado 0)
+    Set<String> nombres = new LinkedHashSet<>(gastadoPorCategoria.keySet());
+    nombres.addAll(presupuestoPorCategoria.keySet());
+
     List<ResumenCategoria> categorias = new ArrayList<>();
-    for (Map.Entry<String, Double> categoria : gastadoPorCategoria.entrySet()) {
-      double gastadoCategoria = categoria.getValue();
+    for (String nombre : nombres) {
+      double gastadoCategoria = gastadoPorCategoria.getOrDefault(nombre, 0.0);
       categorias.add(
         fila(
-          categoria.getKey(),
+          nombre,
           gastadoCategoria,
           porcentaje(gastadoCategoria, gastado),
-          presupuestoPorCategoria.get(categoria.getKey()),
-          categoriaPorNombre.get(categoria.getKey())
+          presupuestoPorCategoria.get(nombre),
+          categoriaPorNombre.get(nombre)
         )
       );
-    }
-    // Las categorías con presupuesto pero sin gastos también se muestran (gastado 0)
-    for (Map.Entry<String, Double> definido : presupuestoPorCategoria.entrySet()) {
-      if (!gastadoPorCategoria.containsKey(definido.getKey())) {
-        categorias.add(
-          fila(
-            definido.getKey(),
-            0.0,
-            0.0,
-            definido.getValue(),
-            categoriaPorNombre.get(definido.getKey())
-          )
-        );
-      }
     }
     // De la que más se gastó a la que menos, como se lee el gráfico de torta
     categorias.sort(Comparator.comparing(ResumenCategoria::getGastado).reversed());
@@ -195,7 +187,8 @@ public class ServicioResumenImpl implements ServicioResumen {
     YearMonth mesActual = YearMonth.now(reloj);
     List<ResumenDeMes> historial = new ArrayList<>();
     for (Map.Entry<YearMonth, List<Gasto>> mes : gastosPorMes.entrySet()) {
-      double presupuesto = presupuestoDe(usuario, mes.getKey());
+      // El presupuesto de cada mes: la suma de lo definido por categoría ese mes
+      double presupuesto = servicioPresupuesto.totalDelMes(usuario, mes.getKey());
       double gastado = mes.getValue().stream().mapToDouble(Gasto::getImporte).sum();
       // "Chico" es el 2 % del presupuesto de ese mes, no del actual
       double hormiga = calculadoraHormiga.calcular(mes.getValue(), presupuesto).getTotal();
@@ -210,11 +203,6 @@ public class ServicioResumenImpl implements ServicioResumen {
       );
     }
     return historial;
-  }
-
-  // El presupuesto de cada mes del historial: la suma de lo definido por categoría ese mes
-  private double presupuestoDe(Usuario usuario, YearMonth mes) {
-    return servicioPresupuesto.totalDelMes(usuario, mes);
   }
 
   private double porcentaje(double parte, double total) {

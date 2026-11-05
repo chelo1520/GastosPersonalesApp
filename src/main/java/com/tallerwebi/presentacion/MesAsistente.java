@@ -1,5 +1,6 @@
 package com.tallerwebi.presentacion;
 
+import com.tallerwebi.dominio.NombreDeMes;
 import com.tallerwebi.dominio.asistente.MesGastoReal;
 
 /** Un mes del asistente con su nombre para mostrar ("Oct 2026"). */

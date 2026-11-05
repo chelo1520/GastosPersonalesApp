@@ -17,6 +17,7 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.asistente.CategoriaGastoReal;
 import com.tallerwebi.dominio.asistente.GastoReal;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
+import com.tallerwebi.dominio.asistente.SintesisDelPeriodo;
 import com.tallerwebi.dominio.asistente.Veredicto;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.consejo.ServicioConsejos;
@@ -170,15 +171,16 @@ public class ControladorAsistenteTest {
   }
 
   @Test
-  public void debeDevolverLaSintesisComoTextoPlanoSobreElPeriodoPedido() {
+  public void debeDevolverElResumenYElDetalleDeLaSintesisSobreElPeriodoPedido() {
     GastoReal gastoReal = sinDatos();
+    SintesisDelPeriodo sintesis = new SintesisDelPeriodo("Tu año en una frase.", "Y el detalle.");
     when(servicioMock.calcular(usuario, 12)).thenReturn(gastoReal);
-    when(servicioConsejosMock.sintetizar(usuario, gastoReal)).thenReturn("Tu año en una frase.");
+    when(servicioConsejosMock.sintetizar(usuario, gastoReal)).thenReturn(sintesis);
 
-    ResponseEntity<String> respuesta = controlador.sintesis(12, requestMock);
+    ResponseEntity<SintesisDelPeriodo> respuesta = controlador.sintesis(12, requestMock);
 
     assertThat(respuesta.getStatusCode(), equalTo(HttpStatus.OK));
-    assertThat(respuesta.getBody(), equalTo("Tu año en una frase."));
+    assertThat(respuesta.getBody(), equalTo(sintesis));
   }
 
   @Test

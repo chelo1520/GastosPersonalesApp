@@ -1,68 +1,96 @@
 package com.tallerwebi.infraestructura.indicadores;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.excepcion.IndicadoresNoDisponibles;
+import com.tallerwebi.dominio.indicadores.ClienteIndicadores;
 import com.tallerwebi.dominio.indicadores.CotizacionDolar;
 import com.tallerwebi.dominio.indicadores.InflacionMensual;
+import java.io.IOException;
+import java.net.http.HttpClient;
+import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Parseo de respuestas grabadas de las APIs; no hay llamadas de red. */
+/** El HttpClient y el parser son mocks: no hay red. */
 public class ClienteArgentinaDatosTest {
 
-  private final ClienteArgentinaDatos cliente = new ClienteArgentinaDatos();
+  private HttpClient http;
+  private ParserIndicadores parser;
+  private ClienteIndicadores cliente;
 
-  @Test
-  void debeParsearLaSerieDelDolarCuandoLaRespuestaTieneVariosDias() {
-    String respuesta =
-      "[{\"casa\":\"oficial\",\"compra\":1480,\"venta\":1530,\"fecha\":\"2026-09-15\"}," +
-      "{\"casa\":\"oficial\",\"compra\":1485,\"venta\":1535,\"fecha\":\"2026-10-13\"}]";
-
-    List<CotizacionDolar> serie = cliente.parsearDolares(respuesta);
-
-    assertThat(serie, hasSize(2));
-    assertThat(serie.get(0).getFecha(), equalTo(LocalDate.of(2026, 9, 15)));
-    assertThat(serie.get(0).getCompra(), equalTo(1480.0));
-    assertThat(serie.get(1).getVenta(), equalTo(1535.0));
+  @BeforeEach
+  void init() {
+    http = mock(HttpClient.class);
+    parser = mock(ParserIndicadores.class);
+    cliente =
+      new ClienteArgentinaDatos(
+        "http://dolar-historico.test",
+        "http://inflacion.test",
+        "http://dolar-hoy.test",
+        parser,
+        http
+      );
   }
 
   @Test
-  void debeTomarLaFechaDeActualizacionComoFechaCuandoParseaElDolarDeHoy() {
-    String respuesta =
-      "{\"moneda\":\"USD\",\"casa\":\"oficial\",\"nombre\":\"Oficial\",\"compra\":1485," +
-      "\"venta\":1535,\"fechaActualizacion\":\"2026-10-13T15:00:00.000Z\"}";
-
-    CotizacionDolar hoy = cliente.parsearDolarDeHoy(respuesta);
-
-    assertThat(hoy.getFecha(), equalTo(LocalDate.of(2026, 10, 13)));
-    assertThat(hoy.getVenta(), equalTo(1535.0));
-  }
-
-  @Test
-  void debeConvertirCadaRegistroEnUnMesNoEstimadoCuandoParseaLaInflacion() {
-    String respuesta =
-      "[{\"fecha\":\"2026-07-31\",\"valor\":2.1},{\"fecha\":\"2026-08-31\",\"valor\":1.7}]";
-
-    List<InflacionMensual> meses = cliente.parsearInflacion(respuesta);
-
-    assertThat(meses, hasSize(2));
-    assertThat(meses.get(1).getMes(), equalTo(YearMonth.of(2026, 8)));
-    assertThat(meses.get(1).getPorcentaje(), equalTo(1.7));
-    assertThat(meses.get(1).isEstimada(), is(false));
-  }
-
-  @Test
-  void debeLanzarIndicadoresNoDisponiblesCuandoLaRespuestaNoEsJson() {
-    assertThrows(
-      IndicadoresNoDisponibles.class,
-      () -> cliente.parsearDolares("<html>error</html>")
+  void debeDevolverLaSerieDelDolarQueLeeElParserDeLaRespuesta() throws Exception {
+    List<CotizacionDolar> serie = List.of(
+      new CotizacionDolar(LocalDate.of(2026, 10, 13), 1485.0, 1535.0)
     );
+    respondeLaApi(200, "[serie]");
+    when(parser.parsearDolares("[serie]")).thenReturn(serie);
+
+    assertThat(cliente.obtenerDolarOficialHistorico(), sameInstance(serie));
+  }
+
+  @Test
+  void debeDevolverElDolarDeHoyQueLeeElParserDeLaRespuesta() throws Exception {
+    CotizacionDolar hoy = new CotizacionDolar(LocalDate.of(2026, 10, 13), 1485.0, 1535.0);
+    respondeLaApi(200, "{hoy}");
+    when(parser.parsearDolarDeHoy("{hoy}")).thenReturn(hoy);
+
+    assertThat(cliente.obtenerDolarOficialDeHoy(), sameInstance(hoy));
+  }
+
+  @Test
+  void debeDevolverLaInflacionQueLeeElParserDeLaRespuesta() throws Exception {
+    List<InflacionMensual> meses = List.of(new InflacionMensual(YearMonth.of(2026, 8), 1.7, false));
+    respondeLaApi(200, "[meses]");
+    when(parser.parsearInflacion("[meses]")).thenReturn(meses);
+
+    assertThat(cliente.obtenerInflacionMensual(), sameInstance(meses));
+  }
+
+  @Test
+  void debeAvisarQueNoHayIndicadoresCuandoLaApiNoRespondeOk() throws Exception {
+    respondeLaApi(503, "caída");
+
+    assertThrows(IndicadoresNoDisponibles.class, () -> cliente.obtenerInflacionMensual());
+  }
+
+  @Test
+  void debeAvisarQueNoHayIndicadoresCuandoNoHayRed() throws Exception {
+    doThrow(new IOException("sin red")).when(http).send(any(), any());
+
+    assertThrows(IndicadoresNoDisponibles.class, () -> cliente.obtenerDolarOficialDeHoy());
+  }
+
+  private void respondeLaApi(int estado, String cuerpo) throws Exception {
+    @SuppressWarnings("unchecked")
+    HttpResponse<String> respuesta = mock(HttpResponse.class);
+    when(respuesta.statusCode()).thenReturn(estado);
+    when(respuesta.body()).thenReturn(cuerpo);
+    doReturn(respuesta).when(http).send(any(), any());
   }
 }

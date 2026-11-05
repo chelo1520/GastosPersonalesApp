@@ -10,7 +10,7 @@ import java.util.List;
  * de las reglas.
  */
 public interface ServicioAsistente {
-  String sintetizar(List<Consejo> consejos, GastoReal contexto);
+  SintesisDelPeriodo sintetizar(List<Consejo> consejos, GastoReal contexto);
 
   boolean disponible();
 }

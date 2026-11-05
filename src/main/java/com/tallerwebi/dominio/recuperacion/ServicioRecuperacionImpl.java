@@ -39,7 +39,7 @@ public class ServicioRecuperacionImpl implements ServicioRecuperacion {
     RepositorioUsuario repositorioUsuario,
     RepositorioTokenRecuperacion repositorioToken,
     EnviadorDeMail enviadorDeMail,
-    @Value("${APP_URL:http://localhost:8080/gastitos}") String urlDeLaApp
+    @Value("${app.url}") String urlDeLaApp
   ) {
     this(
       repositorioUsuario,

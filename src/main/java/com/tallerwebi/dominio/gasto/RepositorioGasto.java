@@ -17,7 +17,7 @@ public interface RepositorioGasto {
 
   Gasto buscarPorId(Long id);
 
-  List<Gasto> BuscarGastosPorUsuario(Usuario usuario);
+  List<Gasto> buscarGastosPorUsuario(Usuario usuario);
 
   List<Gasto> obtenerGastosEntreFechas(Usuario usuario, LocalDate desde, LocalDate hasta);
 

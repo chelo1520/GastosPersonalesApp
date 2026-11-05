@@ -68,6 +68,91 @@ public class ServicioGastoImplTest {
   }
 
   @Test
+  void debeGuardarTodosLosGastosDeUnComprobanteAsociadosAlUsuario() {
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
+    Usuario usuario = new Usuario();
+    Gasto almacen = new Gasto(6300.0, LocalDate.of(2026, 10, 5), "Supermercado");
+    Gasto golosinas = new Gasto(3500.0, LocalDate.of(2026, 10, 5), "Supermercado");
+
+    gastoServicio.registrarGastos(List.of(almacen, golosinas), usuario);
+
+    assertEquals(usuario, almacen.getUsuario());
+    assertEquals(usuario, golosinas.getUsuario());
+    verify(repositorioGastoMock).guardar(almacen);
+    verify(repositorioGastoMock).guardar(golosinas);
+  }
+
+  @Test
+  void noDebeGuardarNingunGastoDelComprobanteSiUnoEsInvalido() {
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
+    Gasto valido = new Gasto(6300.0, LocalDate.of(2026, 10, 5), "Supermercado");
+    Gasto sinImporte = new Gasto(0.0, LocalDate.of(2026, 10, 5), "Peluquería");
+
+    GastoInvalidoExeption error = assertThrows(
+      GastoInvalidoExeption.class,
+      () -> gastoServicio.registrarGastos(List.of(valido, sinImporte), new Usuario())
+    );
+
+    assertEquals("Peluquería: El importe debe ser mayor a cero", error.getMessage());
+    verify(repositorioGastoMock, never()).guardar(any());
+  }
+
+  @Test
+  void debeAvisarSiLosGastosDelComprobanteJuntosHacenLlegarElMesAl80PorCiento() {
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
+    Usuario usuario = new Usuario();
+    Gasto alquiler = new Gasto(400000.0, LocalDate.of(2026, 10, 1), "Alquiler");
+    Gasto almacen = new Gasto(25000.0, LocalDate.of(2026, 10, 6), "Supermercado");
+    Gasto golosinas = new Gasto(15000.0, LocalDate.of(2026, 10, 6), "Supermercado");
+    // De un resumen de tarjeta: un consumo del mes pasado no suma al mes en curso
+    Gasto septiembre = new Gasto(90000.0, LocalDate.of(2026, 9, 28), "Cine");
+    when(
+      repositorioGastoMock.obtenerGastosEntreFechas(
+        usuario,
+        LocalDate.of(2026, 10, 1),
+        LocalDate.of(2026, 10, 31)
+      )
+    )
+      .thenReturn(List.of(alquiler, almacen, golosinas));
+    when(servicioPresupuestoMock.totalDelMes(usuario, YearMonth.of(2026, 10))).thenReturn(550000.0);
+
+    Alerta alerta = gastoServicio.alertaDePresupuesto(
+      List.of(almacen, golosinas, septiembre),
+      usuario
+    );
+
+    // Por separado ninguno cruza el 80 %; juntos (40.000) sí
+    assertEquals(
+      "Con este gasto llegaste al 80% del presupuesto del mes ($440.000 de $550.000)",
+      alerta.getMensaje()
+    );
+  }
+
+  @Test
+  void noDebeAvisarDelPresupuestoSiNingunGastoDelComprobanteEsDelMesEnCurso() {
+    GastoServicio gastoServicio = new GastoServicioImpl(
+      repositorioGastoMock,
+      servicioPresupuestoMock,
+      HOY
+    );
+    Gasto septiembre = new Gasto(90000.0, LocalDate.of(2026, 9, 28), "Cine");
+
+    assertNull(gastoServicio.alertaDePresupuesto(List.of(septiembre), new Usuario()));
+  }
+
+  @Test
   void debeBuscarLosGastosDeLos7DiasHastaLaFechaDelGastoParaLaAlertaDeRepeticion() {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
