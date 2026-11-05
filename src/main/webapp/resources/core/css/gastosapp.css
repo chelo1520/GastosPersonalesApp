@@ -391,6 +391,10 @@ a:hover {
   color: var(--app-texto-suave);
 }
 
+.app-perfil-card + .app-perfil-card {
+  margin-top: 16px;
+}
+
 /* Cambiar contraseña y eliminar cuenta: desplegables que se abren con un click */
 .app-perfil-card.app-perfil-seccion {
   margin-top: 16px;

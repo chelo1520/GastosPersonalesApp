@@ -58,7 +58,13 @@ public class RepositorioUsuarioImpl implements RepositorioUsuario {
   @Override
   public void eliminar(Usuario usuario) {
     // Primero lo que apunta al usuario, para no romper las claves foráneas
-    for (String entidad : List.of("Gasto", "Presupuesto", "Consejo", "TokenRecuperacion")) {
+    for (String entidad : List.of(
+      "Gasto",
+      "Presupuesto",
+      "PresupuestoTotal",
+      "Consejo",
+      "TokenRecuperacion"
+    )) {
       sessionFactory
         .getCurrentSession()
         .createMutationQuery("delete from " + entidad + " where usuario = :usuario")

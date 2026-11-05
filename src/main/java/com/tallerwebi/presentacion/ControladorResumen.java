@@ -2,6 +2,7 @@ package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.NombreDeMes;
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import com.tallerwebi.dominio.resumen.ResumenDeMes;
 import com.tallerwebi.dominio.resumen.ResumenMensual;
 import com.tallerwebi.dominio.resumen.ServicioResumen;
@@ -29,16 +30,25 @@ public class ControladorResumen {
   static final int MESES_HISTORIAL = 6;
 
   private ServicioResumen servicioResumen;
+  private ServicioPresupuesto servicioPresupuesto;
   private Clock reloj;
 
   @Autowired
-  public ControladorResumen(ServicioResumen servicioResumen) {
-    this(servicioResumen, Clock.systemDefaultZone());
+  public ControladorResumen(
+    ServicioResumen servicioResumen,
+    ServicioPresupuesto servicioPresupuesto
+  ) {
+    this(servicioResumen, servicioPresupuesto, Clock.systemDefaultZone());
   }
 
   // Permite fijar "hoy" en los tests
-  public ControladorResumen(ServicioResumen servicioResumen, Clock reloj) {
+  public ControladorResumen(
+    ServicioResumen servicioResumen,
+    ServicioPresupuesto servicioPresupuesto,
+    Clock reloj
+  ) {
     this.servicioResumen = servicioResumen;
+    this.servicioPresupuesto = servicioPresupuesto;
     this.reloj = reloj;
   }
 
@@ -69,6 +79,18 @@ public class ControladorResumen {
     model.put("hormiga", resumen.getHormiga());
     model.put("alertas", resumen.getAlertas());
     model.put("historial", historial(usuario, mesMostrado));
+
+    // Total del mes (el definido para ese mes o el del perfil), contra lo gastado
+    double presupuestoMensual = servicioPresupuesto.presupuestoDelMes(usuario, mesMostrado);
+    model.put("presupuestoMensual", presupuestoMensual);
+    model.put("disponibleMensual", presupuestoMensual - resumen.getGastado());
+    model.put("excedido", resumen.getGastado() > presupuestoMensual && presupuestoMensual > 0);
+    model.put("asignado", resumen.getPresupuesto());
+    model.put("sinAsignar", presupuestoMensual - resumen.getPresupuesto());
+    model.put(
+      "porcentajeMensualUsado",
+      presupuestoMensual > 0 ? (resumen.getGastado() * 100) / presupuestoMensual : 0.0
+    );
 
     return new ModelAndView("resumen", model);
   }

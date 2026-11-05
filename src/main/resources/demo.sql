@@ -14,6 +14,7 @@ INSERT INTO Usuario(email, password, rol, activo) SELECT 'bajo@gastitos.demo', '
 UPDATE Usuario SET password = 'test' WHERE email IN ('alto@gastitos.demo', 'medio@gastitos.demo', 'bajo@gastitos.demo');
 
 DELETE FROM Gasto WHERE usuario_id IN (SELECT id FROM Usuario WHERE email IN ('alto@gastitos.demo', 'medio@gastitos.demo', 'bajo@gastitos.demo'));
+DELETE FROM PresupuestoTotal WHERE usuario_id IN (SELECT id FROM Usuario WHERE email IN ('alto@gastitos.demo', 'medio@gastitos.demo', 'bajo@gastitos.demo'));
 DELETE FROM Presupuesto WHERE usuario_id IN (SELECT id FROM Usuario WHERE email IN ('alto@gastitos.demo', 'medio@gastitos.demo', 'bajo@gastitos.demo'));
 
 -- Variables de la conexión: ids de usuarios y categorías

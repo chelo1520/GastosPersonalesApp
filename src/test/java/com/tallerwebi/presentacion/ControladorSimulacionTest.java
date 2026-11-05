@@ -40,8 +40,9 @@ public class ControladorSimulacionTest {
   @Test
   public void debeUsarElPresupuestoDelMesSimuladoCuandoEstaDefinido() {
     YearMonth mesActual = YearMonth.now();
-    when(servicioPresupuesto.totalDelMes(usuario, mesActual.plusMonths(1))).thenReturn(480000.0);
-    when(servicioPresupuesto.totalDelMes(usuario, mesActual)).thenReturn(400000.0);
+    when(servicioPresupuesto.presupuestoDelMes(usuario, mesActual.plusMonths(1)))
+      .thenReturn(480000.0);
+    when(servicioPresupuesto.presupuestoDelMes(usuario, mesActual)).thenReturn(400000.0);
 
     ModelAndView mav = controlador.mostrarSimulacion(request);
 
@@ -52,8 +53,8 @@ public class ControladorSimulacionTest {
   @Test
   public void debeUsarElPresupuestoDelMesActualCuandoElMesSimuladoNoTieneNingunoDefinido() {
     YearMonth mesActual = YearMonth.now();
-    when(servicioPresupuesto.totalDelMes(usuario, mesActual.plusMonths(1))).thenReturn(0.0);
-    when(servicioPresupuesto.totalDelMes(usuario, mesActual)).thenReturn(400000.0);
+    when(servicioPresupuesto.presupuestoDelMes(usuario, mesActual.plusMonths(1))).thenReturn(0.0);
+    when(servicioPresupuesto.presupuestoDelMes(usuario, mesActual)).thenReturn(400000.0);
 
     ModelAndView mav = controlador.mostrarSimulacion(request);
 

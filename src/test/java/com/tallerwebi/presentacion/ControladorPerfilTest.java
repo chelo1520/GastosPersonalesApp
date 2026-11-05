@@ -3,6 +3,7 @@ package com.tallerwebi.presentacion;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -11,11 +12,15 @@ import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.ReglasDeContrasena;
 import com.tallerwebi.dominio.ServicioCuenta;
+import com.tallerwebi.dominio.ServicioPerfil;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.ContrasenaIncorrecta;
 import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
+import com.tallerwebi.dominio.excepcion.PresupuestoInvalido;
+import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.time.YearMonth;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.servlet.ModelAndView;
@@ -26,12 +31,17 @@ public class ControladorPerfilTest {
   private HttpSession sessionMock;
   private Usuario usuarioMock;
   private ServicioCuenta servicioCuentaMock;
+  private ServicioPerfil servicioPerfilMock;
+  private ServicioPresupuesto servicioPresupuestoMock;
   private ControladorPerfil controladorPerfil;
 
   @BeforeEach
   public void init() {
     this.servicioCuentaMock = mock(ServicioCuenta.class);
-    this.controladorPerfil = new ControladorPerfil(servicioCuentaMock);
+    this.servicioPerfilMock = mock(ServicioPerfil.class);
+    this.servicioPresupuestoMock = mock(ServicioPresupuesto.class);
+    this.controladorPerfil =
+      new ControladorPerfil(servicioCuentaMock, servicioPerfilMock, servicioPresupuestoMock);
     this.usuarioMock = mock(Usuario.class);
     this.requestMock = mock(HttpServletRequest.class);
     this.sessionMock = mock(HttpSession.class);
@@ -41,7 +51,7 @@ public class ControladorPerfilTest {
 
   @Test
   public void cuandoHayUnUsuarioAuntenticadoEnLaSesionMuestraElPerfilYRetornaUsuarioALaVista() {
-    ModelAndView resultado = controladorPerfil.mostrarPerfil(requestMock);
+    ModelAndView resultado = controladorPerfil.mostrarPerfil(null, requestMock);
 
     assertEquals("perfil", resultado.getViewName());
     assertSame(usuarioMock, resultado.getModel().get("usuario"));
@@ -51,7 +61,7 @@ public class ControladorPerfilTest {
   public void cuandoNoHayUsuarioEnLaSesionRedirigeAlLogin() {
     when(sessionMock.getAttribute("USUARIO")).thenReturn(null);
 
-    ModelAndView resultado = controladorPerfil.mostrarPerfil(requestMock);
+    ModelAndView resultado = controladorPerfil.mostrarPerfil(null, requestMock);
 
     assertEquals("redirect:/login", resultado.getViewName());
   }
@@ -60,7 +70,7 @@ public class ControladorPerfilTest {
   public void cuandoNoExisteLaSesionRedirigeAlLogin() {
     when(requestMock.getSession(false)).thenReturn(null);
 
-    ModelAndView resultado = controladorPerfil.mostrarPerfil(requestMock);
+    ModelAndView resultado = controladorPerfil.mostrarPerfil(null, requestMock);
 
     assertEquals("redirect:/login", resultado.getViewName());
   }
@@ -167,5 +177,76 @@ public class ControladorPerfilTest {
 
     assertEquals("redirect:/login", resultado.getViewName());
     verify(servicioCuentaMock, never()).eliminarCuenta(any(), any());
+  }
+
+  @Test
+  public void debeGuardarElIngresoYElPorcentajeYRedirigirAlPerfil() {
+    ModelAndView resultado = controladorPerfil.definirPresupuesto(400000.0, 50.0, requestMock);
+
+    verify(servicioPerfilMock).definirPresupuesto(usuarioMock, 400000.0, 50.0);
+    assertEquals("redirect:/perfil", resultado.getViewName());
+  }
+
+  @Test
+  public void debeVolverAlPerfilConElErrorCuandoElServicioRechazaLosDatos() {
+    doThrow(new PresupuestoInvalido("El ingreso debe ser mayor a cero"))
+      .when(servicioPerfilMock)
+      .definirPresupuesto(eq(usuarioMock), any(), any());
+
+    ModelAndView resultado = controladorPerfil.definirPresupuesto(0.0, 50.0, requestMock);
+
+    assertEquals("perfil", resultado.getViewName());
+    assertEquals("El ingreso debe ser mayor a cero", resultado.getModel().get("error"));
+    assertSame(usuarioMock, resultado.getModel().get("usuario"));
+  }
+
+  @Test
+  public void debeRedirigirAlLoginSinGuardarCuandoNoHayUsuarioAlDefinirElPresupuesto() {
+    when(sessionMock.getAttribute("USUARIO")).thenReturn(null);
+
+    ModelAndView resultado = controladorPerfil.definirPresupuesto(400000.0, 50.0, requestMock);
+
+    assertEquals("redirect:/login", resultado.getViewName());
+    verify(servicioPerfilMock, never()).definirPresupuesto(any(), any(), any());
+  }
+
+  @Test
+  public void debeMostrarElPresupuestoTotalDelMesElegido() {
+    when(servicioPresupuestoMock.presupuestoDelMes(usuarioMock, YearMonth.of(2026, 12)))
+      .thenReturn(500000.0);
+
+    ModelAndView resultado = controladorPerfil.mostrarPerfil("2026-12", requestMock);
+
+    assertEquals("2026-12", resultado.getModel().get("mesPresupuesto"));
+    assertEquals(500000.0, resultado.getModel().get("totalDelMes"));
+  }
+
+  @Test
+  public void debeDefinirElPresupuestoDeUnMesYVolverAlPerfilEnEseMes() {
+    ModelAndView resultado = controladorPerfil.definirPresupuestoDelMes(
+      "2026-12",
+      500000.0,
+      requestMock
+    );
+
+    verify(servicioPresupuestoMock)
+      .definirPresupuestoDelMes(usuarioMock, YearMonth.of(2026, 12), 500000.0);
+    assertEquals("redirect:/perfil?mesGuardado&mes=2026-12", resultado.getViewName());
+  }
+
+  @Test
+  public void debeMostrarElErrorSiElTotalDelMesEsMenorAlAsignado() {
+    doThrow(new PresupuestoInvalido("El total no puede ser menor"))
+      .when(servicioPresupuestoMock)
+      .definirPresupuestoDelMes(eq(usuarioMock), any(YearMonth.class), any());
+
+    ModelAndView resultado = controladorPerfil.definirPresupuestoDelMes(
+      "2026-12",
+      10.0,
+      requestMock
+    );
+
+    assertEquals("perfil", resultado.getViewName());
+    assertEquals("El total no puede ser menor", resultado.getModel().get("errorMes"));
   }
 }

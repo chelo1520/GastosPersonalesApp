@@ -53,6 +53,9 @@ public class ResumenVistaTest {
   @Test
   public void debeRenderizarElTotalYLaCategoriaDeLosGastosDelMesPedido() throws Exception {
     Usuario usuario = new Usuario();
+    // Presupuesto total del perfil: 260.000 (ingreso x 100 %)
+    usuario.setIngresoMensual(260000.0);
+    usuario.setPorcentajePresupuesto(100.0);
     Gasto alquiler = new Gasto(250000.0, LocalDate.of(2026, 9, 1), "Alquiler");
     Gasto farmacia = new Gasto(9800.0, LocalDate.of(2026, 9, 15), "Farmacia");
     Gasto deOctubre = new Gasto(5000.0, LocalDate.of(2026, 10, 2), "Gasto de octubre");
@@ -78,7 +81,7 @@ public class ResumenVistaTest {
       .andExpect(content().string(containsString("data-etiqueta=\"Abr 2026\"")))
       .andExpect(content().string(containsString("data-resto=\"259800.0\"")))
       .andExpect(content().string(containsString("$ 259.800")))
-      // Presupuesto del mes = suma de los presupuestos por categoría: quedan 200 disponibles
+      // Presupuesto total (perfil) 260.000 menos lo gastado: quedan 200 disponibles
       .andExpect(content().string(containsString("$ 260.000")))
       .andExpect(content().string(containsString("$ 200")))
       .andExpect(content().string(containsString("Vivienda")))

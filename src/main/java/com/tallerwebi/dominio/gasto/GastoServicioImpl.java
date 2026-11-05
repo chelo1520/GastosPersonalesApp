@@ -102,8 +102,12 @@ public class GastoServicioImpl implements GastoServicio {
       desde,
       gasto.getFecha()
     );
-    // "Chico" se mide contra el presupuesto del mes del gasto (la suma de sus categorías)
-    double presupuesto = servicioPresupuesto.totalDelMes(usuario, YearMonth.from(gasto.getFecha()));
+    // "Chico" se mide contra el total del mes del gasto; sin total, contra lo asignado a categorías
+    YearMonth mesDelGasto = YearMonth.from(gasto.getFecha());
+    double presupuesto = servicioPresupuesto.presupuestoDelMes(usuario, mesDelGasto);
+    if (presupuesto <= 0) {
+      presupuesto = servicioPresupuesto.totalDelMes(usuario, mesDelGasto);
+    }
     return calculadoraAlertas.alertaDeRepeticion(gasto, gastosDeLaSemana, presupuesto);
   }
 
@@ -116,7 +120,11 @@ public class GastoServicioImpl implements GastoServicio {
     }
     // Ya guardado: el total del mes incluye el gasto nuevo
     double gastadoDelMes = sumarGastos(usuario, mes.atDay(1), mes.atEndOfMonth());
-    double presupuesto = servicioPresupuesto.totalDelMes(usuario, mes);
+    // Contra el total del mes; si no hay, contra lo asignado a categorías
+    double presupuesto = servicioPresupuesto.presupuestoDelMes(usuario, mes);
+    if (presupuesto <= 0) {
+      presupuesto = servicioPresupuesto.totalDelMes(usuario, mes);
+    }
     return calculadoraAlertas.alertaDePresupuesto(gastadoDelMes, gasto.getImporte(), presupuesto);
   }
 

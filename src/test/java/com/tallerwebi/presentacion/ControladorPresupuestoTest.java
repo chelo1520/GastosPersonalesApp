@@ -231,4 +231,31 @@ public class ControladorPresupuestoTest {
     categoria.setNombre(nombre);
     return categoria;
   }
+
+  @Test
+  void debeMostrarElPresupuestoDelMesEnElModelo() {
+    when(servicioPresupuestoMock.presupuestoDelMes(usuario, OCTUBRE)).thenReturn(500000.0);
+
+    ModelAndView mav = controlador.mostrarPresupuestos(null, requestMock);
+
+    assertThat(mav.getModel().get("presupuestoMensual"), equalTo(500000.0));
+  }
+
+  @Test
+  void debeMostrarCeroComoPresupuestoDelMesCuandoNoHayNadaDefinido() {
+    when(servicioPresupuestoMock.presupuestoDelMes(usuario, OCTUBRE)).thenReturn(0.0);
+
+    ModelAndView mav = controlador.mostrarPresupuestos(null, requestMock);
+
+    assertThat(mav.getModel().get("presupuestoMensual"), equalTo(0.0));
+  }
+
+  @Test
+  public void debeMostrarLoNoAsignadoDelMesEnElModelo() {
+    when(servicioPresupuestoMock.noAsignadoDelMes(usuario, OCTUBRE)).thenReturn(200000.0);
+
+    ModelAndView mav = controlador.mostrarPresupuestos(null, requestMock);
+
+    assertThat(mav.getModel().get("noAsignado"), equalTo(200000.0));
+  }
 }

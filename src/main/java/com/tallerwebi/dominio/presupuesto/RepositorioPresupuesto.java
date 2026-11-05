@@ -14,4 +14,12 @@ public interface RepositorioPresupuesto {
   Presupuesto buscar(Usuario usuario, Categoria categoria, YearMonth mes);
 
   List<Presupuesto> obtenerDelMes(Usuario usuario, YearMonth mes);
+
+  List<Presupuesto> obtenerDelUsuario(Usuario usuario);
+
+  // Crea o reemplaza el presupuesto total de ese mes
+  void guardarTotal(PresupuestoTotal total);
+
+  // null si el usuario no definió un total para ese mes
+  PresupuestoTotal buscarTotal(Usuario usuario, YearMonth mes);
 }

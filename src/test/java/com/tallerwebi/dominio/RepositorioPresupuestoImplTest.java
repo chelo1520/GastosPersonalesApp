@@ -9,6 +9,7 @@ import static org.hamcrest.Matchers.nullValue;
 
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.presupuesto.Presupuesto;
+import com.tallerwebi.dominio.presupuesto.PresupuestoTotal;
 import com.tallerwebi.dominio.presupuesto.RepositorioPresupuesto;
 import com.tallerwebi.dominio.presupuesto.RepositorioPresupuestoImpl;
 import com.tallerwebi.infraestructura.config.HibernateInfraestructuraTestConfig;
@@ -60,6 +61,25 @@ public class RepositorioPresupuestoImplTest {
     assertThat(encontrado, notNullValue());
     assertThat(encontrado.getMonto(), equalTo(130000.0));
     assertThat(encontrado.getMes(), equalTo(OCTUBRE));
+  }
+
+  @Test
+  void debeGuardarYBuscarElTotalDeUnMesSoloParaEseUsuarioYMes() {
+    repositorioPresupuesto.guardarTotal(new PresupuestoTotal(diego, OCTUBRE, 400000.0));
+
+    assertThat(repositorioPresupuesto.buscarTotal(diego, OCTUBRE).getMonto(), equalTo(400000.0));
+    assertThat(repositorioPresupuesto.buscarTotal(diego, SEPTIEMBRE), nullValue());
+    assertThat(repositorioPresupuesto.buscarTotal(otroUsuario, OCTUBRE), nullValue());
+  }
+
+  @Test
+  void debeActualizarElTotalExistenteEnVezDeCrearOtro() {
+    repositorioPresupuesto.guardarTotal(new PresupuestoTotal(diego, OCTUBRE, 400000.0));
+    PresupuestoTotal total = repositorioPresupuesto.buscarTotal(diego, OCTUBRE);
+    total.setMonto(450000.0);
+    repositorioPresupuesto.guardarTotal(total);
+
+    assertThat(repositorioPresupuesto.buscarTotal(diego, OCTUBRE).getMonto(), equalTo(450000.0));
   }
 
   @Test
