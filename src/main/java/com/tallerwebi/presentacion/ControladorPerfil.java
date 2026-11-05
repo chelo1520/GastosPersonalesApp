@@ -2,11 +2,16 @@ package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.ReglasDeContrasena;
 import com.tallerwebi.dominio.ServicioCuenta;
+import com.tallerwebi.dominio.ServicioPerfil;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.ContrasenaIncorrecta;
 import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
+import com.tallerwebi.dominio.excepcion.PresupuestoInvalido;
+import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -27,19 +32,71 @@ public class ControladorPerfil {
   private static final String USUARIO = "usuario";
 
   private final ServicioCuenta servicioCuenta;
+  private final ServicioPerfil servicioPerfil;
+  private final ServicioPresupuesto servicioPresupuesto;
 
   @Autowired
-  public ControladorPerfil(ServicioCuenta servicioCuenta) {
+  public ControladorPerfil(
+    ServicioCuenta servicioCuenta,
+    ServicioPerfil servicioPerfil,
+    ServicioPresupuesto servicioPresupuesto
+  ) {
     this.servicioCuenta = servicioCuenta;
+    this.servicioPerfil = servicioPerfil;
+    this.servicioPresupuesto = servicioPresupuesto;
   }
 
   @RequestMapping(path = "/perfil", method = RequestMethod.GET)
-  public ModelAndView mostrarPerfil(HttpServletRequest request) {
+  public ModelAndView mostrarPerfil(
+    @RequestParam(value = "mes", required = false) String mes,
+    HttpServletRequest request
+  ) {
     Usuario usuario = SesionUsuario.obtener(request);
     if (usuario == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
-    return new ModelAndView(VISTA, USUARIO, usuario);
+    return new ModelAndView(VISTA, conMes(usuario, elegirMes(mes)));
+  }
+
+  @RequestMapping(path = "/perfil/presupuesto/mes", method = RequestMethod.POST)
+  public ModelAndView definirPresupuestoDelMes(
+    @RequestParam(value = "mes", required = false) String mes,
+    @RequestParam(value = "monto", required = false) Double monto,
+    HttpServletRequest request
+  ) {
+    Usuario usuario = SesionUsuario.obtener(request);
+    if (usuario == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+    YearMonth elegido = elegirMes(mes);
+    try {
+      servicioPresupuesto.definirPresupuestoDelMes(usuario, elegido, monto);
+    } catch (PresupuestoInvalido e) {
+      Map<String, Object> model = conMes(usuario, elegido);
+      model.put("errorMes", e.getMessage());
+      return new ModelAndView(VISTA, model);
+    }
+    return new ModelAndView("redirect:/perfil?mesGuardado&mes=" + elegido);
+  }
+
+  // Sin mes, o con uno inválido, usa el actual
+  private YearMonth elegirMes(String mes) {
+    if (mes == null) {
+      return YearMonth.now();
+    }
+    try {
+      return YearMonth.parse(mes);
+    } catch (DateTimeParseException e) {
+      return YearMonth.now();
+    }
+  }
+
+  private Map<String, Object> conMes(Usuario usuario, YearMonth mes) {
+    Map<String, Object> model = new ModelMap();
+    model.put(USUARIO, usuario);
+    model.put("mesPresupuesto", mes.toString());
+    model.put("totalDelMes", servicioPresupuesto.presupuestoDelMes(usuario, mes));
+    return model;
   }
 
   @RequestMapping(path = "/perfil/contrasena", method = RequestMethod.POST)
@@ -95,9 +152,26 @@ public class ControladorPerfil {
     return new ModelAndView("redirect:/login?cuentaEliminada");
   }
 
+  @RequestMapping(path = "/perfil/presupuesto", method = RequestMethod.POST)
+  public ModelAndView definirPresupuesto(
+    @RequestParam(value = "ingresoMensual", required = false) Double ingresoMensual,
+    @RequestParam(value = "porcentaje", required = false) Double porcentaje,
+    HttpServletRequest request
+  ) {
+    Usuario usuario = SesionUsuario.obtener(request);
+    if (usuario == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+    try {
+      servicioPerfil.definirPresupuesto(usuario, ingresoMensual, porcentaje);
+    } catch (PresupuestoInvalido e) {
+      return conError(usuario, "error", e.getMessage());
+    }
+    return new ModelAndView("redirect:/perfil");
+  }
+
   private ModelAndView conError(Usuario usuario, String clave, String error) {
-    Map<String, Object> model = new ModelMap();
-    model.put(USUARIO, usuario);
+    Map<String, Object> model = conMes(usuario, YearMonth.now());
     model.put(clave, error);
     return new ModelAndView(VISTA, model);
   }

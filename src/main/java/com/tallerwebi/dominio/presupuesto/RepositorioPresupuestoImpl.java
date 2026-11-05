@@ -15,6 +15,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class RepositorioPresupuestoImpl implements RepositorioPresupuesto {
 
+  private static final String USUARIO = "usuario";
+
   private SessionFactory sessionFactory;
 
   @Autowired
@@ -40,7 +42,7 @@ public class RepositorioPresupuestoImpl implements RepositorioPresupuesto {
       .getCurrentSession()
       .createQuery(hql, Presupuesto.class);
 
-    query.setParameter("usuario", usuario);
+    query.setParameter(USUARIO, usuario);
     query.setParameter("categoria", categoria);
     query.setParameter("mes", mes.toString());
 
@@ -55,9 +57,42 @@ public class RepositorioPresupuestoImpl implements RepositorioPresupuesto {
       .getCurrentSession()
       .createQuery(hql, Presupuesto.class);
 
-    query.setParameter("usuario", usuario);
+    query.setParameter(USUARIO, usuario);
     query.setParameter("mes", mes.toString());
 
     return query.getResultList();
+  }
+
+  @Override
+  public List<Presupuesto> obtenerDelUsuario(Usuario usuario) {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery("FROM Presupuesto WHERE usuario = :usuario", Presupuesto.class)
+      .setParameter(USUARIO, usuario)
+      .getResultList();
+  }
+
+  @Override
+  public void guardarTotal(PresupuestoTotal total) {
+    sessionFactory.getCurrentSession().saveOrUpdate(total);
+  }
+
+  @Override
+  public PresupuestoTotal buscarTotal(Usuario usuario, YearMonth mes) {
+    // Un usuario sin guardar no puede tener totales
+    if (usuario.getId() == null) {
+      return null;
+    }
+    Query<PresupuestoTotal> query = sessionFactory
+      .getCurrentSession()
+      .createQuery(
+        "FROM PresupuestoTotal WHERE usuario = :usuario AND mes = :mes",
+        PresupuestoTotal.class
+      );
+
+    query.setParameter(USUARIO, usuario);
+    query.setParameter("mes", mes.toString());
+
+    return query.uniqueResult();
   }
 }

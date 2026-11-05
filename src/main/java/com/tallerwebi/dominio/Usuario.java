@@ -17,6 +17,10 @@ public class Usuario {
   private String rol;
   private Boolean activo = false;
 
+  // Ingreso mensual y qué porcentaje de él se usa como presupuesto (null = todo)
+  private Double ingresoMensual;
+  private Double porcentajePresupuesto;
+
   public Long getId() {
     return id;
   }
@@ -55,6 +59,31 @@ public class Usuario {
 
   public void setActivo(Boolean activo) {
     this.activo = activo;
+  }
+
+  public Double getIngresoMensual() {
+    return ingresoMensual;
+  }
+
+  public void setIngresoMensual(Double ingresoMensual) {
+    this.ingresoMensual = ingresoMensual;
+  }
+
+  public Double getPorcentajePresupuesto() {
+    return porcentajePresupuesto;
+  }
+
+  public void setPorcentajePresupuesto(Double porcentajePresupuesto) {
+    this.porcentajePresupuesto = porcentajePresupuesto;
+  }
+
+  // Presupuesto mensual que sale del perfil; 0 si todavía no cargó su ingreso
+  public Double presupuestoSegunPerfil() {
+    if (ingresoMensual == null) {
+      return 0.0;
+    }
+    double porcentaje = porcentajePresupuesto == null ? 100.0 : porcentajePresupuesto;
+    return (ingresoMensual * porcentaje) / 100.0;
   }
 
   public void activar() {

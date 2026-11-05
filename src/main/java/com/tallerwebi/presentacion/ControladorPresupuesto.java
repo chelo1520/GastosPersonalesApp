@@ -59,7 +59,8 @@ public class ControladorPresupuesto {
     this.reloj = reloj;
   }
 
-  // mes: opcional, con formato yyyy-MM. Sin mes, o con uno inválido, muestra el actual
+  // mes: opcional, con formato yyyy-MM. Sin mes, o con uno inválido, muestra el
+  // actual
   @RequestMapping(path = "/presupuestos", method = RequestMethod.GET)
   public ModelAndView mostrarPresupuestos(
     @RequestParam(value = "mes", required = false) String mes,
@@ -105,7 +106,8 @@ public class ControladorPresupuesto {
     List<Categoria> categorias = categoriaRepositorio.obtenerTodas();
     ResumenMensual resumen = servicioResumen.obtenerResumen(usuario, mes);
 
-    // Todas las categorías en el orden del maestro, con lo gastado y el presupuesto del mes;
+    // Todas las categorías en el orden del maestro, con lo gastado y el presupuesto
+    // del mes;
     // al final, los gastos sin categoría si los hubiera
     Map<String, ResumenCategoria> porNombre = new HashMap<>();
     for (ResumenCategoria categoria : resumen.getCategorias()) {
@@ -121,6 +123,9 @@ public class ControladorPresupuesto {
     datos.setMes(mes.toString());
 
     Map<String, Object> model = new ModelMap();
+
+    model.put("presupuestoMensual", servicioPresupuesto.presupuestoDelMes(usuario, mes));
+    model.put("noAsignado", servicioPresupuesto.noAsignadoDelMes(usuario, mes));
     model.put("mesActual", NombreDeMes.de(mes));
     model.put("mes", mes.toString());
     model.put("mesAnterior", mes.minusMonths(1).toString());

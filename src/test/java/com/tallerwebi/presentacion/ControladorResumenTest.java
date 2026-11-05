@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import com.tallerwebi.dominio.resumen.ResumenCategoria;
 import com.tallerwebi.dominio.resumen.ResumenDeMes;
 import com.tallerwebi.dominio.resumen.ResumenHormiga;
@@ -32,6 +33,7 @@ public class ControladorResumenTest {
   );
 
   private ServicioResumen servicioResumen;
+  private ServicioPresupuesto servicioPresupuesto;
   private ControladorResumen controladorResumen;
   private Usuario usuario;
   private HttpServletRequest request;
@@ -41,7 +43,8 @@ public class ControladorResumenTest {
   @BeforeEach
   public void init() {
     servicioResumen = mock(ServicioResumen.class);
-    controladorResumen = new ControladorResumen(servicioResumen, HOY);
+    servicioPresupuesto = mock(ServicioPresupuesto.class);
+    controladorResumen = new ControladorResumen(servicioResumen, servicioPresupuesto, HOY);
 
     usuario = mock(Usuario.class);
     request = mock(HttpServletRequest.class);
@@ -93,6 +96,32 @@ public class ControladorResumenTest {
     assertEquals(resumen.getCategorias(), resultado.getModel().get("categorias"));
     assertEquals(resumen.getHormiga(), resultado.getModel().get("hormiga"));
     assertEquals(resumen.getAlertas(), resultado.getModel().get("alertas"));
+  }
+
+  @Test
+  public void debePasarALaVistaElPresupuestoMensualDelPerfilYElPorcentajeGastadoDeEl() {
+    when(servicioPresupuesto.presupuestoDelMes(usuario, YearMonth.of(2026, 10)))
+      .thenReturn(180000.0);
+    when(servicioResumen.obtenerResumen(usuario, YearMonth.of(2026, 10))).thenReturn(resumen);
+
+    ModelAndView resultado = controladorResumen.mostrarResumen(null, request);
+
+    assertEquals(180000.0, resultado.getModel().get("presupuestoMensual"));
+    assertEquals(25.0, resultado.getModel().get("porcentajeMensualUsado"));
+    assertEquals(135000.0, resultado.getModel().get("disponibleMensual"));
+    assertEquals(0.0, resultado.getModel().get("asignado"));
+    assertEquals(180000.0, resultado.getModel().get("sinAsignar"));
+  }
+
+  @Test
+  public void debePasarPorcentajeCeroCuandoElPerfilNoDefinioPresupuestoMensual() {
+    when(servicioPresupuesto.presupuestoDelMes(usuario, YearMonth.of(2026, 10))).thenReturn(0.0);
+    when(servicioResumen.obtenerResumen(usuario, YearMonth.of(2026, 10))).thenReturn(resumen);
+
+    ModelAndView resultado = controladorResumen.mostrarResumen(null, request);
+
+    assertEquals(0.0, resultado.getModel().get("presupuestoMensual"));
+    assertEquals(0.0, resultado.getModel().get("porcentajeMensualUsado"));
   }
 
   @Test
@@ -151,5 +180,18 @@ public class ControladorResumenTest {
 
     assertEquals("redirect:/login", resultado.getViewName());
     verifyNoInteractions(servicioResumen);
+  }
+
+  @Test
+  public void debeUsarElPresupuestoTotalDelMesMostradoYMarcarElExcesoDeGasto() {
+    when(servicioResumen.obtenerResumen(usuario, YearMonth.of(2026, 10))).thenReturn(resumen);
+    when(servicioPresupuesto.presupuestoDelMes(usuario, YearMonth.of(2026, 10)))
+      .thenReturn(40000.0);
+
+    ModelAndView resultado = controladorResumen.mostrarResumen(null, request);
+
+    assertEquals(40000.0, resultado.getModel().get("presupuestoMensual"));
+    assertEquals(-5000.0, resultado.getModel().get("disponibleMensual"));
+    assertEquals(true, resultado.getModel().get("excedido"));
   }
 }

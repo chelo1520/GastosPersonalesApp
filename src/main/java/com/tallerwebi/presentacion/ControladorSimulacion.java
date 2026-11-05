@@ -51,9 +51,9 @@ public class ControladorSimulacion {
     model.put("mesBase", NombreDeMes.de(mesBase));
     model.put("mesSimulado", NombreDeMes.de(mesSimulado));
     // Presupuesto del mes simulado; si todavía no se definió, se toma el del mes actual
-    Double presupuesto = servicioPresupuesto.totalDelMes(usuario, mesSimulado);
+    Double presupuesto = servicioPresupuesto.presupuestoDelMes(usuario, mesSimulado);
     if (presupuesto <= 0) {
-      presupuesto = servicioPresupuesto.totalDelMes(usuario, mesActual);
+      presupuesto = servicioPresupuesto.presupuestoDelMes(usuario, mesActual);
     }
     model.put("presupuesto", presupuesto);
 

@@ -18,4 +18,16 @@ public interface ServicioPresupuesto {
 
   // Suma de los presupuestos por categoría del mes; 0 si no hay ninguno definido
   Double totalDelMes(Usuario usuario, YearMonth mes);
+
+  // Total del mes: el definido para ese mes o, si no hay, el del perfil (ingreso x porcentaje); 0 si no hay ninguno
+  Double presupuestoDelMes(Usuario usuario, YearMonth mes);
+
+  // Define el total de un mes; no puede ser menor a lo ya asignado a categorías
+  void definirPresupuestoDelMes(Usuario usuario, YearMonth mes, Double monto);
+
+  // El presupuesto por defecto rige los meses sin total propio: no puede quedar por debajo de lo ya asignado en ellos
+  void validarPresupuestoPorDefecto(Usuario usuario, Double nuevoPorDefecto);
+
+  // Presupuesto del mes menos la suma por categoría; negativo si las categorías lo superan
+  Double noAsignadoDelMes(Usuario usuario, YearMonth mes);
 }

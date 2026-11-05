@@ -88,7 +88,10 @@ public class ServicioResumenImpl implements ServicioResumen {
       categoriaPorNombre
     );
 
-    ResumenHormiga hormiga = calculadoraHormiga.calcular(gastos, presupuesto);
+    ResumenHormiga hormiga = calculadoraHormiga.calcular(
+      gastos,
+      baseDeHormiga(usuario, mes, presupuesto)
+    );
 
     return new ResumenMensual(
       gastado,
@@ -187,11 +190,14 @@ public class ServicioResumenImpl implements ServicioResumen {
     YearMonth mesActual = YearMonth.now(reloj);
     List<ResumenDeMes> historial = new ArrayList<>();
     for (Map.Entry<YearMonth, List<Gasto>> mes : gastosPorMes.entrySet()) {
-      // El presupuesto de cada mes: la suma de lo definido por categoría ese mes
-      double presupuesto = servicioPresupuesto.totalDelMes(usuario, mes.getKey());
+      // El presupuesto de cada mes: su total (el del mes o, si no hay, el del perfil)
+      double presupuesto = servicioPresupuesto.presupuestoDelMes(usuario, mes.getKey());
+      double asignado = servicioPresupuesto.totalDelMes(usuario, mes.getKey());
       double gastado = mes.getValue().stream().mapToDouble(Gasto::getImporte).sum();
-      // "Chico" es el 2 % del presupuesto de ese mes, no del actual
-      double hormiga = calculadoraHormiga.calcular(mes.getValue(), presupuesto).getTotal();
+      // "Chico" es el 2 % del total de ese mes (igual que en el resumen mensual), no del actual
+      double hormiga = calculadoraHormiga
+        .calcular(mes.getValue(), baseDeHormiga(usuario, mes.getKey(), asignado))
+        .getTotal();
       historial.add(
         new ResumenDeMes(
           mes.getKey(),
@@ -203,6 +209,12 @@ public class ServicioResumenImpl implements ServicioResumen {
       );
     }
     return historial;
+  }
+
+  // "Chico" se mide contra el total del mes; sin total, contra lo asignado a categorías
+  private double baseDeHormiga(Usuario usuario, YearMonth mes, double asignado) {
+    double total = servicioPresupuesto.presupuestoDelMes(usuario, mes);
+    return total > 0 ? total : asignado;
   }
 
   private double porcentaje(double parte, double total) {

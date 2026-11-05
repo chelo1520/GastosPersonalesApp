@@ -321,9 +321,13 @@ public class ServicioResumenImplTest {
   void debeArmarElHistorialDe6MesesConLosMesesSinGastosEnCeroYSoloOctubreEnCurso() {
     servicioResumen =
       new ServicioResumenImpl(repositorioGastoMock, servicioPresupuestoMock, reloj("2026-10-15"));
-    // Mismo presupuesto los 6 meses: 550.000, así "chico" es hasta 11.000
+    // Mismo total los 6 meses: 550.000; "chico" se mide contra lo asignado (550.000 → hasta 11.000)
     when(servicioPresupuestoMock.totalDelMes(eq(usuario), any(YearMonth.class)))
       .thenReturn(550000.0);
+    when(servicioPresupuestoMock.presupuestoDelMes(eq(usuario), any(YearMonth.class)))
+      .thenReturn(550000.0);
+    when(servicioPresupuestoMock.presupuestoDelMes(usuario, YearMonth.of(2026, 8)))
+      .thenReturn(700000.0);
     Gasto alquilerJunio = new Gasto(250000.0, LocalDate.of(2026, 6, 1), "Alquiler");
     List<Gasto> gastos = new ArrayList<>(deliveries());
     gastos.add(alquilerJunio);
@@ -359,6 +363,8 @@ public class ServicioResumenImplTest {
     // Julio sin gastos
     assertEquals(0.0, historial.get(2).getGastado());
     assertEquals(550000.0, historial.get(2).getPresupuesto());
+    // Agosto tiene su propio total, distinto de lo asignado a categorías
+    assertEquals(700000.0, historial.get(3).getPresupuesto());
     assertTrue(historial.get(5).isEnCurso());
     assertFalse(historial.get(4).isEnCurso());
   }

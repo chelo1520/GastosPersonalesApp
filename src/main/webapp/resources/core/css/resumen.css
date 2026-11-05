@@ -312,3 +312,7 @@
     display: none;
   }
 }
+
+.app-resumen-mensual {
+  margin-bottom: 24px;
+}

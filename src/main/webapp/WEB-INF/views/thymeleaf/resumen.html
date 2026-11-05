@@ -50,30 +50,49 @@
                 th:text="'$ ' + ${#numbers.formatDecimal(gastado, 1, 'POINT', 0, 'COMMA')}">$ 320.500</strong>
       </article>
 
-      <article class="app-resumen-card">
-        <span class="app-resumen-card-label">Presupuesto del mes</span>
-        <strong class="app-resumen-monto"
-                th:text="'$ ' + ${#numbers.formatDecimal(presupuesto, 1, 'POINT', 0, 'COMMA')}">$ 400.000</strong>
+      <article class="app-resumen-card" id="presupuesto-mensual-resumen">
+        <span class="app-resumen-card-label">Presupuesto total del mes</span>
+        <div th:if="${presupuestoMensual <= 0}">
+          <strong class="app-resumen-monto">—</strong>
+          <small class="app-resumen-barra-texto">
+            <a th:href="@{/perfil}">Definí cuánto tenés disponible en tu perfil</a>
+          </small>
+        </div>
+        <div th:if="${presupuestoMensual > 0}">
+          <strong class="app-resumen-monto"
+                  th:text="'$ ' + ${#numbers.formatDecimal(presupuestoMensual, 1, 'POINT', 0, 'COMMA')}">$ 400.000</strong>
+          <small class="app-resumen-barra-texto">
+            Asignado <span th:text="'$ ' + ${#numbers.formatDecimal(asignado, 1, 'POINT', 0, 'COMMA')}">$ 300.000</span>
+            · Sin asignar <span th:text="'$ ' + ${#numbers.formatDecimal(sinAsignar, 1, 'POINT', 0, 'COMMA')}">$ 100.000</span>
+          </small>
+        </div>
       </article>
 
       <article class="app-resumen-card">
         <span class="app-resumen-card-label">Disponible</span>
-        <strong class="app-resumen-monto app-resumen-disponible"
-                th:classappend="${disponible < 0} ? 'is-neg'"
-                th:text="'$ ' + ${#numbers.formatDecimal(disponible, 1, 'POINT', 0, 'COMMA')}">$ 79.500</strong>
-        <div class="app-resumen-barra" th:classappend="${porcentajeUsado > 100} ? 'is-over'"
-             role="progressbar" aria-label="Presupuesto usado" aria-valuemin="0" aria-valuemax="100"
-             aria-valuenow="80"
-             th:attr="aria-valuenow=${porcentajeUsado > 100 ? 100 : porcentajeUsado}">
-          <div class="app-resumen-barra-fill" style="width: 80%"
-               th:style="'width:' + ${#numbers.formatInteger(porcentajeUsado > 100 ? 100 : porcentajeUsado, 1)} + '%'"></div>
+        <div th:if="${presupuestoMensual <= 0}">
+          <strong class="app-resumen-monto">—</strong>
         </div>
-        <small class="app-resumen-barra-texto">
-          <span th:text="${#numbers.formatInteger(porcentajeUsado, 1)}">80</span> % del presupuesto usado
-        </small>
+        <div th:if="${presupuestoMensual > 0}">
+          <strong class="app-resumen-monto app-resumen-disponible"
+                  th:classappend="${disponibleMensual < 0} ? 'is-neg'"
+                  th:text="'$ ' + ${#numbers.formatDecimal(disponibleMensual, 1, 'POINT', 0, 'COMMA')}">$ 79.500</strong>
+          <div class="app-resumen-barra" th:classappend="${porcentajeMensualUsado > 100} ? 'is-over'"
+               role="progressbar" aria-label="Presupuesto usado" aria-valuemin="0" aria-valuemax="100"
+               th:attr="aria-valuenow=${porcentajeMensualUsado > 100 ? 100 : porcentajeMensualUsado}">
+            <div class="app-resumen-barra-fill"
+                 th:style="'width:' + ${#numbers.formatInteger(porcentajeMensualUsado > 100 ? 100 : porcentajeMensualUsado, 1)} + '%'"></div>
+          </div>
+          <small class="app-resumen-barra-texto" th:if="${excedido}" id="resumen-excedido">
+            Superaste tu presupuesto total en
+            <span th:text="'$ ' + ${#numbers.formatDecimal(-disponibleMensual, 1, 'POINT', 0, 'COMMA')}">$ 5.000</span>
+          </small>
+          <small class="app-resumen-barra-texto">
+            <span th:text="${#numbers.formatInteger(porcentajeMensualUsado, 1)}">80</span> % del presupuesto usado
+          </small>
+        </div>
       </article>
     </section>
-
     <!-- Gráfico + tabla -->
     <section class="app-resumen-detalle">
 
