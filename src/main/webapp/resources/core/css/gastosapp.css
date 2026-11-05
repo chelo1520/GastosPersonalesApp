@@ -107,7 +107,25 @@ a:hover {
   font-weight: 600;
 }
 
-.app-cuenta a + a::before {
+.app-cuenta-salir {
+  display: inline;
+}
+
+.app-cuenta-salir button {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--app-texto-nav);
+  font: inherit;
+  cursor: pointer;
+}
+
+.app-cuenta-salir button:hover {
+  color: #fff;
+}
+
+.app-cuenta > * + *::before {
   content: "·";
   margin-right: 10px;
   opacity: 0.5;
@@ -393,6 +411,11 @@ a:hover {
 
 .app-perfil-card + .app-perfil-card {
   margin-top: 16px;
+}
+
+/* Cerrar sesión: al final del perfil, único lugar de la cuenta que se ve desde el celular */
+.app-perfil-salir {
+  margin-top: 24px;
 }
 
 /* Cambiar contraseña y eliminar cuenta: desplegables que se abren con un click */

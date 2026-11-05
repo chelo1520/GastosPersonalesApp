@@ -190,4 +190,23 @@ public class ControladorLoginTest {
     // validacion
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login"));
   }
+
+  @Test
+  public void debeInvalidarLaSesionYVolverAlLoginConAvisoAlCerrarSesion() {
+    when(requestMock.getSession(false)).thenReturn(sessionMock);
+
+    ModelAndView modelAndView = controladorLogin.cerrarSesion(requestMock);
+
+    verify(sessionMock, times(1)).invalidate();
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login?salida"));
+  }
+
+  @Test
+  public void debeVolverAlLoginSinFallarCuandoSeCierraSesionSinTenerSesion() {
+    when(requestMock.getSession(false)).thenReturn(null);
+
+    ModelAndView modelAndView = controladorLogin.cerrarSesion(requestMock);
+
+    assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/login?salida"));
+  }
 }
