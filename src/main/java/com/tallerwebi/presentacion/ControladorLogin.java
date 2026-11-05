@@ -5,6 +5,7 @@ import com.tallerwebi.dominio.ServicioLogin;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.UsuarioExistente;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -97,5 +98,16 @@ public class ControladorLogin {
   @RequestMapping(path = "/", method = RequestMethod.GET)
   public ModelAndView inicio() {
     return new ModelAndView("redirect:/login");
+  }
+
+  // "Salir": se invalida la sesión entera, no solo el usuario, así no queda nada de la cuenta
+  @RequestMapping(path = "/logout", method = RequestMethod.POST)
+  public ModelAndView cerrarSesion(HttpServletRequest request) {
+    HttpSession session = request.getSession(false);
+    if (session != null) {
+      session.invalidate();
+    }
+    // El login muestra "Cerraste sesión" con este parámetro
+    return new ModelAndView("redirect:/login?salida");
   }
 }

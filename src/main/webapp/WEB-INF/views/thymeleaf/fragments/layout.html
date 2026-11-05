@@ -42,7 +42,10 @@
 
     <div class="app-cuenta ms-auto">
       <a th:href="@{/perfil}" th:aria-current="${activo == 'perfil'} ? 'page'">Perfil</a>
-      <a th:href="@{/login}">Salir</a>
+      <!-- Salir cierra la sesión en el servidor: va por POST, no es un link al login -->
+      <form th:action="@{/logout}" method="post" class="app-cuenta-salir">
+        <button type="submit">Salir</button>
+      </form>
     </div>
   </header>
 

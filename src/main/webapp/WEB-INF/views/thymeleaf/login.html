@@ -27,6 +27,10 @@
         Tu cuenta y todos tus datos se eliminaron.
       </p>
 
+      <p th:if="${param.salida != null}" class="alert alert-success" role="status">
+        Cerraste sesión.
+      </p>
+
       <form action="#" th:action="@{/validar-login}" method="POST" th:object="${datosLogin}">
 
         <div class="mb-3">
