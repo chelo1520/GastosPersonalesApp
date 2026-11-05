@@ -129,6 +129,62 @@ public class PresupuestosVistaTest {
   }
 
   @Test
+  public void debeMostrarElLapizYElFormularioDeEdicionEnLaFilaConElMontoActual() throws Exception {
+    mockMvc
+      .perform(
+        post("/presupuestos")
+          .sessionAttr("USUARIO", usuario)
+          .param("categoriaId", alimentacion.getId().toString())
+          .param("monto", "130000")
+          .param("mes", "2026-10")
+      )
+      .andExpect(status().is3xxRedirection());
+
+    mockMvc
+      .perform(get("/presupuestos").param("mes", "2026-10").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("app-presupuesto-lapiz")))
+      .andExpect(content().string(containsString("Editar el presupuesto de Alimentación")))
+      .andExpect(content().string(containsString("class=\"app-presupuesto-editar\" hidden")))
+      .andExpect(
+        content()
+          .string(containsString("name=\"categoriaId\" value=\"" + alimentacion.getId() + "\""))
+      )
+      .andExpect(content().string(containsString("value=\"130000.0\"")));
+  }
+
+  @Test
+  public void debeReemplazarElMontoCuandoSeEditaElPresupuestoDesdeLaFila() throws Exception {
+    for (String monto : new String[] { "130000", "150000" }) {
+      mockMvc
+        .perform(
+          post("/presupuestos")
+            .sessionAttr("USUARIO", usuario)
+            .param("categoriaId", alimentacion.getId().toString())
+            .param("monto", monto)
+            .param("mes", "2026-10")
+        )
+        .andExpect(status().is3xxRedirection());
+    }
+
+    mockMvc
+      .perform(get("/presupuestos").param("mes", "2026-10").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("$ 150.000")));
+  }
+
+  @Test
+  public void debeOfrecerOcultarLasCategoriasSinPresupuesto() throws Exception {
+    mockMvc
+      .perform(get("/presupuestos").param("mes", "2026-10").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("id=\"ocultar-sin-presupuesto\"")))
+      .andExpect(content().string(containsString("Ocultar categorías sin presupuesto")))
+      .andExpect(content().string(containsString("app-presupuesto-sin-definir")))
+      .andExpect(content().string(containsString("/js/presupuestos.js")));
+  }
+
+  @Test
   public void debeVolverAlFormularioConErrorSinGuardarCuandoElMontoEsCero() throws Exception {
     mockMvc
       .perform(

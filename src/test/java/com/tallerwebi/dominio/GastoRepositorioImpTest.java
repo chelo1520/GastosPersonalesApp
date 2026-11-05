@@ -98,7 +98,7 @@ public class GastoRepositorioImpTest {
     gasto.setUsuario(usuario);
     repositorioGasto.guardar(gasto);
 
-    List<Gasto> gastos = repositorioGasto.BuscarGastosPorUsuario(usuario);
+    List<Gasto> gastos = repositorioGasto.buscarGastosPorUsuario(usuario);
 
     assertEquals(1, gastos.size());
     assertEquals("Supermercado", gastos.get(0).getDescripcion());

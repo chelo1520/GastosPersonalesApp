@@ -43,7 +43,75 @@
                 </div>
             </dl>
         </section>
+
+        <!-- Cambiar contraseña -->
+        <details class="app-perfil-card app-perfil-seccion" id="perfil-contrasena"
+                 th:open="${errorContrasena != null or param.contrasenaCambiada != null}">
+            <summary class="app-perfil-desplegable">
+                <span>
+                    <span class="app-perfil-seccion-titulo">Cambiar contraseña</span>
+                    <span class="app-perfil-bajada">Elegí una contraseña nueva para tu cuenta.</span>
+                </span>
+                <svg class="app-perfil-flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+            </summary>
+            <div class="app-perfil-desplegable-contenido">
+                <p th:if="${param.contrasenaCambiada != null}" class="alert alert-success" role="status">
+                    Tu contraseña se cambió.
+                </p>
+                <p th:if="${errorContrasena != null}" class="alert alert-danger" role="alert" th:text="${errorContrasena}"></p>
+                <form th:action="@{/perfil/contrasena}" method="post" class="app-perfil-form">
+                    <div class="mb-3">
+                        <label for="actual" class="form-label">Contraseña actual</label>
+                        <input name="actual" id="actual" type="password" class="form-control"
+                               autocomplete="current-password" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Contraseña nueva</label>
+                        <input name="password" id="password" type="password" class="form-control"
+                               autocomplete="new-password" aria-describedby="password-requisitos" required />
+                        <ul th:replace="~{fragments/contrasena :: requisitos}"></ul>
+                    </div>
+                    <div class="mb-4">
+                        <label for="confirmacion" class="form-label">Repetí la contraseña nueva</label>
+                        <input name="confirmacion" id="confirmacion" type="password" class="form-control"
+                               autocomplete="new-password" aria-describedby="confirmacion-error" required />
+                        <div id="confirmacion-error" class="invalid-feedback">Las contraseñas no coinciden.</div>
+                    </div>
+                    <button id="btn-cambiar-contrasena" type="submit" class="btn btn-primary" disabled>Guardar contraseña</button>
+                </form>
+            </div>
+        </details>
+
+        <!-- Eliminar cuenta -->
+        <details class="app-perfil-card app-perfil-seccion app-perfil-peligro" id="perfil-eliminar"
+                 th:open="${errorEliminar != null}">
+            <summary class="app-perfil-desplegable">
+                <span>
+                    <span class="app-perfil-seccion-titulo">Eliminar cuenta</span>
+                    <span class="app-perfil-bajada">Se borran tu cuenta y todos tus gastos, presupuestos y consejos. No se puede deshacer.</span>
+                </span>
+                <svg class="app-perfil-flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+            </summary>
+            <div class="app-perfil-desplegable-contenido">
+                <p th:if="${errorEliminar != null}" class="alert alert-danger" role="alert" th:text="${errorEliminar}"></p>
+                <form th:action="@{/perfil/eliminar}" method="post" class="app-perfil-form"
+                      data-confirmar-titulo="¿Eliminar tu cuenta?"
+                      data-confirmar-texto="Se van a borrar tu cuenta y todos tus datos para siempre. No se puede deshacer."
+                      data-confirmar-boton="Eliminar cuenta"
+                      data-confirmar-peligro>
+                    <div class="mb-3">
+                        <label for="password-eliminar" class="form-label">Escribí tu contraseña para confirmar</label>
+                        <input name="password" id="password-eliminar" type="password" class="form-control"
+                               autocomplete="current-password" required />
+                    </div>
+                    <button id="btn-eliminar-cuenta" type="submit" class="btn btn-outline-danger">Eliminar mi cuenta</button>
+                </form>
+            </div>
+        </details>
     </main>
+
+    <!-- Modal de confirmación de eliminar cuenta (confirmar.js) -->
+    <div th:replace="~{fragments/confirmar :: modal}"></div>
 
     <nav class="app-mobile-nav d-md-none" aria-label="Navegación principal">
         <a th:href="@{/home}" aria-label="Resumen">
@@ -68,6 +136,8 @@
     </nav>
 
     <script th:replace="~{fragments/layout :: scripts}"></script>
+    <script th:src="@{/js/confirmar.js}" charset="utf-8"></script>
+    <script type="module" th:src="@{/js/perfil.js}"></script>
 </body>
 
 </html>

@@ -5,7 +5,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
- * Guarda de la síntesis: el párrafo que escribe la IA reemplaza en pantalla a la oración del
+ * Guarda de la síntesis: el resumen que escribe la IA reemplaza en pantalla a la oración del
  * veredicto, así que tiene que decir los mismos números que calculó Java (subida de los gastos,
  * inflación y diferencia real). Si falta alguno o cambió, la síntesis se descarta y queda la regla.
  */

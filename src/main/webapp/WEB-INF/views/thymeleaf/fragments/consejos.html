@@ -40,14 +40,16 @@
     </div>
     <div class="offcanvas-body app-panel-cuerpo">
 
-      <!-- La síntesis de la IA tarda: se muestra el veredicto de las reglas y asistente.js pide el párrafo aparte -->
+      <!-- La síntesis de la IA tarda: se muestra el veredicto de las reglas y asistente.js pide resumen y detalle aparte.
+           Se ve solo el resumen; "Contame más" despliega el detalle (el botón aparece solo si hay detalle) -->
       <section class="app-panel-seccion" th:if="${veredicto != null}">
         <h3 class="app-consejos-titulo">En pocas palabras</h3>
         <div class="app-sintesis" th:classappend="${sintesisPendiente} ? 'is-escribiendo'"
              th:attr="data-sintesis-url=${sintesisPendiente} ? @{/asistente/sintesis(periodo=${periodo})} : null">
-          <p class="app-sintesis-texto is-recortada" id="veredicto-texto" th:text="${veredicto.textoParaMostrar}">Desde Mayo 2026 tus gastos subieron 9,4 %.</p>
+          <p class="app-sintesis-texto" id="veredicto-texto" th:text="${veredicto.textoParaMostrar}">Desde Mayo 2026 tus gastos subieron 9,4 %.</p>
+          <p class="app-sintesis-detalle" id="veredicto-detalle" hidden th:text="${veredicto.detalleRedactado}"></p>
           <small class="app-sintesis-estado" role="status" th:if="${sintesisPendiente}">Tu asistente está escribiendo<span class="app-asistente-puntos" aria-hidden="true"></span></small>
-          <button type="button" class="app-enlace app-sintesis-leer" hidden aria-expanded="false">Leer todo</button>
+          <button type="button" class="app-enlace app-sintesis-mas" hidden aria-expanded="false" aria-controls="veredicto-detalle">Contame más</button>
         </div>
       </section>
 
@@ -55,19 +57,19 @@
         <section class="app-panel-seccion" th:unless="${#lists.isEmpty(lecturas)}">
           <h3 class="app-consejos-titulo">Lo que veo</h3>
           <div class="accordion app-lecturas" id="lecturas">
-            <article class="accordion-item app-lectura" th:each="l, it : ${lecturas}"
+            <!-- Plegadas: se ven los títulos y cada una se abre al tocarla -->
+            <article class="accordion-item app-lectura" th:each="l : ${lecturas}"
                      th:id="'lectura-' + ${l.id}" th:classappend="'is-' + ${l.severidad.estilo}"
                      th:data-mes="${l.mesSenialado}" th:data-categoria="${l.categoriaSenialada}">
               <h4 class="accordion-header">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                        th:classappend="${!it.first} ? 'collapsed'"
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                         th:data-bs-target="'#lectura-cuerpo-' + ${l.id}"
-                        th:aria-expanded="${it.first}" th:aria-controls="'lectura-cuerpo-' + ${l.id}">
+                        aria-expanded="false" th:aria-controls="'lectura-cuerpo-' + ${l.id}">
                   <span class="app-numero" th:if="${l.ancla != null}" aria-hidden="true"></span>
                   <span th:text="${l.titulo}">Gastos hormiga del período</span>
                 </button>
               </h4>
-              <div th:id="'lectura-cuerpo-' + ${l.id}" class="accordion-collapse collapse" th:classappend="${it.first} ? 'show'" data-bs-parent="#lecturas">
+              <div th:id="'lectura-cuerpo-' + ${l.id}" class="accordion-collapse collapse" data-bs-parent="#lecturas">
                 <div class="accordion-body">
                   <p class="app-lectura-texto" th:text="${l.texto}">Entre Mayo y Septiembre se te fueron $ 304.500 en gastos hormiga.</p>
                   <button type="button" class="app-enlace app-ver-en-grafico" th:if="${l.mesSenialado != null}" th:data-mes="${l.mesSenialado}">Ver en el gráfico</button>

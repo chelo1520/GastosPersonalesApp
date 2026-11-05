@@ -43,7 +43,8 @@ public class Consejo {
   // Categoría a la que refiere (null si es un consejo general; en el veredicto, el período)
   private String categoria;
 
-  // Hibernate deja un embebido en null cuando todas sus columnas son null: los getters lo contemplan
+  // Agrupados en embebidos para no pasar el máximo de campos por clase (PMD). Hibernate deja un
+  // embebido en null cuando todas sus columnas son null: los getters lo contemplan
   @Embedded
   private Hechos hechos = new Hechos();
 
@@ -168,26 +169,29 @@ public class Consejo {
       : null;
   }
 
-  public String getTextoRedactado() {
-    return sintesis == null ? null : sintesis.getTexto();
+  public String getResumenRedactado() {
+    return sintesis == null ? null : sintesis.getResumen();
+  }
+
+  public String getDetalleRedactado() {
+    return sintesis == null ? null : sintesis.getDetalle();
   }
 
   public String getFirmaHechos() {
     return sintesis == null ? null : sintesis.getFirma();
   }
 
-  public void redactar(String textoRedactado, String firmaHechos) {
-    this.sintesis = new Sintesis(textoRedactado, firmaHechos);
+  public void redactar(String resumen, String detalle, String firmaHechos) {
+    this.sintesis = new Sintesis(resumen, detalle, firmaHechos);
   }
 
-  // Lo que ve el usuario: en el veredicto, la síntesis del asistente si la hay; si no, los hechos tal cual
+  public void olvidarSintesis() {
+    redactar(null, null, null);
+  }
+
+  // Lo que ve el usuario: en el veredicto, el resumen del asistente si lo hay; si no, los hechos tal cual
   public String getTextoParaMostrar() {
-    return getTextoRedactado() != null ? getTextoRedactado() : getTexto();
-  }
-
-  // Los hechos que importan para la síntesis; si cambian, la síntesis vieja ya no sirve
-  public String firmaDeLosHechos() {
-    return Integer.toHexString((getTexto() + "|" + montoSugerido).hashCode());
+    return getResumenRedactado() != null ? getResumenRedactado() : getTexto();
   }
 
   public boolean isAplicable() {

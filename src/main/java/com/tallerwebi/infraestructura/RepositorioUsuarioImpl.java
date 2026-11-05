@@ -3,6 +3,7 @@ package com.tallerwebi.infraestructura;
 import com.tallerwebi.dominio.RepositorioUsuario;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.UsuarioNoEncontrado;
+import java.util.List;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -52,5 +53,18 @@ public class RepositorioUsuarioImpl implements RepositorioUsuario {
       throw new UsuarioNoEncontrado();
     }
     sessionFactory.getCurrentSession().merge(usuario);
+  }
+
+  @Override
+  public void eliminar(Usuario usuario) {
+    // Primero lo que apunta al usuario, para no romper las claves foráneas
+    for (String entidad : List.of("Gasto", "Presupuesto", "Consejo", "TokenRecuperacion")) {
+      sessionFactory
+        .getCurrentSession()
+        .createMutationQuery("delete from " + entidad + " where usuario = :usuario")
+        .setParameter("usuario", usuario)
+        .executeUpdate();
+    }
+    sessionFactory.getCurrentSession().remove(sessionFactory.getCurrentSession().merge(usuario));
   }
 }

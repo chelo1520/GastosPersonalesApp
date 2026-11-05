@@ -1,22 +1,23 @@
 package com.tallerwebi.dominio.consejo;
 
+import com.tallerwebi.dominio.NombreDeMes;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.asistente.CategoriaGastoReal;
 import com.tallerwebi.dominio.asistente.GastoReal;
 import com.tallerwebi.dominio.asistente.ServicioAsistente;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
+import com.tallerwebi.dominio.asistente.SintesisDelPeriodo;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.excepcion.ConsejoNoEncontrado;
+import com.tallerwebi.dominio.indicadores.InflacionMensual;
 import com.tallerwebi.dominio.indicadores.ServicioIndicadores;
 import com.tallerwebi.dominio.presupuesto.Presupuesto;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
-import com.tallerwebi.dominio.resumen.ResumenCategoria;
-import com.tallerwebi.dominio.resumen.ServicioResumen;
 import java.time.Clock;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -48,7 +49,6 @@ public class ServicioConsejosImpl implements ServicioConsejos {
   private final RepositorioConsejo repositorioConsejo;
   private final ServicioPresupuesto servicioPresupuesto;
   private final ServicioIndicadores servicioIndicadores;
-  private final ServicioResumen servicioResumen;
   private final ServicioGastoReal servicioGastoReal;
   private final ServicioAsistente servicioAsistente;
   private final Clock reloj;
@@ -59,7 +59,6 @@ public class ServicioConsejosImpl implements ServicioConsejos {
     RepositorioConsejo repositorioConsejo,
     ServicioPresupuesto servicioPresupuesto,
     ServicioIndicadores servicioIndicadores,
-    ServicioResumen servicioResumen,
     ServicioGastoReal servicioGastoReal,
     ServicioAsistente servicioAsistente
   ) {
@@ -67,7 +66,6 @@ public class ServicioConsejosImpl implements ServicioConsejos {
       repositorioConsejo,
       servicioPresupuesto,
       servicioIndicadores,
-      servicioResumen,
       servicioGastoReal,
       servicioAsistente,
       Clock.systemDefaultZone()
@@ -79,7 +77,6 @@ public class ServicioConsejosImpl implements ServicioConsejos {
     RepositorioConsejo repositorioConsejo,
     ServicioPresupuesto servicioPresupuesto,
     ServicioIndicadores servicioIndicadores,
-    ServicioResumen servicioResumen,
     ServicioGastoReal servicioGastoReal,
     ServicioAsistente servicioAsistente,
     Clock reloj
@@ -87,7 +84,6 @@ public class ServicioConsejosImpl implements ServicioConsejos {
     this.repositorioConsejo = repositorioConsejo;
     this.servicioPresupuesto = servicioPresupuesto;
     this.servicioIndicadores = servicioIndicadores;
-    this.servicioResumen = servicioResumen;
     this.servicioGastoReal = servicioGastoReal;
     this.servicioAsistente = servicioAsistente;
     this.reloj = reloj;
@@ -117,10 +113,10 @@ public class ServicioConsejosImpl implements ServicioConsejos {
     Consejo veredicto = veredictoDe(paraMostrar);
     if (
       veredicto != null &&
-      veredicto.getTextoRedactado() != null &&
+      veredicto.getFirmaHechos() != null &&
       !firmaDelPeriodo(paraMostrar).equals(veredicto.getFirmaHechos())
     ) {
-      veredicto.redactar(null, null);
+      veredicto.olvidarSintesis();
       repositorioConsejo.modificar(veredicto);
     }
     return paraMostrar;
@@ -129,28 +125,34 @@ public class ServicioConsejosImpl implements ServicioConsejos {
   // Una sola síntesis del período, escrita por la IA sobre estos hechos y guardada en el veredicto;
   // se vuelve a pedir solo cuando cambian los hechos. Las demás tarjetas muestran el texto de las reglas
   @Override
-  public String sintetizar(Usuario usuario, GastoReal gastoReal) {
+  public SintesisDelPeriodo sintetizar(Usuario usuario, GastoReal gastoReal) {
     List<Consejo> paraMostrar = obtenerPendientes(usuario, gastoReal);
     Consejo veredicto = veredictoDe(paraMostrar);
     if (veredicto == null) {
       return null;
     }
-    if (veredicto.getTextoRedactado() == null) {
-      String sintesis = servicioAsistente.sintetizar(paraMostrar, gastoReal);
-      // Solo se acepta si repite los números del veredicto que calculó Java; si no, queda la regla
-      if (GuardaDeLaSintesis.respetaElVeredicto(sintesis, gastoReal.getVeredicto())) {
-        veredicto.redactar(sintesis.trim(), firmaDelPeriodo(paraMostrar));
+    // Sin resumen se vuelve a pedir; también las síntesis de un solo párrafo guardadas antes
+    if (veredicto.getResumenRedactado() == null) {
+      SintesisDelPeriodo sintesis = servicioAsistente.sintetizar(paraMostrar, gastoReal);
+      // El resumen reemplaza a la oración del veredicto: solo se acepta si repite sus números
+      if (
+        sintesis != null &&
+        GuardaDeLaSintesis.respetaElVeredicto(sintesis.resumen(), gastoReal.getVeredicto())
+      ) {
+        veredicto.redactar(sintesis.resumen(), sintesis.detalle(), firmaDelPeriodo(paraMostrar));
         repositorioConsejo.modificar(veredicto);
       }
     }
-    return veredicto.getTextoRedactado();
+    return veredicto.getResumenRedactado() == null
+      ? null
+      : new SintesisDelPeriodo(veredicto.getResumenRedactado(), veredicto.getDetalleRedactado());
   }
 
   @Override
   public boolean faltaLaSintesis(List<Consejo> consejos) {
     Consejo veredicto = veredictoDe(consejos);
     return (
-      veredicto != null && veredicto.getTextoRedactado() == null && servicioAsistente.disponible()
+      veredicto != null && veredicto.getResumenRedactado() == null && servicioAsistente.disponible()
     );
   }
 
@@ -158,10 +160,11 @@ public class ServicioConsejosImpl implements ServicioConsejos {
     return !consejos.isEmpty() && consejos.get(0).isVeredicto() ? consejos.get(0) : null;
   }
 
+  // Resume los hechos que lee la IA (texto y monto de cada consejo): si cambia, la síntesis ya no vale
   private static String firmaDelPeriodo(List<Consejo> consejos) {
     StringBuilder hechos = new StringBuilder();
     for (Consejo consejo : consejos) {
-      hechos.append(consejo.firmaDeLosHechos()).append('|');
+      hechos.append(consejo.getTexto()).append('|').append(consejo.getMontoSugerido()).append('|');
     }
     return Integer.toHexString(hechos.toString().hashCode());
   }
@@ -178,10 +181,6 @@ public class ServicioConsejosImpl implements ServicioConsejos {
         guardado.setHechos(calculado.getTitulo(), calculado.getTexto());
         guardado.setAncla(calculado.getAncla());
         guardado.setMontoSugerido(calculado.getMontoSugerido());
-        if (!guardado.isVeredicto()) {
-          // Solo el veredicto lleva síntesis; una redacción vieja por tarjeta ya no se muestra
-          guardado.redactar(null, null);
-        }
         repositorioConsejo.modificar(guardado);
         pendientes.add(guardado);
       }
@@ -261,7 +260,7 @@ public class ServicioConsejosImpl implements ServicioConsejos {
         "Tu presupuesto de %s ($ %,.0f) es el mismo desde %s y la inflación desde entonces fue %.1f %%. Para que compre lo mismo, llevalo a $ %,.0f.",
         nombre,
         presupuesto.getMonto(),
-        nombreDeMes(desde),
+        NombreDeMes.de(desde),
         acumulada,
         sugerido
       );
@@ -299,22 +298,24 @@ public class ServicioConsejosImpl implements ServicioConsejos {
   }
 
   private double inflacionAcumulada(YearMonth desde, YearMonth hasta) {
-    double acumulada = 1.0;
+    List<InflacionMensual> inflacion = new ArrayList<>();
     for (YearMonth mes = desde; !mes.isAfter(hasta); mes = mes.plusMonths(1)) {
-      acumulada *= 1 + servicioIndicadores.inflacionMensual(mes).getPorcentaje() / 100;
+      inflacion.add(servicioIndicadores.inflacionMensual(mes));
     }
-    return (acumulada - 1) * 100;
+    return InflacionMensual.acumulada(inflacion);
   }
 
   // Regla 2: una categoría subió más que la inflación en los dos últimos meses cerrados
   private List<Consejo> categoriasQueSubenMasQueLaInflacion(Usuario usuario, YearMonth mesActual) {
     YearMonth ultimo = mesActual.minusMonths(1);
     YearMonth anteultimo = ultimo.minusMonths(1);
-    Map<String, CategoriaGastoReal> ultimoMes = variacionesPorCategoria(usuario, ultimo);
-    Map<String, CategoriaGastoReal> anteultimoMes = variacionesPorCategoria(usuario, anteultimo);
+    Map<String, CategoriaGastoReal> anteultimoMes = new HashMap<>();
+    for (CategoriaGastoReal cat : servicioGastoReal.categoriasDelMes(usuario, anteultimo)) {
+      anteultimoMes.put(cat.getNombre(), cat);
+    }
 
     List<Consejo> consejos = new ArrayList<>();
-    for (CategoriaGastoReal cat : ultimoMes.values()) {
+    for (CategoriaGastoReal cat : servicioGastoReal.categoriasDelMes(usuario, ultimo)) {
       CategoriaGastoReal previa = anteultimoMes.get(cat.getNombre());
       if (!subeEnSerio(cat) || previa == null || !subeEnSerio(previa)) {
         continue;
@@ -324,9 +325,9 @@ public class ServicioConsejosImpl implements ServicioConsejos {
         "%s viene subiendo más que la inflación: %+.1f %% real en %s y %+.1f %% en %s. Vale la pena mirar qué cambió ahí.",
         cat.getNombre(),
         previa.getVariacionReal(),
-        nombreDeMes(anteultimo),
+        NombreDeMes.de(anteultimo),
         cat.getVariacionReal(),
-        nombreDeMes(ultimo)
+        NombreDeMes.de(ultimo)
       );
       consejos.add(
         new Consejo(
@@ -346,38 +347,6 @@ public class ServicioConsejosImpl implements ServicioConsejos {
 
   private boolean subeEnSerio(CategoriaGastoReal categoria) {
     return categoria.getVariacionReal() != null && categoria.getVariacionReal() > UMBRAL_SUBA_REAL;
-  }
-
-  // Variación real de cada categoría de un mes contra el mes anterior
-  private Map<String, CategoriaGastoReal> variacionesPorCategoria(Usuario usuario, YearMonth mes) {
-    Map<String, Double> actual = gastadoPorCategoria(usuario, mes);
-    Map<String, Double> anterior = gastadoPorCategoria(usuario, mes.minusMonths(1));
-    double ipc = servicioIndicadores.inflacionMensual(mes).getPorcentaje();
-    Map<String, CategoriaGastoReal> variaciones = new LinkedHashMap<>();
-    for (Map.Entry<String, Double> cat : actual.entrySet()) {
-      variaciones.put(
-        cat.getKey(),
-        new CategoriaGastoReal(
-          cat.getKey(),
-          cat.getValue(),
-          anterior.getOrDefault(cat.getKey(), 0.0),
-          ipc
-        )
-      );
-    }
-    return variaciones;
-  }
-
-  private Map<String, Double> gastadoPorCategoria(Usuario usuario, YearMonth mes) {
-    Map<String, Double> porCategoria = new LinkedHashMap<>();
-    for (ResumenCategoria categoria : servicioResumen
-      .obtenerResumen(usuario, mes)
-      .getCategorias()) {
-      if (categoria.getGastado() > 0) {
-        porCategoria.put(categoria.getNombre(), categoria.getGastado());
-      }
-    }
-    return porCategoria;
   }
 
   private Consejo buscarIgual(List<Consejo> guardados, Consejo calculado) {
@@ -413,10 +382,5 @@ public class ServicioConsejosImpl implements ServicioConsejos {
       }
     }
     throw new ConsejoNoEncontrado();
-  }
-
-  private String nombreDeMes(YearMonth mes) {
-    String nombre = mes.getMonth().getDisplayName(java.time.format.TextStyle.FULL, ARGENTINA);
-    return Character.toUpperCase(nombre.charAt(0)) + nombre.substring(1) + " " + mes.getYear();
   }
 }

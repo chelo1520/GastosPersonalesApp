@@ -25,6 +25,7 @@ import com.tallerwebi.dominio.asistente.GastoReal;
 import com.tallerwebi.dominio.asistente.MesGastoReal;
 import com.tallerwebi.dominio.asistente.ServicioAsistente;
 import com.tallerwebi.dominio.asistente.ServicioGastoReal;
+import com.tallerwebi.dominio.asistente.SintesisDelPeriodo;
 import com.tallerwebi.dominio.asistente.Veredicto;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.consejo.Consejo;
@@ -39,15 +40,14 @@ import com.tallerwebi.dominio.indicadores.InflacionMensual;
 import com.tallerwebi.dominio.indicadores.ServicioIndicadores;
 import com.tallerwebi.dominio.presupuesto.Presupuesto;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
-import com.tallerwebi.dominio.resumen.ResumenCategoria;
-import com.tallerwebi.dominio.resumen.ResumenMensual;
-import com.tallerwebi.dominio.resumen.ServicioResumen;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -64,8 +64,9 @@ public class ServicioConsejosImplTest {
   private RepositorioConsejo repositorioMock;
   private ServicioPresupuesto servicioPresupuestoMock;
   private ServicioIndicadores servicioIndicadoresMock;
-  private ServicioResumen servicioResumenMock;
   private ServicioGastoReal servicioGastoRealMock;
+  // Lo gastado por categoría en cada mes; de acá sale lo que devuelve categoriasDelMes
+  private final Map<YearMonth, Map<String, Double>> gastadoPorMes = new HashMap<>();
   private ServicioAsistente servicioAsistenteMock;
   private ServicioConsejos servicio;
   private Usuario usuario;
@@ -76,7 +77,6 @@ public class ServicioConsejosImplTest {
     repositorioMock = mock(RepositorioConsejo.class);
     servicioPresupuestoMock = mock(ServicioPresupuesto.class);
     servicioIndicadoresMock = mock(ServicioIndicadores.class);
-    servicioResumenMock = mock(ServicioResumen.class);
     servicioGastoRealMock = mock(ServicioGastoReal.class);
     servicioAsistenteMock = mock(ServicioAsistente.class);
     // Sin IA: no hay síntesis y se muestra el texto de las reglas
@@ -86,7 +86,6 @@ public class ServicioConsejosImplTest {
         repositorioMock,
         servicioPresupuestoMock,
         servicioIndicadoresMock,
-        servicioResumenMock,
         servicioGastoRealMock,
         servicioAsistenteMock,
         HOY
@@ -98,7 +97,8 @@ public class ServicioConsejosImplTest {
     // Por defecto: 2 % de inflación todos los meses, sin gastos, sin presupuestos, sin veredicto
     when(servicioIndicadoresMock.inflacionMensual(any()))
       .thenAnswer(inv -> new InflacionMensual(inv.getArgument(0), 2.0, false));
-    when(servicioResumenMock.obtenerResumen(any(), any())).thenReturn(resumen(List.of()));
+    when(servicioGastoRealMock.categoriasDelMes(any(), any()))
+      .thenAnswer(inv -> categoriasDelMes(inv.getArgument(1)));
     when(servicioPresupuestoMock.obtenerDelMes(any(), any())).thenReturn(List.of());
     when(servicioGastoRealMock.calcular(any(), anyInt())).thenReturn(gastoReal(null));
     when(repositorioMock.obtenerDelMes(any(), any())).thenReturn(List.of());
@@ -142,9 +142,9 @@ public class ServicioConsejosImplTest {
   @Test
   void debeAlertarCuandoUnaCategoriaSubeMasQueLaInflacionDosMesesSeguidos() {
     // Entretenimiento: julio 40.000 → agosto 50.000 (+25 %) → septiembre 60.000 (+20 %), con IPC 2 %
-    conGastos(YearMonth.of(2026, 7), List.of(cat("Entretenimiento", 40000.0)));
-    conGastos(YearMonth.of(2026, 8), List.of(cat("Entretenimiento", 50000.0)));
-    conGastos(YearMonth.of(2026, 9), List.of(cat("Entretenimiento", 60000.0)));
+    conGastos(YearMonth.of(2026, 7), cat("Entretenimiento", 40000.0));
+    conGastos(YearMonth.of(2026, 8), cat("Entretenimiento", 50000.0));
+    conGastos(YearMonth.of(2026, 9), cat("Entretenimiento", 60000.0));
 
     List<Consejo> consejos = servicio.obtenerPendientes(usuario);
 
@@ -157,9 +157,9 @@ public class ServicioConsejosImplTest {
 
   @Test
   void noDebeAlertarCuandoLaCategoriaSubioUnSoloMes() {
-    conGastos(YearMonth.of(2026, 7), List.of(cat("Entretenimiento", 50000.0)));
-    conGastos(YearMonth.of(2026, 8), List.of(cat("Entretenimiento", 50000.0)));
-    conGastos(YearMonth.of(2026, 9), List.of(cat("Entretenimiento", 60000.0)));
+    conGastos(YearMonth.of(2026, 7), cat("Entretenimiento", 50000.0));
+    conGastos(YearMonth.of(2026, 8), cat("Entretenimiento", 50000.0));
+    conGastos(YearMonth.of(2026, 9), cat("Entretenimiento", 60000.0));
 
     assertThat(servicio.obtenerPendientes(usuario), hasSize(0));
   }
@@ -256,9 +256,9 @@ public class ServicioConsejosImplTest {
       .thenReturn(
         gastoReal(new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0))
       );
-    conGastos(YearMonth.of(2026, 7), List.of(cat("Cine", 40000.0)));
-    conGastos(YearMonth.of(2026, 8), List.of(cat("Cine", 50000.0)));
-    conGastos(YearMonth.of(2026, 9), List.of(cat("Cine", 60000.0)));
+    conGastos(YearMonth.of(2026, 7), cat("Cine", 40000.0));
+    conGastos(YearMonth.of(2026, 8), cat("Cine", 50000.0));
+    conGastos(YearMonth.of(2026, 9), cat("Cine", 60000.0));
 
     List<Consejo> consejos = servicio.obtenerPendientes(usuario);
 
@@ -385,21 +385,27 @@ public class ServicioConsejosImplTest {
     );
     when(servicioAsistenteMock.sintetizar(any(), any()))
       .thenReturn(
-        " Subieron 30,0 % con 10,0 % de inflación: gastás 18,2 % más en términos reales. "
+        new SintesisDelPeriodo(
+          "Subieron 30,0 % con 10,0 % de inflación: gastás 18,2 % más en términos reales.",
+          "Lo que más pesó fue Alimentación."
+        )
       );
     conRepositorioQueRecuerda();
 
-    String sintesis = servicio.sintetizar(usuario, gastoReal);
+    SintesisDelPeriodo sintesis = servicio.sintetizar(usuario, gastoReal);
     List<Consejo> consejos = servicio.obtenerPendientes(usuario, gastoReal);
 
     assertThat(
-      sintesis,
+      sintesis.resumen(),
       equalTo("Subieron 30,0 % con 10,0 % de inflación: gastás 18,2 % más en términos reales.")
     );
+    assertThat(sintesis.detalle(), equalTo("Lo que más pesó fue Alimentación."));
     assertThat(consejos, hasSize(2));
     Consejo veredicto = consejos.get(0);
     assertThat(veredicto.getTipo(), equalTo(TipoConsejo.VEREDICTO_ROJO));
     assertThat(veredicto.getFirmaHechos(), not(nullValue()));
+    assertThat(veredicto.getTextoParaMostrar(), equalTo(sintesis.resumen()));
+    assertThat(veredicto.getDetalleRedactado(), equalTo("Lo que más pesó fue Alimentación."));
     Consejo propuesta = consejos.get(1);
     assertThat(propuesta.getTipo(), equalTo(TipoConsejo.PRESUPUESTO_DESACTUALIZADO));
     assertThat(propuesta.getTextoParaMostrar(), equalTo(propuesta.getTexto()));
@@ -412,14 +418,15 @@ public class ServicioConsejosImplTest {
       new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0)
     );
     String valida = "Subieron 30,0 %, inflación 10,0 %, 18,2 % más en términos reales.";
-    when(servicioAsistenteMock.sintetizar(any(), any())).thenReturn(valida);
+    when(servicioAsistenteMock.sintetizar(any(), any()))
+      .thenReturn(new SintesisDelPeriodo(valida, null));
     conRepositorioQueRecuerda();
     servicio.sintetizar(usuario, gastoReal);
 
-    String segundaVez = servicio.sintetizar(usuario, gastoReal);
+    SintesisDelPeriodo segundaVez = servicio.sintetizar(usuario, gastoReal);
     List<Consejo> consejos = servicio.obtenerPendientes(usuario, gastoReal);
 
-    assertThat(segundaVez, equalTo(valida));
+    assertThat(segundaVez, equalTo(new SintesisDelPeriodo(valida, null)));
     assertThat(consejos.get(0).getTextoParaMostrar(), equalTo(valida));
     assertThat(servicio.faltaLaSintesis(consejos), is(false));
     verify(servicioAsistenteMock, times(1)).sintetizar(any(), any());
@@ -431,14 +438,20 @@ public class ServicioConsejosImplTest {
       new Veredicto(YearMonth.of(2026, 5), YearMonth.of(2026, 9), 30.0, 10.0)
     );
     when(servicioAsistenteMock.sintetizar(any(), any()))
-      .thenReturn("Subieron 35,0 % con 10,0 % de inflación: gastás 18,2 % más en términos reales.");
+      .thenReturn(
+        new SintesisDelPeriodo(
+          "Subieron 35,0 % con 10,0 % de inflación: gastás 18,2 % más en términos reales.",
+          "Detalle."
+        )
+      );
     conRepositorioQueRecuerda();
 
-    String sintesis = servicio.sintetizar(usuario, gastoReal);
+    SintesisDelPeriodo sintesis = servicio.sintetizar(usuario, gastoReal);
     List<Consejo> consejos = servicio.obtenerPendientes(usuario, gastoReal);
 
     assertThat(sintesis, nullValue());
-    assertThat(consejos.get(0).getTextoRedactado(), nullValue());
+    assertThat(consejos.get(0).getResumenRedactado(), nullValue());
+    assertThat(consejos.get(0).getDetalleRedactado(), nullValue());
     assertThat(consejos.get(0).getTextoParaMostrar(), containsString("subieron 30,0 %"));
   }
 
@@ -455,12 +468,13 @@ public class ServicioConsejosImplTest {
       "viejo",
       null
     );
-    guardado.redactar("Síntesis vieja.", "otra-firma");
+    guardado.redactar("Síntesis vieja.", "Detalle viejo.", "otra-firma");
     when(repositorioMock.obtenerDelMes(any(), any())).thenReturn(List.of(guardado));
 
     List<Consejo> consejos = servicio.obtenerPendientes(usuario, gastoReal);
 
-    assertThat(consejos.get(0).getTextoRedactado(), nullValue());
+    assertThat(consejos.get(0).getResumenRedactado(), nullValue());
+    assertThat(consejos.get(0).getDetalleRedactado(), nullValue());
     assertThat(consejos.get(0).getTextoParaMostrar(), containsString("Desde Mayo 2026"));
     verify(servicioAsistenteMock, never()).sintetizar(any(), any());
   }
@@ -527,17 +541,30 @@ public class ServicioConsejosImplTest {
     return new Presupuesto(usuario, categoria, OCTUBRE, monto);
   }
 
-  private void conGastos(YearMonth mes, List<ResumenCategoria> categorias) {
-    when(servicioResumenMock.obtenerResumen(usuario, mes)).thenReturn(resumen(categorias));
+  private void conGastos(YearMonth mes, Map<String, Double> gastadoPorCategoria) {
+    gastadoPorMes.put(mes, gastadoPorCategoria);
   }
 
-  private ResumenMensual resumen(List<ResumenCategoria> categorias) {
-    double total = categorias.stream().mapToDouble(ResumenCategoria::getGastado).sum();
-    return new ResumenMensual(total, 0.0, -total, 100.0, categorias);
+  private Map<String, Double> cat(String nombre, Double gastado) {
+    return Map.of(nombre, gastado);
   }
 
-  private ResumenCategoria cat(String nombre, Double gastado) {
-    return new ResumenCategoria(nombre, gastado, 0.0);
+  // Como ServicioGastoRealImpl: cada categoría del mes contra el anterior, con el IPC del mes (2 %)
+  private List<CategoriaGastoReal> categoriasDelMes(YearMonth mes) {
+    Map<String, Double> actual = gastadoPorMes.getOrDefault(mes, Map.of());
+    Map<String, Double> anterior = gastadoPorMes.getOrDefault(mes.minusMonths(1), Map.of());
+    List<CategoriaGastoReal> categorias = new ArrayList<>();
+    for (Map.Entry<String, Double> categoria : actual.entrySet()) {
+      categorias.add(
+        new CategoriaGastoReal(
+          categoria.getKey(),
+          categoria.getValue(),
+          anterior.getOrDefault(categoria.getKey(), 0.0),
+          2.0
+        )
+      );
+    }
+    return categorias;
   }
 
   private GastoReal gastoReal(Veredicto veredicto) {

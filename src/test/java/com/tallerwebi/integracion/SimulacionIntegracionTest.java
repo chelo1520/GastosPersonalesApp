@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.categoria.CategoriaRepositorioImpl;
-import com.tallerwebi.dominio.comprobante.LectorComprobante;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicioImpl;
 import com.tallerwebi.dominio.gasto.RepositorioGastoImpl;
@@ -14,13 +13,13 @@ import com.tallerwebi.dominio.presupuesto.RepositorioPresupuestoImpl;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuestoImpl;
 import com.tallerwebi.infraestructura.config.HibernateInfraestructuraTestConfig;
 import com.tallerwebi.presentacion.ControladorGasto;
+import com.tallerwebi.presentacion.ControladorSimulacion;
 import java.time.LocalDate;
 import java.util.List;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
@@ -32,7 +31,8 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 /**
- * Integra ControladorGasto, GastoServicioImpl y RepositorioGastoImpl contra la base en memoria.
+ * Integra ControladorSimulacion (y ControladorGasto para cargar), GastoServicioImpl y
+ * RepositorioGastoImpl contra la base en memoria.
  */
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = HibernateInfraestructuraTestConfig.class)
@@ -44,6 +44,7 @@ public class SimulacionIntegracionTest {
   private SessionFactory sessionFactory;
 
   private ControladorGasto controladorGasto;
+  private ControladorSimulacion controladorSimulacion;
   private Usuario usuario;
   private MockHttpServletRequest request;
   private LocalDate mesAnterior;
@@ -54,13 +55,10 @@ public class SimulacionIntegracionTest {
     ServicioPresupuestoImpl servicioPresupuesto = new ServicioPresupuestoImpl(
       new RepositorioPresupuestoImpl(sessionFactory)
     );
+    GastoServicioImpl gastoServicio = new GastoServicioImpl(repositorioGasto, servicioPresupuesto);
     controladorGasto =
-      new ControladorGasto(
-        new GastoServicioImpl(repositorioGasto, servicioPresupuesto),
-        new CategoriaRepositorioImpl(sessionFactory),
-        servicioPresupuesto,
-        Mockito.mock(LectorComprobante.class)
-      );
+      new ControladorGasto(gastoServicio, new CategoriaRepositorioImpl(sessionFactory));
+    controladorSimulacion = new ControladorSimulacion(gastoServicio, servicioPresupuesto);
 
     usuario = guardarUsuario("lourdes@gmail.com");
     request = requestConUsuario(usuario);
@@ -131,7 +129,7 @@ public class SimulacionIntegracionTest {
 
   @SuppressWarnings("unchecked")
   private List<Gasto> gastosDeLaSimulacion() {
-    ModelAndView resultado = controladorGasto.mostrarSimulacion(request);
+    ModelAndView resultado = controladorSimulacion.mostrarSimulacion(request);
     assertEquals("simulacion", resultado.getViewName());
     return (List<Gasto>) resultado.getModel().get("gastos");
   }
