@@ -4,6 +4,8 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.alerta.CalculadoraAlertas;
 import com.tallerwebi.dominio.categoria.Categoria;
+import com.tallerwebi.dominio.categoria.MarcasHormiga;
+import com.tallerwebi.dominio.categoria.ServicioCategoria;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.RepositorioGasto;
 import com.tallerwebi.dominio.presupuesto.Presupuesto;
@@ -32,6 +34,7 @@ public class ServicioResumenImpl implements ServicioResumen {
 
   private final RepositorioGasto repositorioGasto;
   private final ServicioPresupuesto servicioPresupuesto;
+  private final ServicioCategoria servicioCategoria;
   private final Clock reloj;
   private final CalculadoraGastosHormiga calculadoraHormiga = new CalculadoraGastosHormiga();
   private final CalculadoraAlertas calculadoraAlertas = new CalculadoraAlertas();
@@ -39,19 +42,22 @@ public class ServicioResumenImpl implements ServicioResumen {
   @Autowired
   public ServicioResumenImpl(
     RepositorioGasto repositorioGasto,
-    ServicioPresupuesto servicioPresupuesto
+    ServicioPresupuesto servicioPresupuesto,
+    ServicioCategoria servicioCategoria
   ) {
-    this(repositorioGasto, servicioPresupuesto, Clock.systemDefaultZone());
+    this(repositorioGasto, servicioPresupuesto, servicioCategoria, Clock.systemDefaultZone());
   }
 
   // Permite fijar "hoy" en los tests
   public ServicioResumenImpl(
     RepositorioGasto repositorioGasto,
     ServicioPresupuesto servicioPresupuesto,
+    ServicioCategoria servicioCategoria,
     Clock reloj
   ) {
     this.repositorioGasto = repositorioGasto;
     this.servicioPresupuesto = servicioPresupuesto;
+    this.servicioCategoria = servicioCategoria;
     this.reloj = reloj;
   }
 
@@ -81,16 +87,20 @@ public class ServicioResumenImpl implements ServicioResumen {
       categoriaPorNombre.putIfAbsent(definido.getCategoria().getNombre(), definido.getCategoria());
     }
 
+    // Las marcas de hormiga son de cada usuario, no de la categoría
+    MarcasHormiga marcas = servicioCategoria.marcasDe(usuario);
     List<ResumenCategoria> categorias = filas(
       gastado,
       gastadoPorCategoria,
       presupuestoPorCategoria,
-      categoriaPorNombre
+      categoriaPorNombre,
+      marcas
     );
 
     ResumenHormiga hormiga = calculadoraHormiga.calcular(
       gastos,
-      baseDeHormiga(usuario, mes, presupuesto)
+      baseDeHormiga(usuario, mes, presupuesto),
+      marcas
     );
 
     return new ResumenMensual(
@@ -108,7 +118,8 @@ public class ServicioResumenImpl implements ServicioResumen {
     double gastado,
     Map<String, Double> gastadoPorCategoria,
     Map<String, Double> presupuestoPorCategoria,
-    Map<String, Categoria> categoriaPorNombre
+    Map<String, Categoria> categoriaPorNombre,
+    MarcasHormiga marcas
   ) {
     // Las categorías con gastos y también las que solo tienen presupuesto (con gastado 0)
     Set<String> nombres = new LinkedHashSet<>(gastadoPorCategoria.keySet());
@@ -123,7 +134,8 @@ public class ServicioResumenImpl implements ServicioResumen {
           gastadoCategoria,
           porcentaje(gastadoCategoria, gastado),
           presupuestoPorCategoria.get(nombre),
-          categoriaPorNombre.get(nombre)
+          categoriaPorNombre.get(nombre),
+          marcas
         )
       );
     }
@@ -144,12 +156,13 @@ public class ServicioResumenImpl implements ServicioResumen {
     Double gastado,
     Double porcentajeTotal,
     Double presupuesto,
-    Categoria categoria
+    Categoria categoria,
+    MarcasHormiga marcas
   ) {
     if (categoria == null) {
       return new ResumenCategoria(nombre, gastado, porcentajeTotal, presupuesto);
     }
-    Boolean esHormiga = categoria.isFija() ? null : !categoria.isEsencial();
+    Boolean esHormiga = categoria.isFija() ? null : marcas.esPrescindible(categoria);
     return new ResumenCategoria(
       nombre,
       gastado,

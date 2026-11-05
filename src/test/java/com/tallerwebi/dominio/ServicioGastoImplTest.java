@@ -12,6 +12,8 @@ import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.categoria.Categoria;
+import com.tallerwebi.dominio.categoria.MarcasHormiga;
+import com.tallerwebi.dominio.categoria.ServicioCategoria;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
 import com.tallerwebi.dominio.gasto.Gasto;
@@ -40,12 +42,16 @@ public class ServicioGastoImplTest {
   private RepositorioGasto repositorioGastoMock;
   private RepositorioUsuario repositorioUsuarioMock;
   private ServicioPresupuesto servicioPresupuestoMock;
+  private ServicioCategoria servicioCategoriaMock;
 
   @BeforeEach
   public void init() {
     this.repositorioGastoMock = mock(RepositorioGasto.class);
     this.repositorioUsuarioMock = mock(RepositorioUsuario.class);
     this.servicioPresupuestoMock = mock(ServicioPresupuesto.class);
+    // Sin preferencias del usuario: valen las marcas del maestro de categorías
+    this.servicioCategoriaMock = mock(ServicioCategoria.class);
+    when(servicioCategoriaMock.marcasDe(any())).thenReturn(MarcasHormiga.porDefecto());
   }
 
   @Test
@@ -53,6 +59,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Usuario usuario = new Usuario();
@@ -72,6 +79,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Usuario usuario = new Usuario();
@@ -91,6 +99,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Gasto valido = new Gasto(6300.0, LocalDate.of(2026, 10, 5), "Supermercado");
@@ -110,6 +119,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Usuario usuario = new Usuario();
@@ -145,6 +155,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Gasto septiembre = new Gasto(90000.0, LocalDate.of(2026, 9, 28), "Cine");
@@ -157,6 +168,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Usuario usuario = new Usuario();
@@ -193,6 +205,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Usuario usuario = new Usuario();
@@ -221,6 +234,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Usuario usuario = new Usuario();
@@ -238,6 +252,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Gasto delMesPasado = new Gasto(1000.00, LocalDate.of(2026, 9, 30), "Supermercado");
@@ -255,6 +270,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Gasto gasto = new Gasto(1000.00, LocalDate.of(2025, 9, 30), "Supermercado");
@@ -273,6 +289,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Usuario usuario = new Usuario();
@@ -289,6 +306,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Gasto gasto = new Gasto(1000.00, LocalDate.of(2026, 11, 1), "Supermercado");
@@ -305,6 +323,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Gasto primerDia = new Gasto(1000.00, LocalDate.of(2026, 10, 1), "Alquiler");
@@ -322,6 +341,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Gasto gasto = new Gasto(1000.00, null, "Supermercado");
@@ -338,6 +358,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Usuario usuario = usuarioConId(1L);
@@ -363,6 +384,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Usuario usuario = usuarioConId(1L);
@@ -386,6 +408,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Usuario usuario = usuarioConId(1L);
@@ -405,6 +428,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     when(repositorioGastoMock.buscarPorId(99L)).thenReturn(null);
@@ -423,6 +447,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoDe(usuarioConId(2L)));
@@ -441,6 +466,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Usuario usuario = usuarioConId(1L);
@@ -457,6 +483,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     when(repositorioGastoMock.buscarPorId(99L)).thenReturn(null);
@@ -470,6 +497,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoDe(usuarioConId(2L)));
@@ -483,6 +511,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     Usuario usuario = usuarioConId(1L);
@@ -497,6 +526,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
     when(repositorioGastoMock.buscarPorId(10L)).thenReturn(gastoDe(usuarioConId(2L)));
@@ -509,6 +539,7 @@ public class ServicioGastoImplTest {
     GastoServicio gastoServicio = new GastoServicioImpl(
       repositorioGastoMock,
       servicioPresupuestoMock,
+      servicioCategoriaMock,
       HOY
     );
 

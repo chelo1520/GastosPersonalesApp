@@ -11,6 +11,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.categoria.Categoria;
+import com.tallerwebi.dominio.categoria.MarcasHormiga;
+import com.tallerwebi.dominio.categoria.PreferenciaCategoria;
+import com.tallerwebi.dominio.categoria.ServicioCategoria;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.RepositorioGasto;
 import com.tallerwebi.dominio.presupuesto.Presupuesto;
@@ -38,6 +41,7 @@ public class ServicioResumenImplTest {
 
   private RepositorioGasto repositorioGastoMock;
   private ServicioPresupuesto servicioPresupuestoMock;
+  private ServicioCategoria servicioCategoriaMock;
   private ServicioResumen servicioResumen;
   private Usuario usuario;
   private Categoria vivienda;
@@ -47,7 +51,11 @@ public class ServicioResumenImplTest {
   public void init() {
     repositorioGastoMock = mock(RepositorioGasto.class);
     servicioPresupuestoMock = mock(ServicioPresupuesto.class);
-    servicioResumen = new ServicioResumenImpl(repositorioGastoMock, servicioPresupuestoMock);
+    // Sin preferencias del usuario: valen las marcas del maestro de categorías
+    servicioCategoriaMock = mock(ServicioCategoria.class);
+    when(servicioCategoriaMock.marcasDe(any())).thenReturn(MarcasHormiga.porDefecto());
+    servicioResumen =
+      new ServicioResumenImpl(repositorioGastoMock, servicioPresupuestoMock, servicioCategoriaMock);
     usuario = new Usuario();
     vivienda = categoria("Vivienda");
     alimentacion = categoria("Alimentación");
@@ -294,7 +302,12 @@ public class ServicioResumenImplTest {
   void debeIncluirLosGastosHormigaYLaAlertaDeAcumuladoCuandoElMesEsElActual() {
     // Hoy: 15 de septiembre. 4 deliveries de 8.000 = 32.000, el 5,8 % del presupuesto
     servicioResumen =
-      new ServicioResumenImpl(repositorioGastoMock, servicioPresupuestoMock, reloj("2026-09-15"));
+      new ServicioResumenImpl(
+        repositorioGastoMock,
+        servicioPresupuestoMock,
+        servicioCategoriaMock,
+        reloj("2026-09-15")
+      );
     conPresupuestos(presupuesto(categoria("Vivienda"), 550000.0));
     when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE)).thenReturn(deliveries());
 
@@ -307,7 +320,12 @@ public class ServicioResumenImplTest {
   @Test
   void noDebeDarAlertasCuandoElMesYaCerro() {
     servicioResumen =
-      new ServicioResumenImpl(repositorioGastoMock, servicioPresupuestoMock, reloj("2026-10-15"));
+      new ServicioResumenImpl(
+        repositorioGastoMock,
+        servicioPresupuestoMock,
+        servicioCategoriaMock,
+        reloj("2026-10-15")
+      );
     conPresupuestos(presupuesto(categoria("Vivienda"), 550000.0));
     when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE)).thenReturn(deliveries());
 
@@ -320,7 +338,12 @@ public class ServicioResumenImplTest {
   @Test
   void debeArmarElHistorialDe6MesesConLosMesesSinGastosEnCeroYSoloOctubreEnCurso() {
     servicioResumen =
-      new ServicioResumenImpl(repositorioGastoMock, servicioPresupuestoMock, reloj("2026-10-15"));
+      new ServicioResumenImpl(
+        repositorioGastoMock,
+        servicioPresupuestoMock,
+        servicioCategoriaMock,
+        reloj("2026-10-15")
+      );
     // Mismo total los 6 meses: 550.000; "chico" se mide contra lo asignado (550.000 → hasta 11.000)
     when(servicioPresupuestoMock.totalDelMes(eq(usuario), any(YearMonth.class)))
       .thenReturn(550000.0);
@@ -399,5 +422,22 @@ public class ServicioResumenImplTest {
     Categoria categoria = new Categoria();
     categoria.setNombre(nombre);
     return categoria;
+  }
+
+  @Test
+  void elCheckEsHormigaDeLaTablaReflejaLaMarcaDelUsuarioYNoLaDeLaCategoria() {
+    Categoria delivery = categoria("Delivery");
+    delivery.setId(7L);
+    delivery.setEsencial(false);
+    when(repositorioGastoMock.obtenerGastosDelMes(usuario, SEPTIEMBRE))
+      .thenReturn(List.of(gasto(8000.0, "Delivery", delivery)));
+    // Este usuario la quitó de hormiga; para los demás sigue siendo prescindible
+    when(servicioCategoriaMock.marcasDe(usuario))
+      .thenReturn(MarcasHormiga.de(List.of(new PreferenciaCategoria(usuario, delivery, true))));
+
+    ResumenMensual resumen = servicioResumen.obtenerResumen(usuario, SEPTIEMBRE);
+
+    assertEquals(Boolean.FALSE, resumen.getCategorias().get(0).getEsHormiga());
+    assertEquals(0.0, resumen.getHormiga().getTotal(), 0.01);
   }
 }
