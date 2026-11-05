@@ -6,11 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.categoria.CategoriaRepositorioImpl;
+import com.tallerwebi.dominio.categoria.ServicioCategoriaImpl;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicioImpl;
 import com.tallerwebi.dominio.gasto.RepositorioGastoImpl;
 import com.tallerwebi.dominio.presupuesto.RepositorioPresupuestoImpl;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuestoImpl;
+import com.tallerwebi.infraestructura.categoria.RepositorioPreferenciaCategoriaImpl;
 import com.tallerwebi.infraestructura.config.HibernateInfraestructuraTestConfig;
 import com.tallerwebi.presentacion.ControladorGasto;
 import com.tallerwebi.presentacion.ControladorSimulacion;
@@ -55,7 +57,15 @@ public class SimulacionIntegracionTest {
     ServicioPresupuestoImpl servicioPresupuesto = new ServicioPresupuestoImpl(
       new RepositorioPresupuestoImpl(sessionFactory)
     );
-    GastoServicioImpl gastoServicio = new GastoServicioImpl(repositorioGasto, servicioPresupuesto);
+    ServicioCategoriaImpl servicioCategoria = new ServicioCategoriaImpl(
+      new CategoriaRepositorioImpl(sessionFactory),
+      new RepositorioPreferenciaCategoriaImpl(sessionFactory)
+    );
+    GastoServicioImpl gastoServicio = new GastoServicioImpl(
+      repositorioGasto,
+      servicioPresupuesto,
+      servicioCategoria
+    );
     controladorGasto =
       new ControladorGasto(gastoServicio, new CategoriaRepositorioImpl(sessionFactory));
     controladorSimulacion = new ControladorSimulacion(gastoServicio, servicioPresupuesto);

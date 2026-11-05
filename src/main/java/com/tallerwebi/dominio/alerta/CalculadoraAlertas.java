@@ -1,5 +1,6 @@
 package com.tallerwebi.dominio.alerta;
 
+import com.tallerwebi.dominio.categoria.MarcasHormiga;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.resumen.CalculadoraGastosHormiga;
 import com.tallerwebi.dominio.resumen.EstadoPresupuesto;
@@ -52,13 +53,22 @@ public class CalculadoraAlertas {
   // gastosDeLaSemana: los gastos del usuario en los 7 días que terminan en la fecha del gasto nuevo,
   // incluido el gasto nuevo. Devuelve null si no corresponde alertar
   public Alerta alertaDeRepeticion(Gasto nuevo, List<Gasto> gastosDeLaSemana, double presupuesto) {
-    if (!CalculadoraGastosHormiga.esChicoYPrescindible(nuevo, presupuesto)) {
+    return alertaDeRepeticion(nuevo, gastosDeLaSemana, presupuesto, MarcasHormiga.porDefecto());
+  }
+
+  public Alerta alertaDeRepeticion(
+    Gasto nuevo,
+    List<Gasto> gastosDeLaSemana,
+    double presupuesto,
+    MarcasHormiga marcas
+  ) {
+    if (!CalculadoraGastosHormiga.esChicoYPrescindible(nuevo, presupuesto, marcas)) {
       return null;
     }
 
     List<Gasto> repetidos = gastosDeLaSemana
       .stream()
-      .filter(gasto -> CalculadoraGastosHormiga.esChicoYPrescindible(gasto, presupuesto))
+      .filter(gasto -> CalculadoraGastosHormiga.esChicoYPrescindible(gasto, presupuesto, marcas))
       .filter(gasto -> Objects.equals(gasto.getCategoria().getId(), nuevo.getCategoria().getId()))
       .toList();
 

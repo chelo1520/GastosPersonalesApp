@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.tallerwebi.dominio.categoria.Categoria;
+import com.tallerwebi.dominio.categoria.MarcasHormiga;
+import com.tallerwebi.dominio.categoria.PreferenciaCategoria;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.resumen.CalculadoraGastosHormiga;
 import com.tallerwebi.dominio.resumen.ResumenCategoria;
@@ -108,8 +110,36 @@ public class CalculadoraGastosHormigaTest {
 
   private Categoria categoria(String nombre, Boolean esencial) {
     Categoria categoria = new Categoria();
+    categoria.setId((long) nombre.hashCode());
     categoria.setNombre(nombre);
     categoria.setEsencial(esencial);
     return categoria;
+  }
+
+  @Test
+  void noDebeContarUnaCategoriaPrescindibleQueElUsuarioMarcoComoEsencial() {
+    List<Gasto> gastos = new ArrayList<>();
+    gastos.addAll(gastos(12, 2500.0, cafe));
+    gastos.addAll(gastos(8, 1800.0, kiosco));
+    MarcasHormiga marcas = MarcasHormiga.de(
+      List.of(new PreferenciaCategoria(new Usuario(), cafe, true))
+    );
+
+    ResumenHormiga hormiga = calculadora.calcular(gastos, PRESUPUESTO, marcas);
+
+    assertEquals(14400.0, hormiga.getTotal(), 0.01);
+    assertEquals(1, hormiga.getCategorias().size());
+    assertEquals("Kiosco", hormiga.getCategorias().get(0).getNombre());
+  }
+
+  @Test
+  void debeContarUnaCategoriaEsencialQueElUsuarioMarcoComoHormiga() {
+    List<Gasto> gastos = new ArrayList<>(gastos(8, 1500.0, supermercado));
+    MarcasHormiga marcas = MarcasHormiga.de(
+      List.of(new PreferenciaCategoria(new Usuario(), supermercado, false))
+    );
+
+    assertEquals(0.0, calculadora.calcular(gastos, PRESUPUESTO).getTotal(), 0.01);
+    assertEquals(12000.0, calculadora.calcular(gastos, PRESUPUESTO, marcas).getTotal(), 0.01);
   }
 }

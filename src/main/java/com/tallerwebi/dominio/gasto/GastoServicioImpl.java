@@ -3,6 +3,7 @@ package com.tallerwebi.dominio.gasto;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.alerta.CalculadoraAlertas;
+import com.tallerwebi.dominio.categoria.ServicioCategoria;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
@@ -28,25 +29,29 @@ public class GastoServicioImpl implements GastoServicio {
 
   private final RepositorioGasto repositorioGasto;
   private final ServicioPresupuesto servicioPresupuesto;
+  private final ServicioCategoria servicioCategoria;
   private final Clock reloj;
   private final CalculadoraAlertas calculadoraAlertas = new CalculadoraAlertas();
 
   @Autowired
   public GastoServicioImpl(
     RepositorioGasto repositorioGasto,
-    ServicioPresupuesto servicioPresupuesto
+    ServicioPresupuesto servicioPresupuesto,
+    ServicioCategoria servicioCategoria
   ) {
-    this(repositorioGasto, servicioPresupuesto, Clock.systemDefaultZone());
+    this(repositorioGasto, servicioPresupuesto, servicioCategoria, Clock.systemDefaultZone());
   }
 
   // Permite fijar "hoy" en los tests
   public GastoServicioImpl(
     RepositorioGasto repositorioGasto,
     ServicioPresupuesto servicioPresupuesto,
+    ServicioCategoria servicioCategoria,
     Clock reloj
   ) {
     this.repositorioGasto = repositorioGasto;
     this.servicioPresupuesto = servicioPresupuesto;
+    this.servicioCategoria = servicioCategoria;
     this.reloj = reloj;
   }
 
@@ -108,7 +113,12 @@ public class GastoServicioImpl implements GastoServicio {
     if (presupuesto <= 0) {
       presupuesto = servicioPresupuesto.totalDelMes(usuario, mesDelGasto);
     }
-    return calculadoraAlertas.alertaDeRepeticion(gasto, gastosDeLaSemana, presupuesto);
+    return calculadoraAlertas.alertaDeRepeticion(
+      gasto,
+      gastosDeLaSemana,
+      presupuesto,
+      servicioCategoria.marcasDe(usuario)
+    );
   }
 
   @Override

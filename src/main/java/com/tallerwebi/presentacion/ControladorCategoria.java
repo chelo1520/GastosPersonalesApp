@@ -1,7 +1,7 @@
 package com.tallerwebi.presentacion;
 
-import com.tallerwebi.dominio.categoria.Categoria;
-import com.tallerwebi.dominio.categoria.CategoriaRepositorio;
+import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.categoria.ServicioCategoria;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -24,14 +24,15 @@ public class ControladorCategoria {
   // El resumen de un mes puntual (check "¿Es hormiga?" de la tabla): se vuelve al mismo mes
   private static final Pattern RESUMEN_DE_UN_MES = Pattern.compile("/home\\?mes=\\d{4}-\\d{2}");
 
-  private CategoriaRepositorio categoriaRepositorio;
+  private final ServicioCategoria servicioCategoria;
 
   @Autowired
-  public ControladorCategoria(CategoriaRepositorio categoriaRepositorio) {
-    this.categoriaRepositorio = categoriaRepositorio;
+  public ControladorCategoria(ServicioCategoria servicioCategoria) {
+    this.servicioCategoria = servicioCategoria;
   }
 
-  // Botón "Quitar categoría de hormiga": la categoría pasa a esencial y sus gastos dejan de contarse
+  // Botón "Quitar categoría de hormiga": para este usuario la categoría pasa a esencial y sus
+  // gastos dejan de contarse. La marca es de cada usuario, no de la categoría
   @RequestMapping(path = "/categorias/{id}/no-es-hormiga", method = RequestMethod.POST)
   public ModelAndView marcarComoNoHormiga(
     @PathVariable("id") Long id,
@@ -57,20 +58,20 @@ public class ControladorCategoria {
     String volver,
     HttpServletRequest request
   ) {
-    if (SesionUsuario.obtener(request) == null) {
+    Usuario usuario = SesionUsuario.obtener(request);
+    if (usuario == null) {
       return new ModelAndView("redirect:/login");
     }
 
-    // Una categoría fija es siempre esencial: no se cambia aunque llegue el pedido
-    Categoria categoria = categoriaRepositorio.buscarPorId(id);
-    if (categoria != null && !categoria.isFija()) {
-      categoria.setEsencial(esencial);
-      categoriaRepositorio.modificar(categoria);
+    if (esencial) {
+      servicioCategoria.quitarDeHormiga(usuario, id);
+    } else {
+      servicioCategoria.marcarComoHormiga(usuario, id);
     }
 
     boolean vueltaValida =
-      PANTALLAS_DE_VUELTA.contains(volver) ||
-      (volver != null && RESUMEN_DE_UN_MES.matcher(volver).matches());
+      volver != null &&
+      (PANTALLAS_DE_VUELTA.contains(volver) || RESUMEN_DE_UN_MES.matcher(volver).matches());
     String destino = vueltaValida ? volver : "/home";
     return new ModelAndView("redirect:" + destino);
   }

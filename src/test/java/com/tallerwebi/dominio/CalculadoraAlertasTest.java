@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.alerta.CalculadoraAlertas;
 import com.tallerwebi.dominio.categoria.Categoria;
+import com.tallerwebi.dominio.categoria.MarcasHormiga;
+import com.tallerwebi.dominio.categoria.PreferenciaCategoria;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.resumen.ResumenHormiga;
 import java.time.LocalDate;
@@ -169,5 +171,28 @@ public class CalculadoraAlertasTest {
       gastos.add(gasto);
     }
     return gastos;
+  }
+
+  @Test
+  void noDebeAlertarCuandoElUsuarioQuitoLaCategoriaDeHormigaAunqueSeaPrescindible() {
+    List<Gasto> semana = cafes(4);
+    MarcasHormiga marcas = MarcasHormiga.de(
+      List.of(new PreferenciaCategoria(new Usuario(), cafe, true))
+    );
+
+    assertNull(calculadora.alertaDeRepeticion(semana.get(3), semana, PRESUPUESTO, marcas));
+  }
+
+  @Test
+  void debeAlertarCuandoElUsuarioMarcoComoHormigaUnaCategoriaEsencial() {
+    List<Gasto> semana = cafes(4);
+    cafe.setEsencial(true);
+    MarcasHormiga marcas = MarcasHormiga.de(
+      List.of(new PreferenciaCategoria(new Usuario(), cafe, false))
+    );
+
+    Alerta alerta = calculadora.alertaDeRepeticion(semana.get(3), semana, PRESUPUESTO, marcas);
+
+    assertEquals(Alerta.Tipo.REPETICION, alerta.getTipo());
   }
 }

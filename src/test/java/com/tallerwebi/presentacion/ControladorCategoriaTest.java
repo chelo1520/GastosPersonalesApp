@@ -1,18 +1,13 @@
 package com.tallerwebi.presentacion;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.Usuario;
-import com.tallerwebi.dominio.categoria.Categoria;
-import com.tallerwebi.dominio.categoria.CategoriaRepositorio;
+import com.tallerwebi.dominio.categoria.ServicioCategoria;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,74 +16,62 @@ import org.springframework.web.servlet.ModelAndView;
 
 public class ControladorCategoriaTest {
 
-  private CategoriaRepositorio categoriaRepositorio;
+  private ServicioCategoria servicioCategoria;
   private ControladorCategoria controladorCategoria;
   private HttpServletRequest request;
   private HttpSession session;
-  private Categoria cafe;
+  private Usuario usuario;
 
   @BeforeEach
   public void init() {
-    categoriaRepositorio = mock(CategoriaRepositorio.class);
-    controladorCategoria = new ControladorCategoria(categoriaRepositorio);
-
+    servicioCategoria = mock(ServicioCategoria.class);
+    controladorCategoria = new ControladorCategoria(servicioCategoria);
     request = mock(HttpServletRequest.class);
     session = mock(HttpSession.class);
+    usuario = new Usuario();
+    usuario.setEmail("medio@gastitos.demo");
     when(request.getSession(false)).thenReturn(session);
-    when(session.getAttribute("USUARIO")).thenReturn(mock(Usuario.class));
-
-    cafe = new Categoria();
-    cafe.setId(7L);
-    cafe.setEsencial(false);
-    when(categoriaRepositorio.buscarPorId(7L)).thenReturn(cafe);
+    when(session.getAttribute("USUARIO")).thenReturn(usuario);
   }
 
   @Test
-  public void debeMarcarLaCategoriaComoEsencialYVolverALaPantallaPedida() {
+  public void debeQuitarLaCategoriaDeHormigaParaElUsuarioYVolverALaPantallaPedida() {
     ModelAndView resultado = controladorCategoria.marcarComoNoHormiga(
       7L,
       "/mostrar-gastos",
       request
     );
 
-    assertTrue(cafe.isEsencial());
-    verify(categoriaRepositorio).modificar(cafe);
+    verify(servicioCategoria).quitarDeHormiga(usuario, 7L);
     assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
   }
 
   @Test
-  public void debeMarcarLaCategoriaComoPrescindibleCuandoSeTocaEsHormiga() {
-    cafe.setEsencial(true);
-
+  public void debeMarcarLaCategoriaComoHormigaParaElUsuarioCuandoSeTocaEsHormiga() {
     ModelAndView resultado = controladorCategoria.marcarComoHormiga(7L, "/mostrar-gastos", request);
 
-    assertFalse(cafe.isEsencial());
-    verify(categoriaRepositorio).modificar(cafe);
+    verify(servicioCategoria).marcarComoHormiga(usuario, 7L);
     assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
   }
 
   @Test
-  public void noDebeMarcarComoHormigaUnaCategoriaFija() {
-    Categoria salud = new Categoria();
-    salud.setId(3L);
-    salud.setFija(true);
-    when(categoriaRepositorio.buscarPorId(3L)).thenReturn(salud);
-
-    ModelAndView resultado = controladorCategoria.marcarComoHormiga(3L, "/mostrar-gastos", request);
-
-    assertTrue(salud.isEsencial());
-    verify(categoriaRepositorio, never()).modificar(any());
-    assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
-  }
-
-  @Test
-  public void debeRedirigirALoginSinTocarLaCategoriaCuandoSeTocaEsHormigaSinSesion() {
+  public void debeRedirigirALoginSinTocarNadaCuandoSeTocaEsHormigaSinSesion() {
     when(session.getAttribute("USUARIO")).thenReturn(null);
 
     ModelAndView resultado = controladorCategoria.marcarComoHormiga(7L, "/home", request);
 
     assertEquals("redirect:/login", resultado.getViewName());
-    verifyNoInteractions(categoriaRepositorio);
+    verifyNoInteractions(servicioCategoria);
+  }
+
+  @Test
+  public void debeRedirigirALoginSinTocarNadaCuandoSeQuitaDeHormigaSinSesion() {
+    when(session.getAttribute("USUARIO")).thenReturn(null);
+
+    ModelAndView resultado = controladorCategoria.marcarComoNoHormiga(7L, "/home", request);
+
+    assertEquals("redirect:/login", resultado.getViewName());
+    verifyNoInteractions(servicioCategoria);
   }
 
   @Test
@@ -125,20 +108,10 @@ public class ControladorCategoriaTest {
   }
 
   @Test
-  public void noDebeModificarNadaCuandoLaCategoriaNoExiste() {
-    ModelAndView resultado = controladorCategoria.marcarComoNoHormiga(99L, "/home", request);
+  public void debeVolverAlResumenCuandoNoSePideNingunaPantalla() {
+    ModelAndView resultado = controladorCategoria.marcarComoNoHormiga(7L, null, request);
 
-    verify(categoriaRepositorio, never()).modificar(any());
+    verify(servicioCategoria).quitarDeHormiga(usuario, 7L);
     assertEquals("redirect:/home", resultado.getViewName());
-  }
-
-  @Test
-  public void debeRedirigirALoginSinTocarLaCategoriaCuandoNoHayUsuarioEnSesion() {
-    when(session.getAttribute("USUARIO")).thenReturn(null);
-
-    ModelAndView resultado = controladorCategoria.marcarComoNoHormiga(7L, "/home", request);
-
-    assertEquals("redirect:/login", resultado.getViewName());
-    verifyNoInteractions(categoriaRepositorio);
   }
 }
