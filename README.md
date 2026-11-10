@@ -86,6 +86,21 @@ la bienvenida automáticamente; el valor 5 sigue indicando que la guía ya se fi
 6 y 7 identifican los nuevos pasos de simulación y asistente. Hibernate agrega la columna al
 actualizar el esquema; se recomienda respaldar la base antes de desplegar cambios de esquema.
 
+### Presupuestos por categoría
+
+En Presupuestos, el lápiz permite asignar un monto fijo en pesos o un porcentaje del presupuesto
+total del mes. Para usar porcentajes es necesario definir primero un total positivo en el perfil.
+El porcentaje se conserva y el monto se recalcula al cambiar el total que usa ese mes; se redondea
+a centavos. Las asignaciones fijas no cambian. Las categorías combinadas no pueden superar el total,
+y los cambios de total se validan teniendo en cuenta los porcentajes recalculados.
+Las asignaciones existentes continúan siendo montos fijos. Hibernate agrega la columna nullable
+`porcentaje` a `Presupuesto`; se recomienda respaldar la base antes de desplegar.
+
+### Mis gastos
+
+La lista muestra 10 gastos por página, del más reciente al más antiguo. El total mostrado incluye
+todos los gastos del usuario, no solamente los de la página visible.
+
 ### Cargar un gasto desde un comprobante
 
 En "Registrar gasto" se puede elegir una foto o una imagen JPG/PNG de hasta 5 MB. La imagen se envía

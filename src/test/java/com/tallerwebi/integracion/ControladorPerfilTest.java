@@ -60,19 +60,17 @@ public class ControladorPerfilTest {
   }
 
   @Test
-  public void debeMostrarElEmailYEstadoDelUsuarioAutenticadoSinExponerLaContrasenia()
-    throws Exception {
+  public void debeMostrarElEmailSinEstadoDeCuentaNiContrasenia() throws Exception {
     Usuario usuario = new Usuario();
     usuario.setEmail("marce@ejemplo.com");
     usuario.setPassword("clave");
-    usuario.setActivo(true);
 
     mockMvc
       .perform(get("/perfil").sessionAttr("USUARIO", usuario))
       .andExpect(status().isOk())
       .andExpect(view().name("perfil"))
       .andExpect(content().string(containsString("marce@ejemplo.com")))
-      .andExpect(content().string(containsString("Activa")))
+      .andExpect(content().string(not(containsString("Estado de la cuenta"))))
       .andExpect(content().string(not(containsString("clave"))));
   }
 }

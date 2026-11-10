@@ -95,6 +95,13 @@
           </div>
         </article>
       </div>
+      <nav th:if="${totalPaginas > 1}" class="app-gastos-paginacion" aria-label="Páginas de gastos">
+        <a class="btn btn-sm btn-outline-secondary" th:if="${paginaActual > 1}"
+           th:href="@{/mostrar-gastos(pagina=${paginaActual - 1})}">Anterior</a>
+        <span th:text="'Página ' + ${paginaActual} + ' de ' + ${totalPaginas}">Página 1 de 2</span>
+        <a class="btn btn-sm btn-outline-secondary" th:if="${paginaActual < totalPaginas}"
+           th:href="@{/mostrar-gastos(pagina=${paginaActual + 1})}">Siguiente</a>
+      </nav>
     </div>
   </main>
 

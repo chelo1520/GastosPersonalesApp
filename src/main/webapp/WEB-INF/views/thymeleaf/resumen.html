@@ -229,13 +229,8 @@
         <ul class="app-resumen-hormiga-lista list-unstyled mb-0" id="lista-hormiga">
           <li th:each="cat : ${hormiga.categorias}">
             <span th:text="${cat.nombre}">Café y snacks</span>
-            <span class="app-resumen-hormiga-acciones">
-              <span class="app-resumen-num"
-                    th:text="'$ ' + ${#numbers.formatDecimal(cat.gastado, 1, 'POINT', 0, 'COMMA')}">$ 30.000</span>
-              <th:block th:if="${cat.categoriaId != null}">
-                <form th:replace="~{fragments/hormiga :: boton(${cat.categoriaId}, ${cat.nombre}, false, '/home')}"></form>
-              </th:block>
-            </span>
+            <span class="app-resumen-num"
+                  th:text="'$ ' + ${#numbers.formatDecimal(cat.gastado, 1, 'POINT', 0, 'COMMA')}">$ 30.000</span>
           </li>
         </ul>
       </div>

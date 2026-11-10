@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -61,7 +62,6 @@ public class PerfilCuentaVistaTest {
     usuario = new Usuario();
     usuario.setEmail(EMAIL);
     usuario.setPassword("Actual1!");
-    usuario.setActivo(true);
     sessionFactory.getCurrentSession().persist(usuario);
   }
 
@@ -70,6 +70,9 @@ public class PerfilCuentaVistaTest {
     mockMvc
       .perform(get("/perfil").sessionAttr("USUARIO", usuario))
       .andExpect(status().isOk())
+      .andExpect(content().string(containsString(EMAIL)))
+      .andExpect(content().string(not(containsString("Estado de la cuenta"))))
+      .andExpect(content().string(not(containsString("perfil-estado"))))
       .andExpect(content().string(containsString("Cambiar contraseña")))
       .andExpect(content().string(containsString("id=\"password-requisitos\"")))
       .andExpect(content().string(containsString("id=\"btn-cambiar-contrasena\"")))
@@ -80,6 +83,23 @@ public class PerfilCuentaVistaTest {
       .andExpect(content().string(containsString("/js/perfil.js")))
       // Los dos desplegables arrancan cerrados
       .andExpect(content().string(not(containsString("open=\"open\""))));
+  }
+
+  @Test
+  public void debeMostrarConfiguracionDeCuentaAntesDeLosPresupuestos() throws Exception {
+    String pagina = mockMvc
+      .perform(get("/perfil").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andReturn()
+      .getResponse()
+      .getContentAsString();
+    int datos = pagina.indexOf("id=\"perfil-datos-titulo\"");
+    int contrasena = pagina.indexOf("id=\"perfil-contrasena\"");
+    int eliminar = pagina.indexOf("id=\"perfil-eliminar\"");
+    int presupuesto = pagina.indexOf("id=\"guia-destino-perfil\"");
+    int mes = pagina.indexOf("id=\"perfil-mes-form\"");
+    assertTrue(datos >= 0 && datos < contrasena);
+    assertTrue(contrasena < eliminar && eliminar < presupuesto && presupuesto < mes);
   }
 
   @Test

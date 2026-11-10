@@ -67,6 +67,78 @@ public class ServicioPresupuestoImplTest {
   }
 
   @Test
+  void debeGuardarPorcentajeYCalcularElMontoSegunElTotalVigente() {
+    usuario.setIngresoMensual(1000.0);
+    servicioPresupuesto.definirPorcentaje(usuario, alimentacion, OCTUBRE, 25.0);
+    ArgumentCaptor<Presupuesto> captor = ArgumentCaptor.forClass(Presupuesto.class);
+    verify(repositorioPresupuestoMock).guardar(captor.capture());
+    Presupuesto guardado = captor.getValue();
+    assertThat(guardado.getPorcentaje(), equalTo(25.0));
+    when(repositorioPresupuestoMock.obtenerDelMes(usuario, OCTUBRE)).thenReturn(List.of(guardado));
+    usuario.setIngresoMensual(2000.0);
+    assertThat(servicioPresupuesto.totalDelMes(usuario, OCTUBRE), equalTo(500.0));
+    assertThat(guardado.getMonto(), equalTo(250.0));
+  }
+
+  @Test
+  void debeRechazarUnNuevoTotalQueNoAlcanceParaMontosFijosYPorcentajesRecalculados() {
+    Presupuesto variable = new Presupuesto(usuario, alimentacion, OCTUBRE, 500.0);
+    variable.setPorcentaje(50.0);
+    Categoria transporte = new Categoria();
+    Presupuesto fijo = new Presupuesto(usuario, transporte, OCTUBRE, 300.0);
+    when(repositorioPresupuestoMock.obtenerDelMes(usuario, OCTUBRE))
+      .thenReturn(List.of(variable, fijo));
+    when(repositorioPresupuestoMock.obtenerDelUsuario(usuario)).thenReturn(List.of(variable, fijo));
+
+    assertThrows(
+      PresupuestoInvalido.class,
+      () -> servicioPresupuesto.definirPresupuestoDelMes(usuario, OCTUBRE, 500.0)
+    );
+    assertThrows(
+      PresupuestoInvalido.class,
+      () -> servicioPresupuesto.validarPresupuestoPorDefecto(usuario, 500.0)
+    );
+    servicioPresupuesto.definirPresupuestoDelMes(usuario, OCTUBRE, 600.0);
+    servicioPresupuesto.validarPresupuestoPorDefecto(usuario, 600.0);
+  }
+
+  @Test
+  void debeRechazarPorcentajesSinTotalOMayoresAlDisponible() {
+    assertThrows(
+      PresupuestoInvalido.class,
+      () -> servicioPresupuesto.definirPorcentaje(usuario, alimentacion, OCTUBRE, 50.0)
+    );
+    usuario.setIngresoMensual(1000.0);
+    when(repositorioPresupuestoMock.obtenerDelMes(usuario, OCTUBRE))
+      .thenReturn(List.of(new Presupuesto(usuario, new Categoria(), OCTUBRE, 600.0)));
+    assertThrows(
+      PresupuestoInvalido.class,
+      () -> servicioPresupuesto.definirPorcentaje(usuario, alimentacion, OCTUBRE, 50.0)
+    );
+    assertThrows(
+      PresupuestoInvalido.class,
+      () -> servicioPresupuesto.definirPorcentaje(usuario, alimentacion, OCTUBRE, 101.0)
+    );
+    verify(repositorioPresupuestoMock, never()).guardar(any());
+  }
+
+  @Test
+  void debeRedondearElPorcentajeACentavosYUsarElMontoActualAlReemplazarlo() {
+    usuario.setIngresoMensual(10.0);
+    Presupuesto existente = new Presupuesto(usuario, alimentacion, OCTUBRE, 6.66);
+    existente.setPorcentaje(66.67);
+    when(repositorioPresupuestoMock.buscar(usuario, alimentacion, OCTUBRE)).thenReturn(existente);
+    when(repositorioPresupuestoMock.obtenerDelMes(usuario, OCTUBRE)).thenReturn(List.of(existente));
+
+    servicioPresupuesto.definirPorcentaje(usuario, alimentacion, OCTUBRE, 33.33);
+    assertThat(existente.getMonto(), equalTo(3.33));
+    assertThat(existente.getPorcentaje(), equalTo(33.33));
+    servicioPresupuesto.definir(usuario, alimentacion, OCTUBRE, 9.0);
+    assertThat(existente.getMonto(), equalTo(9.0));
+    assertThat(existente.getPorcentaje(), org.hamcrest.Matchers.nullValue());
+  }
+
+  @Test
   void debeReemplazarElMontoSinCrearOtroCuandoLaCategoriaYaTeniaPresupuestoEnEseMes() {
     Presupuesto existente = new Presupuesto(usuario, alimentacion, OCTUBRE, 100000.0);
     when(repositorioPresupuestoMock.buscar(usuario, alimentacion, OCTUBRE)).thenReturn(existente);

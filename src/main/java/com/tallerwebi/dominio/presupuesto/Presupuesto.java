@@ -35,6 +35,7 @@ public class Presupuesto {
   private String mes;
 
   private Double monto;
+  private Double porcentaje;
 
   public Presupuesto() {}
 
@@ -83,5 +84,13 @@ public class Presupuesto {
 
   public void setMonto(Double monto) {
     this.monto = monto;
+  }
+
+  public Double getPorcentaje() {
+    return porcentaje;
+  }
+
+  public void setPorcentaje(Double porcentaje) {
+    this.porcentaje = porcentaje;
   }
 }

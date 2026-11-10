@@ -100,7 +100,6 @@ public class RepositorioUsuarioTest {
     this.dadoQueExisteElUsuario(usuario);
 
     usuario.setPassword("4567");
-    usuario.setActivo(true);
     usuario.setRol("ADMIN");
 
     this.cuandoModificoUnUsuario(usuario);
@@ -162,7 +161,6 @@ public class RepositorioUsuarioTest {
   ) {
     assertThat(usuarioObtenido.getEmail(), is(equalTo(usuarioEsperado.getEmail())));
     assertThat(usuarioObtenido.getPassword(), is(equalTo(usuarioEsperado.getPassword())));
-    assertThat(usuarioObtenido.getActivo(), is(equalTo(usuarioEsperado.getActivo())));
     assertThat(usuarioObtenido.getRol(), is(equalTo(usuarioEsperado.getRol())));
   }
 

@@ -15,7 +15,6 @@ public class Usuario {
   private String email;
   private String password;
   private String rol;
-  private Boolean activo = false;
 
   // Ingreso mensual y qué porcentaje de él se usa como presupuesto (null = todo)
   private Double ingresoMensual;
@@ -62,14 +61,6 @@ public class Usuario {
     this.rol = rol;
   }
 
-  public Boolean getActivo() {
-    return activo;
-  }
-
-  public void setActivo(Boolean activo) {
-    this.activo = activo;
-  }
-
   public Double getIngresoMensual() {
     return ingresoMensual;
   }
@@ -93,9 +84,5 @@ public class Usuario {
     }
     double porcentaje = porcentajePresupuesto == null ? 100.0 : porcentajePresupuesto;
     return (ingresoMensual * porcentaje) / 100.0;
-  }
-
-  public void activar() {
-    activo = true;
   }
 }

@@ -14,11 +14,13 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -32,6 +34,7 @@ public class ControladorGasto {
   private static final String CLAVE_TITULO = "titulo";
   private static final String CLAVE_URL_CANCELAR = "urlCancelar";
   private static final String CLAVE_SECCION = "seccion";
+  private static final int GASTOS_POR_PAGINA = 10;
   private final GastoServicio gastoServicio;
   private final CategoriaRepositorio categoriaRepositorio;
 
@@ -51,15 +54,44 @@ public class ControladorGasto {
     List<Gasto> gastos = gastoServicio
       .obtenerGastos(usuario)
       .stream()
-      .sorted(Comparator.comparing(Gasto::getFecha).reversed())
+      .sorted(
+        Comparator
+          .comparing(Gasto::getFecha, Comparator.reverseOrder())
+          .thenComparing(Gasto::getId, Comparator.nullsLast(Comparator.reverseOrder()))
+      )
       .toList();
     double total = gastos.stream().mapToDouble(Gasto::getImporte).sum();
+    int totalPaginas = Math.max(
+      1,
+      (int) (((long) gastos.size() + GASTOS_POR_PAGINA - 1) / GASTOS_POR_PAGINA)
+    );
+    int pagina = Math.min(paginaSolicitada(request), totalPaginas);
+    int desde = (pagina - 1) * GASTOS_POR_PAGINA;
+    int hasta = Math.min(desde + GASTOS_POR_PAGINA, gastos.size());
 
     Map<String, Object> model = new ModelMap();
-    model.put("gastos", gastos);
+    model.put("gastos", gastos.subList(desde, hasta));
     model.put("total", total);
+    model.put("paginaActual", pagina);
+    model.put("totalPaginas", totalPaginas);
 
     return new ModelAndView("mostrar-gastos", model);
+  }
+
+  private int paginaSolicitada(HttpServletRequest request) {
+    String valor = request.getParameter("pagina");
+    if (valor == null) {
+      return 1;
+    }
+    try {
+      int pagina = Integer.parseInt(valor);
+      if (pagina > 0) {
+        return pagina;
+      }
+    } catch (NumberFormatException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Número de página inválido", e);
+    }
+    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Número de página inválido");
   }
 
   @RequestMapping(path = RUTA_REGISTRAR_GASTO, method = RequestMethod.GET)

@@ -117,7 +117,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 6px;
+}
+
+.app-presupuesto-tipo {
+  width: auto;
+  max-width: 135px;
+  font-size: 0.85rem;
 }
 
 .app-presupuesto-monto {

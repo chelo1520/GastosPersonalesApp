@@ -33,69 +33,7 @@
                     <dt>Email</dt>
                     <dd id="perfil-email" th:text="${usuario.email}">email@ejemplo.com</dd>
                 </div>
-                <div class="app-perfil-dato">
-                    <dt>Estado de la cuenta</dt>
-                    <dd>
-                        <span id="perfil-estado"
-                              class="app-perfil-estado"
-                              th:classappend="${usuario.activo} ? ' app-perfil-estado-activa' : ' app-perfil-estado-inactiva'"
-                              th:text="${usuario.activo} ? 'Activa' : 'Inactiva'">Activa</span>
-                    </dd>
-                </div>
             </dl>
-        </section>
-
-        <section class="app-perfil-card" id="guia-destino-perfil" aria-labelledby="perfil-presupuesto-titulo">
-            <h2 id="perfil-presupuesto-titulo">Mi presupuesto mensual por defecto</h2>
-            <p>Indicá tu ingreso mensual y qué porcentaje querés destinar a tu presupuesto.</p>
-
-            <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
-
-            <form id="perfil-presupuesto-form" th:action="@{/perfil/presupuesto}" method="post" class="row g-3">
-                <div class="col-md-6">
-                    <label for="ingresoMensual" class="form-label">Ingreso mensual ($)</label>
-                    <input type="number" step="0.01" min="0.01" class="form-control" id="ingresoMensual"
-                           name="ingresoMensual" th:value="${usuario.ingresoMensual}" required>
-                </div>
-                <div class="col-md-6">
-                    <label for="porcentaje" class="form-label">% usado como presupuesto</label>
-                    <input type="number" step="0.01" min="0.01" max="100" class="form-control" id="porcentaje"
-                           name="porcentaje" th:value="${usuario.porcentajePresupuesto}" required>
-                </div>
-                <div class="col-12">
-                    <p class="mb-2">Presupuesto mensual:
-                        <strong id="perfil-presupuesto-calculado"
-                                th:text="${#numbers.formatDecimal(usuario.presupuestoSegunPerfil(), 1, 'POINT', 2, 'COMMA')}">0,00</strong>
-                    </p>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                </div>
-            </form>
-        </section>
-
-        <section class="app-perfil-card" aria-labelledby="perfil-mes-titulo">
-            <h2 id="perfil-mes-titulo">Presupuesto de un mes</h2>
-            <p>Elegí un mes y definí su presupuesto total. Los meses sin valor propio usan el presupuesto por defecto.</p>
-
-            <div class="alert alert-danger" role="alert" th:if="${errorMes}" th:text="${errorMes}"></div>
-
-            <p class="alert alert-success" role="status" th:if="${param.mesGuardado != null}">Presupuesto del mes guardado.</p>
-
-            <form id="perfil-mes-form" th:action="@{/perfil/presupuesto/mes}" method="post" class="row g-3">
-                <div class="col-md-6">
-                    <label for="mes-selector" class="form-label">Mes</label>
-                    <input type="month" class="form-control" id="mes-selector" name="mes"
-                           th:value="${mesPresupuesto}" required
-                           onchange="if (this.value) { window.location.href = window.location.pathname + '?mes=' + this.value; }">
-                </div>
-                <div class="col-md-6">
-                    <label for="monto-mes" class="form-label">Presupuesto total del mes ($)</label>
-                    <input type="number" step="0.01" min="0.01" class="form-control" id="monto-mes"
-                           name="monto" th:value="${totalDelMes}" required>
-                </div>
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary">Guardar mes</button>
-                </div>
-            </form>
         </section>
 
         <details class="app-perfil-card app-perfil-seccion" id="perfil-contrasena"
@@ -161,6 +99,59 @@
                 </form>
             </div>
         </details>
+
+        <section class="app-perfil-card" id="guia-destino-perfil" aria-labelledby="perfil-presupuesto-titulo">
+            <h2 id="perfil-presupuesto-titulo">Mi presupuesto mensual por defecto</h2>
+            <p>Indicá tu ingreso mensual y qué porcentaje querés destinar a tu presupuesto.</p>
+
+            <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
+
+            <form id="perfil-presupuesto-form" th:action="@{/perfil/presupuesto}" method="post" class="row g-3">
+                <div class="col-md-6">
+                    <label for="ingresoMensual" class="form-label">Ingreso mensual ($)</label>
+                    <input type="number" step="0.01" min="0.01" class="form-control" id="ingresoMensual"
+                           name="ingresoMensual" th:value="${usuario.ingresoMensual}" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="porcentaje" class="form-label">% usado como presupuesto</label>
+                    <input type="number" step="0.01" min="0.01" max="100" class="form-control" id="porcentaje"
+                           name="porcentaje" th:value="${usuario.porcentajePresupuesto}" required>
+                </div>
+                <div class="col-12">
+                    <p class="mb-2">Presupuesto mensual:
+                        <strong id="perfil-presupuesto-calculado"
+                                th:text="${#numbers.formatDecimal(usuario.presupuestoSegunPerfil(), 1, 'POINT', 2, 'COMMA')}">0,00</strong>
+                    </p>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="app-perfil-card" aria-labelledby="perfil-mes-titulo">
+            <h2 id="perfil-mes-titulo">Presupuesto de un mes</h2>
+            <p>Elegí un mes y definí su presupuesto total. Los meses sin valor propio usan el presupuesto por defecto.</p>
+
+            <div class="alert alert-danger" role="alert" th:if="${errorMes}" th:text="${errorMes}"></div>
+
+            <p class="alert alert-success" role="status" th:if="${param.mesGuardado != null}">Presupuesto del mes guardado.</p>
+
+            <form id="perfil-mes-form" th:action="@{/perfil/presupuesto/mes}" method="post" class="row g-3">
+                <div class="col-md-6">
+                    <label for="mes-selector" class="form-label">Mes</label>
+                    <input type="month" class="form-control" id="mes-selector" name="mes"
+                           th:value="${mesPresupuesto}" required
+                           onchange="if (this.value) { window.location.href = window.location.pathname + '?mes=' + this.value; }">
+                </div>
+                <div class="col-md-6">
+                    <label for="monto-mes" class="form-label">Presupuesto total del mes ($)</label>
+                    <input type="number" step="0.01" min="0.01" class="form-control" id="monto-mes"
+                           name="monto" th:value="${totalDelMes}" required>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Guardar mes</button>
+                </div>
+            </form>
+        </section>
 
         <form th:action="@{/logout}" method="post" class="app-perfil-salir">
             <button type="submit" class="btn btn-outline-secondary w-100">Cerrar sesión</button>

@@ -152,12 +152,16 @@ public class ResumenVistaTest {
       .andExpect(content().string(containsString("$ 10.000")))
       .andExpect(content().string(containsString("1,8</span> % del presupuesto")))
       .andExpect(content().string(containsString("Café y snacks")))
+      .andExpect(content().string(not(containsString("Quitar categoría de hormiga"))))
+      .andExpect(
+        content().string(containsString("Destildá para marcar Café y snacks como esencial"))
+      )
       // Agosto de 2025 ya cerró: no hay alertas
       .andExpect(content().string(not(containsString("app-alerta"))));
   }
 
   @Test
-  public void debeMostrarLaAlertaDeAcumuladoYElBotonNoEsHormigaEnElMesEnCurso() throws Exception {
+  public void debeMostrarLaAlertaDeAcumuladoYElCheckHormigaEnElMesEnCurso() throws Exception {
     LocalDate hoy = LocalDate.now();
     Usuario usuario = new Usuario();
     Categoria delivery = categoria("Delivery");
@@ -180,7 +184,8 @@ public class ResumenVistaTest {
       )
       .andExpect(
         content().string(containsString("/categorias/" + delivery.getId() + "/no-es-hormiga"))
-      );
+      )
+      .andExpect(content().string(not(containsString("Quitar categoría de hormiga"))));
   }
 
   @Test
