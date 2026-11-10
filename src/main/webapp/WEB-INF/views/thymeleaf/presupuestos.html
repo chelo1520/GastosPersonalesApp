@@ -12,6 +12,7 @@
   <header th:replace="~{fragments/layout :: header-mobile('Presupuestos')}"></header>
 
   <main class="app-main app-resumen-main">
+    <div th:replace="~{fragments/guia :: recorrido}"></div>
 
     <!-- Encabezado -->
     <div class="app-resumen-titulo">
@@ -57,7 +58,7 @@
     </div>
 
     <!-- Tabla por categoría -->
-    <section class="app-resumen-card app-presupuestos-tabla-card" aria-label="Presupuestos del mes">
+    <section class="app-resumen-card app-presupuestos-tabla-card" id="guia-destino-categorias" aria-label="Presupuestos del mes">
       <div class="form-check form-switch app-presupuestos-ocultar">
         <input class="form-check-input" type="checkbox" role="switch" id="ocultar-sin-presupuesto">
         <label class="form-check-label" for="ocultar-sin-presupuesto">Ocultar categorías sin presupuesto</label>

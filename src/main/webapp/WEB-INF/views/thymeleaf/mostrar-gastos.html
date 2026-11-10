@@ -9,6 +9,7 @@
   <header th:replace="~{fragments/layout :: header-mobile('Mis gastos')}"></header>
 
   <main class="app-main app-gastos-main">
+    <div th:replace="~{fragments/guia :: recorrido}"></div>
     <div class="app-gastos-titulo">
       <h1 class="h3 fw-bold mb-0">Mis gastos</h1>
       <a class="btn btn-primary app-registrar-link" th:href="@{/registrar-gasto}">+ Registrar gasto</a>
@@ -25,7 +26,7 @@
       <strong>$ <span th:text="${#numbers.formatDecimal(total, 1, 'POINT', 2, 'COMMA')}">0,00</span></strong>
     </section>
 
-    <div class="app-gastos-tabla-card">
+    <div class="app-gastos-tabla-card" id="guia-destino-lista">
       <div th:if="${#lists.isEmpty(gastos)}" class="app-gastos-vacio">
         <h2 class="h5 fw-bold">Todavía no registraste gastos</h2>
         <p class="mb-3">Cuando registres uno, aparecerá en esta lista.</p>

@@ -2,6 +2,7 @@ package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.ReglasDeContrasena;
 import com.tallerwebi.dominio.ServicioCuenta;
+import com.tallerwebi.dominio.ServicioGuia;
 import com.tallerwebi.dominio.ServicioPerfil;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.ContrasenaIncorrecta;
@@ -34,16 +35,19 @@ public class ControladorPerfil {
   private final ServicioCuenta servicioCuenta;
   private final ServicioPerfil servicioPerfil;
   private final ServicioPresupuesto servicioPresupuesto;
+  private final ServicioGuia servicioGuia;
 
   @Autowired
   public ControladorPerfil(
     ServicioCuenta servicioCuenta,
     ServicioPerfil servicioPerfil,
-    ServicioPresupuesto servicioPresupuesto
+    ServicioPresupuesto servicioPresupuesto,
+    ServicioGuia servicioGuia
   ) {
     this.servicioCuenta = servicioCuenta;
     this.servicioPerfil = servicioPerfil;
     this.servicioPresupuesto = servicioPresupuesto;
+    this.servicioGuia = servicioGuia;
   }
 
   @RequestMapping(path = "/perfil", method = RequestMethod.GET)
@@ -166,6 +170,10 @@ public class ControladorPerfil {
       servicioPerfil.definirPresupuesto(usuario, ingresoMensual, porcentaje);
     } catch (PresupuestoInvalido e) {
       return conError(usuario, "error", e.getMessage());
+    }
+    if (Integer.valueOf(1).equals(usuario.getGuiaPaso())) {
+      servicioGuia.guardarPaso(usuario, 2);
+      return new ModelAndView("redirect:/presupuestos");
     }
     return new ModelAndView("redirect:/perfil");
   }

@@ -70,6 +70,7 @@ public class ControladorLoginTest {
     // validacion
     assertThat(modelAndView.getViewName(), equalToIgnoringCase("redirect:/home"));
     verify(sessionMock, times(1)).setAttribute("USUARIO", usuarioEncontradoMock);
+    verify(sessionMock, times(1)).removeAttribute("GUIA_POSPUESTA");
     verify(sessionMock, times(1)).setAttribute("ROL", usuarioEncontradoMock.getRol());
   }
 

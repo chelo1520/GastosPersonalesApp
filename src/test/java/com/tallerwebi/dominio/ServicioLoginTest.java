@@ -49,6 +49,7 @@ public class ServicioLoginTest {
 
     // validacion
     verify(this.repositorioUsuarioMock, times(1)).guardar(usuario);
+    assertThat(usuario.getGuiaPaso(), equalTo(0));
   }
 
   @Test

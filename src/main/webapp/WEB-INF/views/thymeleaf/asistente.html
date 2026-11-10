@@ -25,8 +25,9 @@
       indicadoresNoDisponibles (true cuando no hay IPC ni dólar)
   -->
   <main class="app-main app-resumen-main app-asistente-main">
+    <div th:replace="~{fragments/guia :: recorrido}"></div>
 
-    <div class="app-resumen-titulo">
+    <div class="app-resumen-titulo" id="guia-destino-asistente">
       <div>
         <h1 class="h3 fw-bold mb-0">Asistente</h1>
         <p class="app-asistente-subtitulo">Tu gasto real<span th:if="${periodoTexto != null}" th:text="' de ' + ${periodoTexto}"> de Mayo a Septiembre 2026</span>, descontada la inflación · solo meses cerrados</p>

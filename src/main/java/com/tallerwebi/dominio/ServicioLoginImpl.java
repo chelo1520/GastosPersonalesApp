@@ -28,6 +28,7 @@ public class ServicioLoginImpl implements ServicioLogin {
     if (repositorioUsuario.buscar(usuario.getEmail()) != null) {
       throw new UsuarioExistente();
     }
+    usuario.setGuiaPaso(0);
     repositorioUsuario.guardar(usuario);
   }
 }

@@ -11,7 +11,8 @@
 <header th:replace="~{fragments/layout :: header-mobile('Simulación')}"></header>
 
 <main class="app-main app-sim-main">
-    <div class="app-sim-titulo">
+  <div th:replace="~{fragments/guia :: recorrido}"></div>
+    <div class="app-sim-titulo" id="guia-destino-simulacion">
         <h1 class="h3 fw-bold mb-0">Simulación · <span th:text="${mesSimulado}">Noviembre 2026</span></h1>
     </div>
 
