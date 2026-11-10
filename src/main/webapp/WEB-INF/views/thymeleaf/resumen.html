@@ -20,6 +20,10 @@
       historial: lista con etiqueta (ej. "Oct 2026") y resumen (gastado, hormiga, resto, presupuesto, enCurso)
   -->
   <main class="app-main app-resumen-main">
+    <div th:replace="~{fragments/guia :: recorrido}"></div>
+    <div class="alert alert-success" role="status" th:if="${guiaFinalizada}">
+      ¡Listo para empezar! Ya conocés los primeros pasos de Gastitos.
+    </div>
 
     <!-- Encabezado -->
     <div class="app-resumen-titulo">
@@ -43,7 +47,7 @@
     </div>
 
     <!-- Tarjetas de totales -->
-    <section class="app-resumen-stats" aria-label="Totales del mes">
+    <section class="app-resumen-stats" id="guia-destino-resumen" aria-label="Totales del mes">
       <article class="app-resumen-card">
         <span class="app-resumen-card-label">Gastado en el mes</span>
         <strong class="app-resumen-monto"

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="recorrido" th:if="${session.USUARIO != null and session.USUARIO.guiaPaso != null}">
+  <dialog id="guia-bienvenida" class="app-guia-modal" aria-labelledby="guia-bienvenida-titulo"
+          th:if="${session.USUARIO.guiaPaso == 0 and session.GUIA_POSPUESTA != true}">
+    <p class="app-guia-etiqueta">Tu primera visita</p>
+    <h2 id="guia-bienvenida-titulo">¡Bienvenido a Gastitos!</h2>
+    <p>Te ayudamos a organizar tu dinero y entender en qué lo gastás.</p>
+    <p>Te mostramos cómo organizar tu presupuesto, registrar gastos y conocer el resumen, la simulación y el asistente. Podés completar los datos ahora o más adelante.</p>
+    <div class="app-guia-acciones">
+      <form method="post" th:action="@{/guia/continuar}"><button class="btn btn-primary" type="submit">Empezar</button></form>
+      <form method="post" data-guia-pausar th:action="@{/guia/pausar}"><button class="btn btn-link" type="submit">Ahora no</button></form>
+    </div>
+  </dialog>
+
+  <section class="app-guia" id="guia-pasos" aria-labelledby="guia-titulo"
+           th:if="${(session.USUARIO.guiaPaso >= 1 and session.USUARIO.guiaPaso <= 4) or session.USUARIO.guiaPaso == 6 or session.USUARIO.guiaPaso == 7}"
+           th:with="paso=${session.USUARIO.guiaPaso}"
+           th:attr="data-paso=${paso},data-perfil=@{/perfil},data-presupuestos=@{/presupuestos},data-registrar=@{/registrar-gasto},data-resumen=@{/home},data-simulacion=@{/simulacion},data-asistente=@{/asistente}">
+    <p class="app-guia-etiqueta" th:text="'Tu guía · Paso ' + ${paso >= 6 ? paso - 1 : paso} + ' de 6'">Tu guía</p>
+    <h2 id="guia-titulo" th:switch="${paso}">
+      <span th:case="1">Definí tu presupuesto mensual</span>
+      <span th:case="2">Organizá tu presupuesto</span>
+      <span th:case="3">Registrá un gasto</span>
+      <span th:case="4">Conocé tu resumen</span>
+      <span th:case="6">Explorá la simulación</span>
+      <span th:case="7">Conocé el asistente</span>
+    </h2>
+    <div th:switch="${paso}">
+      <p th:case="1">Acá podés indicar tu ingreso y el porcentaje que querés usar como presupuesto. Si lo guardás, avanzás al siguiente paso; también podés continuar sin cargarlo.</p>
+      <p th:case="2">En Presupuestos usá el lápiz para asignar un monto a una categoría de este mes. Si no la ves, desactivá “Ocultar categorías sin presupuesto”.</p>
+      <p th:case="3">Acá podés cargar un gasto a mano o desde un comprobante. Si preferís, podés registrarlo más adelante.</p>
+      <p th:case="4">En Resumen podés consultar lo gastado y lo disponible. Si superás el total, recibís un aviso y podés seguir registrando gastos.</p>
+      <p th:case="6">Simulá el próximo mes con los gastos del último mes cerrado. Podés agregar o quitar gastos y comparar el resultado con tu presupuesto: los cambios no se guardan.</p>
+      <p th:case="7">El asistente analiza tus gastos de meses cerrados teniendo en cuenta la inflación y ofrece lecturas y sugerencias cuando hay datos disponibles. Podés explorarlo más adelante.</p>
+    </div>
+    <div class="app-guia-acciones">
+      <form method="post" th:action="@{/guia/anterior}"><button class="btn btn-link" type="submit">Anterior</button></form>
+      <form method="post" th:action="@{/guia/continuar}"><button class="btn btn-primary" type="submit" th:text="${paso == 7} ? 'Finalizar' : 'Continuar'">Continuar</button></form>
+    </div>
+  </section>
+</div>
+</body>
+</html>

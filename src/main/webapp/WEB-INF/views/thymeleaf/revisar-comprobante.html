@@ -15,7 +15,8 @@
       categorias, fechaMinima, fechaMaxima, error (opcional)
   -->
   <main class="app-main">
-    <section class="app-form-card" aria-labelledby="titulo-revision">
+    <div th:replace="~{fragments/guia :: recorrido}"></div>
+    <section class="app-form-card" id="guia-destino-comprobante" aria-labelledby="titulo-revision">
       <h1 id="titulo-revision" class="h3 fw-bold mb-3 d-none d-md-block">
         Revisar y confirmar datos extraídos del comprobante
       </h1>

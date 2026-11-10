@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 @Repository("repositorioUsuario")
 public class RepositorioUsuarioImpl implements RepositorioUsuario {
 
+  private static final int UN_USUARIO = 1;
   private SessionFactory sessionFactory;
 
   @Autowired
@@ -53,6 +54,19 @@ public class RepositorioUsuarioImpl implements RepositorioUsuario {
       throw new UsuarioNoEncontrado();
     }
     sessionFactory.getCurrentSession().merge(usuario);
+  }
+
+  @Override
+  public void actualizarGuia(Long usuarioId, Integer paso) {
+    int actualizados = sessionFactory
+      .getCurrentSession()
+      .createMutationQuery("update Usuario set guiaPaso = :paso where id = :id")
+      .setParameter("paso", paso)
+      .setParameter("id", usuarioId)
+      .executeUpdate();
+    if (actualizados != UN_USUARIO) {
+      throw new UsuarioNoEncontrado();
+    }
   }
 
   @Override

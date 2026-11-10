@@ -9,7 +9,8 @@
   <header th:replace="~{fragments/layout :: header-mobile(${titulo})}"></header>
 
   <main class="app-main">
-    <section class="app-form-card" aria-labelledby="titulo-comprobante">
+    <div th:replace="~{fragments/guia :: recorrido}"></div>
+    <section class="app-form-card" id="guia-destino-comprobante" aria-labelledby="titulo-comprobante">
       <h1 id="titulo-comprobante" class="h3 fw-bold mb-3 d-none d-md-block">Cargar desde comprobante</h1>
 
       <div th:if="${error != null}" class="alert alert-danger" role="alert" th:text="${error}">

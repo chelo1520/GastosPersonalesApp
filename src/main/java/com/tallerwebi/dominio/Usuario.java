@@ -20,6 +20,15 @@ public class Usuario {
   // Ingreso mensual y qué porcentaje de él se usa como presupuesto (null = todo)
   private Double ingresoMensual;
   private Double porcentajePresupuesto;
+  private Integer guiaPaso;
+
+  public Integer getGuiaPaso() {
+    return guiaPaso;
+  }
+
+  public void setGuiaPaso(Integer guiaPaso) {
+    this.guiaPaso = guiaPaso;
+  }
 
   public Long getId() {
     return id;

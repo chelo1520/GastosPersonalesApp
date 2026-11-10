@@ -3,6 +3,7 @@ package com.tallerwebi.presentacion;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.ReglasDeContrasena;
 import com.tallerwebi.dominio.ServicioCuenta;
+import com.tallerwebi.dominio.ServicioGuia;
 import com.tallerwebi.dominio.ServicioPerfil;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.ContrasenaIncorrecta;
@@ -33,6 +35,7 @@ public class ControladorPerfilTest {
   private ServicioCuenta servicioCuentaMock;
   private ServicioPerfil servicioPerfilMock;
   private ServicioPresupuesto servicioPresupuestoMock;
+  private ServicioGuia servicioGuiaMock;
   private ControladorPerfil controladorPerfil;
 
   @BeforeEach
@@ -40,8 +43,14 @@ public class ControladorPerfilTest {
     this.servicioCuentaMock = mock(ServicioCuenta.class);
     this.servicioPerfilMock = mock(ServicioPerfil.class);
     this.servicioPresupuestoMock = mock(ServicioPresupuesto.class);
+    this.servicioGuiaMock = mock(ServicioGuia.class);
     this.controladorPerfil =
-      new ControladorPerfil(servicioCuentaMock, servicioPerfilMock, servicioPresupuestoMock);
+      new ControladorPerfil(
+        servicioCuentaMock,
+        servicioPerfilMock,
+        servicioPresupuestoMock,
+        servicioGuiaMock
+      );
     this.usuarioMock = mock(Usuario.class);
     this.requestMock = mock(HttpServletRequest.class);
     this.sessionMock = mock(HttpSession.class);
@@ -184,11 +193,13 @@ public class ControladorPerfilTest {
     ModelAndView resultado = controladorPerfil.definirPresupuesto(400000.0, 50.0, requestMock);
 
     verify(servicioPerfilMock).definirPresupuesto(usuarioMock, 400000.0, 50.0);
+    verify(servicioGuiaMock, never()).guardarPaso(any(), anyInt());
     assertEquals("redirect:/perfil", resultado.getViewName());
   }
 
   @Test
   public void debeVolverAlPerfilConElErrorCuandoElServicioRechazaLosDatos() {
+    when(usuarioMock.getGuiaPaso()).thenReturn(1);
     doThrow(new PresupuestoInvalido("El ingreso debe ser mayor a cero"))
       .when(servicioPerfilMock)
       .definirPresupuesto(eq(usuarioMock), any(), any());
@@ -198,6 +209,28 @@ public class ControladorPerfilTest {
     assertEquals("perfil", resultado.getViewName());
     assertEquals("El ingreso debe ser mayor a cero", resultado.getModel().get("error"));
     assertSame(usuarioMock, resultado.getModel().get("usuario"));
+    verify(servicioGuiaMock, never()).guardarPaso(any(), anyInt());
+  }
+
+  @Test
+  public void debeAvanzarLaGuiaAlGuardarElPresupuestoEnElPrimerPaso() {
+    when(usuarioMock.getGuiaPaso()).thenReturn(1);
+
+    ModelAndView resultado = controladorPerfil.definirPresupuesto(400000.0, 50.0, requestMock);
+
+    verify(servicioPerfilMock).definirPresupuesto(usuarioMock, 400000.0, 50.0);
+    verify(servicioGuiaMock).guardarPaso(usuarioMock, 2);
+    assertEquals("redirect:/presupuestos", resultado.getViewName());
+  }
+
+  @Test
+  public void noDebeCambiarLaGuiaAlGuardarElPresupuestoEnOtroPaso() {
+    when(usuarioMock.getGuiaPaso()).thenReturn(3);
+
+    ModelAndView resultado = controladorPerfil.definirPresupuesto(400000.0, 50.0, requestMock);
+
+    verify(servicioGuiaMock, never()).guardarPaso(any(), anyInt());
+    assertEquals("redirect:/perfil", resultado.getViewName());
   }
 
   @Test

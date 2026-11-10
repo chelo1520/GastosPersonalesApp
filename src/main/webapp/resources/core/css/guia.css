@@ -1,0 +1,83 @@
+.app-guia,
+.app-guia-modal {
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #e6e5df;
+  border-radius: 16px;
+  padding: 24px;
+  color: #233331;
+}
+
+.app-guia {
+  margin-bottom: 20px;
+}
+
+.app-guia-activa {
+  padding-bottom: 300px;
+}
+
+.app-guia-activa::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1040;
+  background: rgba(15, 30, 27, 0.6);
+  pointer-events: none;
+}
+
+.app-guia-activa .app-guia-destacado {
+  position: relative;
+  z-index: 1041;
+  scroll-margin-top: 16px;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.app-guia-activa .app-guia {
+  position: fixed;
+  z-index: 1042;
+  right: 24px;
+  bottom: 24px;
+  width: min(440px, calc(100% - 32px));
+  max-height: 45vh;
+  overflow-y: auto;
+  margin: 0;
+  box-shadow: 0 16px 48px rgba(18, 45, 40, 0.18);
+}
+
+@media (max-width: 575px) {
+  .app-guia-activa .app-guia {
+    right: 16px;
+    bottom: 16px;
+    padding: 16px;
+  }
+}
+
+.app-guia-modal {
+  max-width: min(520px, calc(100% - 32px));
+  box-shadow: 0 16px 48px rgba(18, 45, 40, 0.18);
+}
+
+.app-guia-modal::backdrop {
+  background: rgba(15, 30, 27, 0.6);
+}
+
+.app-guia h2,
+.app-guia-modal h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.app-guia-etiqueta {
+  color: #167266;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.app-guia-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}

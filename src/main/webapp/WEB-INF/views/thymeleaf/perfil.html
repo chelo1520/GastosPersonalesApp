@@ -8,6 +8,7 @@
     <header th:replace="~{fragments/layout :: header-mobile('Perfil')}"></header>
 
     <main class="app-main app-perfil-main">
+        <div th:replace="~{fragments/guia :: recorrido}"></div>
         <div class="app-perfil-titulo">
             <h1 class="h3 fw-bold mb-2">Mi perfil</h1>
             <p class="mb-0">Información asociada a tu cuenta de Gastitos.</p>
@@ -44,7 +45,7 @@
             </dl>
         </section>
 
-        <section class="app-perfil-card" aria-labelledby="perfil-presupuesto-titulo">
+        <section class="app-perfil-card" id="guia-destino-perfil" aria-labelledby="perfil-presupuesto-titulo">
             <h2 id="perfil-presupuesto-titulo">Mi presupuesto mensual por defecto</h2>
             <p>Indicá tu ingreso mensual y qué porcentaje querés destinar a tu presupuesto.</p>
 

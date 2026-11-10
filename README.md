@@ -71,6 +71,21 @@ si existe la variable de entorno `ANTHROPIC_API_KEY` (en `.env`, nunca en el rep
 muestra el veredicto y los consejos con el texto de las reglas.
 El modelo es `claude-haiku-5-5`; se cambia con `ASISTENTE_MODELO` (por ejemplo `claude-opus-5-5`).
 
+### Guía de bienvenida
+
+Las cuentas nuevas ven una bienvenida con una guía para configurar el presupuesto del mes,
+asignar una categoría, registrar un gasto y conocer el resumen, la simulación y el asistente.
+Los dos últimos pasos son informativos y no requieren usar esas herramientas. La guía permite volver al paso
+anterior y continuar sin completar los formularios; los datos se pueden cargar durante el recorrido
+o más adelante. Al guardar el presupuesto por defecto en el primer paso, la guía avanza
+automáticamente. Si se elige «Ahora no» en la bienvenida, esta vuelve a aparecer en el próximo
+inicio de sesión.
+
+El progreso se guarda en `Usuario.guiaPaso`. Las cuentas existentes con ese campo vacío no ven
+la bienvenida automáticamente; el valor 5 sigue indicando que la guía ya se finalizó, mientras que
+6 y 7 identifican los nuevos pasos de simulación y asistente. Hibernate agrega la columna al
+actualizar el esquema; se recomienda respaldar la base antes de desplegar cambios de esquema.
+
 ### Cargar un gasto desde un comprobante
 
 En "Registrar gasto" se puede elegir una foto o una imagen JPG/PNG de hasta 5 MB. La imagen se envía

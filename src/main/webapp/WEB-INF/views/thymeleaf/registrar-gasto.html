@@ -9,7 +9,8 @@
   <header th:replace="~{fragments/layout :: header-mobile(${titulo})}"></header>
 
   <main class="app-main">
-    <div class="app-form-card">
+    <div th:replace="~{fragments/guia :: recorrido}"></div>
+    <div class="app-form-card" id="guia-destino-gasto">
       <h1 class="h3 fw-bold mb-4 d-none d-md-block" th:text="${titulo}">Registrar gasto</h1>
 
       <div th:if="${error != null}" class="alert alert-danger" role="alert" th:text="${error}">
