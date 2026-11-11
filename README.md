@@ -62,9 +62,15 @@ docker run --env-file .env --name tallerwebi-mysql -d -p 3306:3306 mysql
 $ mvn clean jetty:run
 # http://localhost:8080/gastitos
 ```
-Usuarios de demostración (contraseña `test`, como el usuario de prueba), que se recargan en cada arranque:
-`alto@gastitos.demo` (consumo alto) y `medio@gastitos.demo` (moderado) con presupuestos y gastos desde octubre
-de 2025 hasta el día de hoy, y `bajo@gastitos.demo` (muy bajo) solo desde septiembre de 2026. Ver `src/main/resources/demo.sql`.
+Datos iniciales, cargados en cada arranque:
+
+- `src/main/resources/data.sql`: datos maestros. Las 16 categorías y el usuario de prueba `test@unlam.edu.ar`
+  (contraseña `test`), sin gastos. No pisa nada.
+- `src/main/resources/demo.sql`: datos ficticios para la demo. Tres usuarios (contraseña `test`) con ingreso en el
+  perfil, presupuestos y gastos que se recargan en cada arranque, así la demo siempre arranca igual:
+  `alto@gastitos.demo` (consumo alto) y `medio@gastitos.demo` (moderado) desde octubre de 2025 hasta el día de hoy,
+  y `bajo@gastitos.demo` (muy bajo) desde septiembre de 2026. Lo que se cargue a mano con ellos se pierde al
+  reiniciar. El archivo se genera con un script; no editarlo a mano.
 
 El asistente escribe con Claude una síntesis del período (un párrafo que conecta sus conclusiones)
 si existe la variable de entorno `ANTHROPIC_API_KEY` (en `.env`, nunca en el repo). Sin la variable,
