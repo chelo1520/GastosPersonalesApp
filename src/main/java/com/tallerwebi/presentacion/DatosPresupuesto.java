@@ -8,6 +8,8 @@ public class DatosPresupuesto {
   private Long categoriaId;
   private Double monto;
   private String mes;
+  private String tipo;
+  private Double valor;
 
   public DatosPresupuesto() {}
 
@@ -39,5 +41,21 @@ public class DatosPresupuesto {
 
   public void setMes(String mes) {
     this.mes = mes;
+  }
+
+  public String getTipo() {
+    return tipo;
+  }
+
+  public void setTipo(String tipo) {
+    this.tipo = tipo;
+  }
+
+  public Double getValor() {
+    return valor;
+  }
+
+  public void setValor(Double valor) {
+    this.valor = valor;
   }
 }

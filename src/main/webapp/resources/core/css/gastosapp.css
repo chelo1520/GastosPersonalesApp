@@ -213,6 +213,15 @@ a:hover {
   overflow: hidden;
 }
 
+.app-gastos-paginacion {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px;
+}
+
 .app-gastos-tabla {
   font-size: 15px;
 }
@@ -388,25 +397,6 @@ a:hover {
   margin: 0;
   overflow-wrap: anywhere;
   font-weight: 600;
-}
-
-.app-perfil-estado {
-  display: inline-flex;
-  align-items: center;
-  padding: 5px 11px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.app-perfil-estado-activa {
-  background: #e5f1ee;
-  color: #115e59;
-}
-
-.app-perfil-estado-inactiva {
-  background: #efede6;
-  color: var(--app-texto-suave);
 }
 
 .app-perfil-card + .app-perfil-card {

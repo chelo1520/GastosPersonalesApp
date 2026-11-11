@@ -11,9 +11,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.gasto.Gasto;
+import com.tallerwebi.dominio.presupuesto.Presupuesto;
 import com.tallerwebi.integracion.config.HibernateTestConfig;
 import com.tallerwebi.integracion.config.SpringWebTestConfig;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -145,7 +147,9 @@ public class PresupuestosVistaTest {
       .andExpect(status().isOk())
       .andExpect(content().string(containsString("app-presupuesto-lapiz")))
       .andExpect(content().string(containsString("Editar el presupuesto de Alimentación")))
-      .andExpect(content().string(containsString("class=\"app-presupuesto-editar\" hidden")))
+      .andExpect(content().string(containsString("class=\"app-presupuesto-editar\"")))
+      .andExpect(content().string(containsString("name=\"tipo\"")))
+      .andExpect(content().string(containsString("Porcentaje (%)")))
       .andExpect(
         content()
           .string(containsString("name=\"categoriaId\" value=\"" + alimentacion.getId() + "\""))
@@ -198,5 +202,140 @@ public class PresupuestosVistaTest {
       .andExpect(view().name("presupuestos"))
       .andExpect(content().string(containsString("El monto debe ser mayor a cero")))
       .andExpect(content().string(containsString("Sin presupuesto")));
+  }
+
+  @Test
+  public void debeRecalcularElPorcentajeAlCambiarElTotalDelMesYAlVolverAPesos() throws Exception {
+    String mes = YearMonth.now().toString();
+    usuario.setIngresoMensual(1000.0);
+    usuario.setPorcentajePresupuesto(100.0);
+    sessionFactory.getCurrentSession().flush();
+
+    mockMvc
+      .perform(
+        post("/presupuestos")
+          .sessionAttr("USUARIO", usuario)
+          .param("categoriaId", alimentacion.getId().toString())
+          .param("tipo", "porcentaje")
+          .param("valor", "25")
+          .param("mes", mes)
+      )
+      .andExpect(redirectedUrl("/presupuestos?mes=" + mes));
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+    Presupuesto guardado = sessionFactory
+      .getCurrentSession()
+      .createQuery("FROM Presupuesto WHERE usuario.id = :id", Presupuesto.class)
+      .setParameter("id", usuario.getId())
+      .getSingleResult();
+    org.junit.jupiter.api.Assertions.assertEquals(25.0, guardado.getPorcentaje());
+
+    mockMvc
+      .perform(
+        post("/perfil/presupuesto/mes")
+          .sessionAttr("USUARIO", usuario)
+          .param("mes", mes)
+          .param("monto", "2000")
+      )
+      .andExpect(redirectedUrl("/perfil?mesGuardado&mes=" + mes));
+    mockMvc
+      .perform(get("/presupuestos").param("mes", mes).sessionAttr("USUARIO", usuario))
+      .andExpect(content().string(containsString("25.0 % del total")))
+      .andExpect(content().string(containsString("$ 500")));
+
+    mockMvc
+      .perform(
+        post("/presupuestos")
+          .sessionAttr("USUARIO", usuario)
+          .param("categoriaId", alimentacion.getId().toString())
+          .param("tipo", "pesos")
+          .param("valor", "300")
+          .param("mes", mes)
+      )
+      .andExpect(redirectedUrl("/presupuestos?mes=" + mes));
+    mockMvc
+      .perform(
+        post("/perfil/presupuesto/mes")
+          .sessionAttr("USUARIO", usuario)
+          .param("mes", mes)
+          .param("monto", "4000")
+      )
+      .andExpect(redirectedUrl("/perfil?mesGuardado&mes=" + mes));
+    mockMvc
+      .perform(get("/presupuestos").param("mes", mes).sessionAttr("USUARIO", usuario))
+      .andExpect(content().string(containsString("$ 300")));
+  }
+
+  @Test
+  public void debeMostrarErrorSiNoHayTotalOElPorcentajeEsInvalido() throws Exception {
+    mockMvc
+      .perform(
+        post("/presupuestos")
+          .sessionAttr("USUARIO", usuario)
+          .param("categoriaId", alimentacion.getId().toString())
+          .param("tipo", "porcentaje")
+          .param("valor", "25")
+          .param("mes", "2026-10")
+      )
+      .andExpect(content().string(containsString("Definí primero un presupuesto total")));
+    usuario.setIngresoMensual(1000.0);
+    for (String valor : new String[] { "0", "101" }) {
+      mockMvc
+        .perform(
+          post("/presupuestos")
+            .sessionAttr("USUARIO", usuario)
+            .param("categoriaId", alimentacion.getId().toString())
+            .param("tipo", "porcentaje")
+            .param("valor", valor)
+            .param("mes", "2026-10")
+        )
+        .andExpect(content().string(containsString("El porcentaje debe ser mayor a cero")));
+    }
+  }
+
+  @Test
+  public void debeRecalcularSegunElPerfilYRespetarElTotalPropioDeOtroMes() throws Exception {
+    String mes = YearMonth.now().toString();
+    String otroMes = YearMonth.now().plusMonths(1).toString();
+    usuario.setIngresoMensual(1000.0);
+    usuario.setPorcentajePresupuesto(100.0);
+    mockMvc
+      .perform(
+        post("/perfil/presupuesto/mes")
+          .sessionAttr("USUARIO", usuario)
+          .param("mes", otroMes)
+          .param("monto", "3000")
+      )
+      .andExpect(status().is3xxRedirection());
+    for (String periodo : new String[] { mes, otroMes }) {
+      mockMvc
+        .perform(
+          post("/presupuestos")
+            .sessionAttr("USUARIO", usuario)
+            .param("categoriaId", alimentacion.getId().toString())
+            .param("tipo", "porcentaje")
+            .param("valor", "25")
+            .param("mes", periodo)
+        )
+        .andExpect(status().is3xxRedirection());
+    }
+
+    mockMvc
+      .perform(
+        post("/perfil/presupuesto")
+          .sessionAttr("USUARIO", usuario)
+          .param("ingresoMensual", "2000")
+          .param("porcentaje", "100")
+      )
+      .andExpect(redirectedUrl("/perfil"));
+    mockMvc
+      .perform(get("/presupuestos").param("mes", mes).sessionAttr("USUARIO", usuario))
+      .andExpect(content().string(containsString("$ 500")));
+    mockMvc
+      .perform(get("/presupuestos").param("mes", otroMes).sessionAttr("USUARIO", usuario))
+      .andExpect(content().string(containsString("$ 750")));
+    mockMvc
+      .perform(get("/home").param("mes", mes).sessionAttr("USUARIO", usuario))
+      .andExpect(content().string(containsString("500")));
   }
 }

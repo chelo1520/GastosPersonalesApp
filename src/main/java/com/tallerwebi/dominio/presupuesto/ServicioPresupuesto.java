@@ -12,6 +12,8 @@ public interface ServicioPresupuesto {
   // Uno por categoría y mes: si ya existe, reemplaza el monto
   void definir(Usuario usuario, Categoria categoria, YearMonth mes, Double monto);
 
+  void definirPorcentaje(Usuario usuario, Categoria categoria, YearMonth mes, Double porcentaje);
+
   Presupuesto buscar(Usuario usuario, Categoria categoria, YearMonth mes);
 
   List<Presupuesto> obtenerDelMes(Usuario usuario, YearMonth mes);

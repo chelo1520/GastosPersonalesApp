@@ -1,12 +1,14 @@
 package com.tallerwebi.integracion;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -64,6 +66,88 @@ public class MostrarGastosVistaTest {
       .andExpect(content().string(containsString("Compra de prueba")))
       .andExpect(content().string(containsString("30/09/2026")))
       .andExpect(content().string(containsString("1.800,00")));
+  }
+
+  @Test
+  public void debePaginarDiezGastosPorPaginaConTotalGeneralYOrdenEstable() throws Exception {
+    Usuario usuario = new Usuario();
+    Usuario otroUsuario = new Usuario();
+    sessionFactory.getCurrentSession().persist(usuario);
+    sessionFactory.getCurrentSession().persist(otroUsuario);
+    for (int i = 1; i <= 21; i++) {
+      Gasto gasto = new Gasto(10.0, LocalDate.of(2026, 9, 30), String.format("Registro %02d", i));
+      gasto.setUsuario(usuario);
+      sessionFactory.getCurrentSession().persist(gasto);
+    }
+    Gasto ajeno = new Gasto(500.0, LocalDate.of(2026, 10, 1), "Gasto ajeno");
+    ajeno.setUsuario(otroUsuario);
+    sessionFactory.getCurrentSession().persist(ajeno);
+    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+    mockMvc
+      .perform(get("/mostrar-gastos").sessionAttr("USUARIO", usuario))
+      .andExpect(model().attribute("gastos", hasSize(10)))
+      .andExpect(model().attribute("total", 210.0))
+      .andExpect(content().string(containsString("Página 1 de 3")))
+      .andExpect(content().string(containsString("Registro 21")))
+      .andExpect(content().string(containsString("Registro 12")))
+      .andExpect(content().string(not(containsString("Registro 11"))))
+      .andExpect(content().string(not(containsString("Gasto ajeno"))))
+      .andExpect(content().string(containsString("pagina=2")));
+    mockMvc
+      .perform(get("/mostrar-gastos").param("pagina", "2").sessionAttr("USUARIO", usuario))
+      .andExpect(model().attribute("gastos", hasSize(10)))
+      .andExpect(model().attribute("total", 210.0))
+      .andExpect(content().string(containsString("Página 2 de 3")))
+      .andExpect(content().string(containsString("Registro 11")))
+      .andExpect(content().string(containsString("Registro 02")))
+      .andExpect(content().string(not(containsString("Registro 01"))));
+    mockMvc
+      .perform(get("/mostrar-gastos").param("pagina", "3").sessionAttr("USUARIO", usuario))
+      .andExpect(model().attribute("gastos", hasSize(1)))
+      .andExpect(content().string(containsString("Registro 01")))
+      .andExpect(content().string(containsString("Página 3 de 3")));
+    mockMvc
+      .perform(get("/mostrar-gastos").param("pagina", "99").sessionAttr("USUARIO", usuario))
+      .andExpect(model().attribute("paginaActual", 3))
+      .andExpect(model().attribute("gastos", hasSize(1)));
+  }
+
+  @Test
+  public void noMuestraPaginacionSinGastosYRechazaPaginasInvalidas() throws Exception {
+    Usuario usuario = new Usuario();
+    sessionFactory.getCurrentSession().persist(usuario);
+    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+    mockMvc
+      .perform(get("/mostrar-gastos").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("Todavía no registraste gastos")))
+      .andExpect(content().string(not(containsString("Páginas de gastos"))));
+    for (String pagina : new String[] { "0", "-1", "abc", "999999999999" }) {
+      mockMvc
+        .perform(get("/mostrar-gastos").param("pagina", pagina).sessionAttr("USUARIO", usuario))
+        .andExpect(status().isBadRequest());
+    }
+  }
+
+  @Test
+  public void diezGastosCabenEnUnaPaginaOrdenadosPorFechaMasReciente() throws Exception {
+    Usuario usuario = new Usuario();
+    sessionFactory.getCurrentSession().persist(usuario);
+    for (int i = 1; i <= 10; i++) {
+      Gasto gasto = new Gasto(1.0, LocalDate.of(2026, 9, i), "Día " + i);
+      gasto.setUsuario(usuario);
+      sessionFactory.getCurrentSession().persist(gasto);
+    }
+    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+    MvcResult resultado = mockMvc
+      .perform(get("/mostrar-gastos").sessionAttr("USUARIO", usuario))
+      .andExpect(model().attribute("gastos", hasSize(10)))
+      .andExpect(model().attribute("totalPaginas", 1))
+      .andExpect(content().string(not(containsString("Páginas de gastos"))))
+      .andReturn();
+    String html = resultado.getResponse().getContentAsString();
+    org.junit.jupiter.api.Assertions.assertTrue(html.indexOf("Día 10") < html.indexOf("Día 1<"));
   }
 
   @Test

@@ -21,9 +21,9 @@ public class ReiniciarDB {
       "ALTER TABLE Presupuesto AUTO_INCREMENT = 1;\n" +
       "DELETE FROM Usuario;\n" +
       "ALTER TABLE Usuario AUTO_INCREMENT = 1;\n" +
-      "INSERT INTO Usuario(id, email, password, rol, activo) VALUES(null, '" +
+      "INSERT INTO Usuario(id, email, password, rol) VALUES(null, '" +
       EMAIL_USUARIO_DE_PRUEBA +
-      "', 'test', 'ADMIN', true);";
+      "', 'test', 'ADMIN');";
 
     if (ejecutarSql(sqlCommands)) {
       System.out.println("Base de datos limpiada exitosamente");

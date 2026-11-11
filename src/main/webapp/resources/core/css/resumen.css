@@ -161,12 +161,6 @@
   border-bottom: 1px solid var(--res-border);
 }
 
-.app-resumen-hormiga-acciones {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-}
-
 .app-resumen-hormiga-lista li:last-child {
   border-bottom: 0;
 }

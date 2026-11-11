@@ -5,6 +5,7 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.categoria.CategoriaRepositorio;
 import com.tallerwebi.dominio.excepcion.PresupuestoInvalido;
+import com.tallerwebi.dominio.presupuesto.Presupuesto;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import com.tallerwebi.dominio.resumen.ResumenCategoria;
 import com.tallerwebi.dominio.resumen.ResumenMensual;
@@ -32,6 +33,8 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 public class ControladorPresupuesto {
 
+  private static final String PORCENTAJE = "porcentaje";
+  private static final String PESOS = "pesos";
   private ServicioPresupuesto servicioPresupuesto;
   private ServicioResumen servicioResumen;
   private CategoriaRepositorio categoriaRepositorio;
@@ -89,7 +92,15 @@ public class ControladorPresupuesto {
     Categoria categoria = categoriaRepositorio.buscarPorId(datos.getCategoriaId());
 
     try {
-      servicioPresupuesto.definir(usuario, categoria, mes, datos.getMonto());
+      if (PORCENTAJE.equals(datos.getTipo())) {
+        servicioPresupuesto.definirPorcentaje(usuario, categoria, mes, datos.getValor());
+      } else if (datos.getTipo() == null) {
+        servicioPresupuesto.definir(usuario, categoria, mes, datos.getMonto());
+      } else if (PESOS.equals(datos.getTipo())) {
+        servicioPresupuesto.definir(usuario, categoria, mes, datos.getValor());
+      } else {
+        throw new PresupuestoInvalido("Elegí una forma de asignar el presupuesto");
+      }
     } catch (PresupuestoInvalido e) {
       return vistaPresupuestos(usuario, mes, datos, e.getMessage());
     }
@@ -123,7 +134,14 @@ public class ControladorPresupuesto {
     datos.setMes(mes.toString());
 
     Map<String, Object> model = new ModelMap();
+    Map<Long, Double> porcentajes = new HashMap<>();
+    for (Presupuesto presupuesto : servicioPresupuesto.obtenerDelMes(usuario, mes)) {
+      if (presupuesto.getPorcentaje() != null) {
+        porcentajes.put(presupuesto.getCategoria().getId(), presupuesto.getPorcentaje());
+      }
+    }
 
+    model.put("porcentajes", porcentajes);
     model.put("presupuestoMensual", servicioPresupuesto.presupuestoDelMes(usuario, mes));
     model.put("noAsignado", servicioPresupuesto.noAsignadoDelMes(usuario, mes));
     model.put("mesActual", NombreDeMes.de(mes));

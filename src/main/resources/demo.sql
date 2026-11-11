@@ -6,9 +6,9 @@
 -- Generado con herramientas/generar_demo_sql.py del repo de coordinación; no editar a mano.
 -- Contraseña de los tres: test (la misma que el usuario de prueba de data.sql)
 
-INSERT INTO Usuario(email, password, rol, activo) SELECT 'alto@gastitos.demo', 'test', 'USER', true FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM Usuario WHERE email = 'alto@gastitos.demo');
-INSERT INTO Usuario(email, password, rol, activo) SELECT 'medio@gastitos.demo', 'test', 'USER', true FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM Usuario WHERE email = 'medio@gastitos.demo');
-INSERT INTO Usuario(email, password, rol, activo) SELECT 'bajo@gastitos.demo', 'test', 'USER', true FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM Usuario WHERE email = 'bajo@gastitos.demo');
+INSERT INTO Usuario(email, password, rol) SELECT 'alto@gastitos.demo', 'test', 'USER' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM Usuario WHERE email = 'alto@gastitos.demo');
+INSERT INTO Usuario(email, password, rol) SELECT 'medio@gastitos.demo', 'test', 'USER' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM Usuario WHERE email = 'medio@gastitos.demo');
+INSERT INTO Usuario(email, password, rol) SELECT 'bajo@gastitos.demo', 'test', 'USER' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM Usuario WHERE email = 'bajo@gastitos.demo');
 
 -- Por si la contraseña cambió después de crearlos
 UPDATE Usuario SET password = 'test' WHERE email IN ('alto@gastitos.demo', 'medio@gastitos.demo', 'bajo@gastitos.demo');

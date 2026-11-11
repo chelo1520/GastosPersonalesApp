@@ -13,12 +13,14 @@
     }
     ver.hidden = activo;
     form.hidden = !activo;
-    const monto = form.querySelector("input[name='monto']");
+    const monto = form.querySelector("input[name='valor']");
     if (activo) {
       monto.focus();
       monto.select();
     } else {
       monto.value = monto.defaultValue;
+      form.querySelector("select[name='tipo']").value =
+        form.querySelector("select[name='tipo'] option[selected]")?.value || "pesos";
     }
   }
 
