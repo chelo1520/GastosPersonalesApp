@@ -32,4 +32,7 @@ public interface ServicioPresupuesto {
 
   // Presupuesto del mes menos la suma por categoría; negativo si las categorías lo superan
   Double noAsignadoDelMes(Usuario usuario, YearMonth mes);
+
+  // Los doce meses de un año con su total (propio o del perfil) y lo asignado a categorías
+  List<MesDePresupuesto> resumenDelAnio(Usuario usuario, int anio);
 }

@@ -251,6 +251,18 @@ public class ServicioPresupuestoImpl implements ServicioPresupuesto {
   }
 
   @Override
+  public List<MesDePresupuesto> resumenDelAnio(Usuario usuario, int anio) {
+    List<MesDePresupuesto> meses = new ArrayList<>();
+    for (int numero = 1; numero <= 12; numero++) {
+      YearMonth mes = YearMonth.of(anio, numero);
+      PresupuestoTotal propio = repositorioPresupuesto.buscarTotal(usuario, mes);
+      double total = propio != null ? propio.getMonto() : usuario.presupuestoSegunPerfil();
+      meses.add(new MesDePresupuesto(mes, total, propio != null, totalDelMes(usuario, mes)));
+    }
+    return meses;
+  }
+
+  @Override
   public Double noAsignadoDelMes(Usuario usuario, YearMonth mes) {
     return presupuestoDelMes(usuario, mes) - totalDelMes(usuario, mes);
   }

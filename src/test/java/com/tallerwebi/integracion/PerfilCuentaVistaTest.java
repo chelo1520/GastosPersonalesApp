@@ -97,7 +97,7 @@ public class PerfilCuentaVistaTest {
     int contrasena = pagina.indexOf("id=\"perfil-contrasena\"");
     int eliminar = pagina.indexOf("id=\"perfil-eliminar\"");
     int presupuesto = pagina.indexOf("id=\"guia-destino-perfil\"");
-    int mes = pagina.indexOf("id=\"perfil-mes-form\"");
+    int mes = pagina.indexOf("id=\"presupuesto-anual\"");
     assertTrue(datos >= 0 && datos < contrasena);
     assertTrue(contrasena < eliminar && eliminar < presupuesto && presupuesto < mes);
   }
