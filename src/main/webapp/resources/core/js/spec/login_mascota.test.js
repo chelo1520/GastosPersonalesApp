@@ -5,7 +5,7 @@ describe("Mascota del login", () => {
 
   it("en la intro se presenta contenta, animada y mirando al cursor", () => {
     expect(estadoMascota({ ...base, intro: true })).toEqual({
-      globo: "¡Hola! Yo te cuido los pesos.",
+      globo: "¡Buenas! ¿Arrancamos con tus gastos?",
       mood: "happy",
       covering: "false",
       look: "cursor",

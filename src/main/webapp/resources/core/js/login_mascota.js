@@ -11,7 +11,7 @@ export function estadoMascota(estado) {
   const tapandose = !estado.intro && estado.foco === "password" && !estado.mostrando;
   let globo = "¿Cómo viene el mes?";
   if (estado.intro) {
-    globo = "¡Hola! Yo te cuido los pesos.";
+    globo = "¡Buenas! ¿Arrancamos con tus gastos?";
   } else if (estado.ingresando) {
     globo = "¡Vamos adentro!";
   } else if (estado.error) {
