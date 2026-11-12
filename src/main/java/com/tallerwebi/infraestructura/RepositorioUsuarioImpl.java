@@ -76,6 +76,7 @@ public class RepositorioUsuarioImpl implements RepositorioUsuario {
       "Gasto",
       "Presupuesto",
       "PresupuestoTotal",
+      "SimulacionGuardada",
       "PreferenciaCategoria",
       "Consejo",
       "TokenRecuperacion"

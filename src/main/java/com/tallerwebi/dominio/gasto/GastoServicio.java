@@ -37,6 +37,8 @@ public interface GastoServicio {
 
   List<Gasto> obtenerGastosDelMesAnterior(Usuario usuario, YearMonth mesActual);
 
+  List<Gasto> obtenerGastosDelMes(Usuario usuario, YearMonth mes);
+
   LocalDate obtenerFechaMinimaPermitida();
 
   LocalDate obtenerFechaMaximaPermitida();
