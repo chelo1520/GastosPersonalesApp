@@ -26,13 +26,6 @@
                     <h2 id="perfil-datos-titulo">Datos de la cuenta</h2>
                     <p>Estos son los datos actuales de tu perfil.</p>
                 </div>
-                <!-- Cerrar sesión vive con los datos de la cuenta: es la única acción de sesión que se ve en el celular -->
-                <form th:action="@{/logout}" method="post" class="app-perfil-salir"
-                      data-confirmar-titulo="¿Cerrar sesión?"
-                      data-confirmar-texto="Vas a salir de Gastitos. Para volver a entrar vas a tener que ingresar tu email y contraseña."
-                      data-confirmar-boton="Salir">
-                    <button type="submit" class="btn btn-outline-secondary btn-sm">Cerrar sesión</button>
-                </form>
             </div>
 
             <dl class="app-perfil-datos mb-0">
