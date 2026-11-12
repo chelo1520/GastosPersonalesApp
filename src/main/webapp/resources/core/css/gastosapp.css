@@ -977,3 +977,112 @@ body:has(.app-confirmar.show) .modal-backdrop {
 .app-gasto-propuesto.is-excluido .app-gasto-propuesto-detalle {
   opacity: 0.45;
 }
+
+/* Revisión compacta: una línea por gasto con aceptar y descartar; decidido, se achica */
+.app-revision-progreso {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--app-fondo-suave, #f6f7f9);
+  border: 1px solid var(--app-borde);
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.app-gasto-propuesto-linea {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-gasto-propuesto-resumen {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: var(--app-texto-suave);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.app-gasto-propuesto-datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.app-gasto-propuesto-importe {
+  font-weight: 600;
+  color: var(--app-texto, #222);
+}
+
+.app-gasto-propuesto-acciones {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.app-gasto-propuesto-aceptar,
+.app-gasto-propuesto-descartar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--app-borde);
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+}
+
+.app-gasto-propuesto-aceptar {
+  color: #198754;
+}
+
+.app-gasto-propuesto-descartar {
+  color: #dc3545;
+}
+
+.app-gasto-propuesto-aceptar:hover,
+.app-gasto-propuesto.is-aceptado .app-gasto-propuesto-aceptar {
+  background: #198754;
+  border-color: #198754;
+  color: #fff;
+}
+
+.app-gasto-propuesto-descartar:hover,
+.app-gasto-propuesto.is-descartado .app-gasto-propuesto-descartar {
+  background: #dc3545;
+  border-color: #dc3545;
+  color: #fff;
+}
+
+.app-gasto-propuesto.is-cerrado {
+  padding: 10px 16px;
+}
+
+.app-gasto-propuesto.is-cerrado .app-gasto-propuesto-campos,
+.app-gasto-propuesto.is-cerrado .app-gasto-propuesto-detalle {
+  display: none;
+}
+
+.app-gasto-propuesto.is-aceptado {
+  border-left: 4px solid #198754;
+}
+
+.app-gasto-propuesto.is-descartado {
+  border-left: 4px solid #dc3545;
+}
+
+.app-gasto-propuesto.is-descartado .app-gasto-propuesto-nombre,
+.app-gasto-propuesto.is-descartado .app-gasto-propuesto-datos {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
