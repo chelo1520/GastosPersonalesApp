@@ -15,6 +15,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class RepositorioGastoImpl implements RepositorioGasto {
 
+  private static final String USUARIO = "usuario";
+
   private SessionFactory sessionFactory;
 
   @Autowired
@@ -43,11 +45,20 @@ public class RepositorioGastoImpl implements RepositorioGasto {
   }
 
   @Override
+  public List<Gasto> obtenerUltimos(Usuario usuario, int cantidad) {
+    return sessionFactory
+      .getCurrentSession()
+      .createQuery("FROM Gasto WHERE usuario = :usuario ORDER BY fecha DESC, id DESC", Gasto.class)
+      .setParameter(USUARIO, usuario)
+      .setMaxResults(cantidad)
+      .getResultList();
+  }
+
+  @Override
   public List<Gasto> buscarGastosPorUsuario(Usuario usuario) {
     String hql = "FROM Gasto WHERE usuario = :usuario";
     Query<Gasto> query = sessionFactory.getCurrentSession().createQuery(hql, Gasto.class);
-
-    query.setParameter("usuario", usuario);
+    query.setParameter(USUARIO, usuario);
     return query.getResultList();
   }
 
@@ -55,11 +66,9 @@ public class RepositorioGastoImpl implements RepositorioGasto {
   public List<Gasto> obtenerGastosEntreFechas(Usuario usuario, LocalDate desde, LocalDate hasta) {
     String hql = "FROM Gasto WHERE usuario = :usuario AND fecha BETWEEN :desde AND :hasta";
     Query<Gasto> query = sessionFactory.getCurrentSession().createQuery(hql, Gasto.class);
-
-    query.setParameter("usuario", usuario);
+    query.setParameter(USUARIO, usuario);
     query.setParameter("desde", desde);
     query.setParameter("hasta", hasta);
-
     return query.getResultList();
   }
 
@@ -68,11 +77,9 @@ public class RepositorioGastoImpl implements RepositorioGasto {
     String hql =
       "FROM Gasto WHERE usuario = :usuario AND fecha BETWEEN :desde AND :hasta ORDER BY fecha DESC";
     Query<Gasto> query = sessionFactory.getCurrentSession().createQuery(hql, Gasto.class);
-
-    query.setParameter("usuario", usuario);
+    query.setParameter(USUARIO, usuario);
     query.setParameter("desde", mes.atDay(1));
     query.setParameter("hasta", mes.atEndOfMonth());
-
     return query.getResultList();
   }
 }
