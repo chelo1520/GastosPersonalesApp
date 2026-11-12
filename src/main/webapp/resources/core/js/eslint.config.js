@@ -3,6 +3,8 @@ import globals from "globals";
 import jasmine from "eslint-plugin-jasmine";
 
 export default [
+  // Mascota 3D del handoff de diseño: código de terceros, no se lintea
+  { ignores: ["mascot3d.js"] },
   js.configs.recommended,
   {
     files: ["**/*.js"],
