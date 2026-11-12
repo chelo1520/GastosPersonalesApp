@@ -81,8 +81,10 @@ public class PerfilCuentaVistaTest {
       .andExpect(content().string(containsString("data-confirmar-peligro")))
       .andExpect(content().string(containsString("id=\"modal-confirmar\"")))
       .andExpect(content().string(containsString("/js/perfil.js")))
-      // Los dos desplegables arrancan cerrados
-      .andExpect(content().string(not(containsString("open=\"open\""))));
+      // Los desplegables de la cuenta arrancan cerrados; el del presupuesto abre porque todavía no hay ingreso
+      .andExpect(content().string(not(containsString("id=\"perfil-contrasena\" open"))))
+      .andExpect(content().string(not(containsString("id=\"perfil-eliminar\" open"))))
+      .andExpect(content().string(containsString("id=\"guia-destino-perfil\" open=\"open\"")));
   }
 
   @Test

@@ -176,21 +176,6 @@ a:hover {
   color: inherit;
 }
 
-.app-perfil-mes-editar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-}
-
-.app-perfil-mes-editar .input-group {
-  width: 170px;
-}
-
-.app-perfil-mes-repartir {
-  white-space: nowrap;
-}
-
 .app-resumen-saludo {
   margin: 0 0 4px;
   font-size: 1.05rem;
@@ -412,8 +397,9 @@ a:hover {
 
 /* Perfil */
 
+/* Mismo ancho que Resumen, Asistente y Simulación */
 .app-perfil-main {
-  max-width: 1120px;
+  max-width: 1180px;
   min-height: calc(100vh - 64px);
   margin: 0 auto;
   padding-bottom: 40px;
@@ -429,7 +415,6 @@ a:hover {
 }
 
 .app-perfil-card {
-  max-width: 760px;
   padding: 28px;
   background: #fff;
   border: 1px solid var(--app-borde);
@@ -438,6 +423,7 @@ a:hover {
 
 .app-perfil-identidad {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 16px;
   margin-bottom: 24px;
@@ -502,11 +488,6 @@ a:hover {
 
 .app-perfil-card + .app-perfil-card {
   margin-top: 16px;
-}
-
-/* Cerrar sesión: al final del perfil, único lugar de la cuenta que se ve desde el celular */
-.app-perfil-salir {
-  margin-top: 24px;
 }
 
 /* Cambiar contraseña y eliminar cuenta: desplegables que se abren con un click */
@@ -1171,4 +1152,44 @@ body:has(.app-confirmar.show) .modal-backdrop {
 .app-gasto-propuesto.is-descartado .app-gasto-propuesto-datos {
   text-decoration: line-through;
   opacity: 0.6;
+}
+
+/* Modal de presupuesto: por categoría (Presupuestos) y por mes (Perfil) */
+.app-modal-presupuesto .modal-content {
+  border: 1px solid var(--app-borde);
+  border-radius: 14px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+}
+
+.app-modal-presupuesto-contenido {
+  padding: 22px 24px 20px;
+}
+
+.app-modal-presupuesto-titulo {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.app-modal-presupuesto-total {
+  margin: 0 0 14px;
+  color: var(--app-texto-suave);
+}
+
+.app-modal-presupuesto-atajos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 6px;
+}
+
+.app-modal-presupuesto-queda {
+  min-height: 1.4em;
+  margin: 0 0 14px;
+  color: var(--app-texto-suave);
+}
+
+.app-modal-presupuesto-queda.is-neg {
+  color: var(--bs-danger);
+  font-weight: 600;
 }

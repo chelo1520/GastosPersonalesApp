@@ -13,6 +13,12 @@ function recalcularPresupuesto() {
   );
 }
 
+// Los links "Definir presupuesto" llegan con #presupuesto: el desplegable se abre solo
+const desplegablePresupuestoNode = document.getElementById("guia-destino-perfil");
+if (desplegablePresupuestoNode && window.location.hash === "#presupuesto") {
+  desplegablePresupuestoNode.open = true;
+}
+
 if (inputIngresoNode && inputPorcentajeNode && presupuestoCalculadoNode) {
   [inputIngresoNode, inputPorcentajeNode].forEach((input) =>
     input.addEventListener("input", recalcularPresupuesto),
@@ -40,41 +46,60 @@ if (btnCambiarNode) {
   actualizar();
 }
 
-// Tabla anual: el lápiz muestra el campo del total en la misma fila; cancelar o Escape lo cierran
+// Tabla anual: el lápiz abre el modal con el mes, su total actual y el valor por defecto del perfil
 const tablaAnualNode = document.getElementById("tabla-anual");
+const modalMesNode = document.getElementById("modal-mes");
 
-function editarMes(celda, activo) {
-  const ver = celda.querySelector(".app-perfil-mes-ver");
-  const form = celda.querySelector(".app-perfil-mes-editar");
-  if (!ver || !form) {
-    return;
+if (tablaAnualNode && modalMesNode) {
+  const titulo = modalMesNode.querySelector("#modal-mes-titulo");
+  const mesValor = modalMesNode.querySelector("#modal-mes-valor");
+  const monto = modalMesNode.querySelector("#modal-mes-monto");
+  const ayuda = modalMesNode.querySelector("#modal-mes-ayuda");
+  const error = modalMesNode.querySelector("#modal-mes-error");
+  const porDefecto = Number(tablaAnualNode.dataset.porDefecto) || 0;
+
+  function mostrarModal() {
+    if (typeof window.bootstrap !== "undefined") {
+      window.bootstrap.Modal.getOrCreateInstance(modalMesNode).show();
+    } else {
+      modalMesNode.classList.add("show");
+      modalMesNode.style.display = "block";
+      modalMesNode.removeAttribute("aria-hidden");
+    }
   }
-  ver.hidden = activo;
-  form.hidden = !activo;
-  const monto = form.querySelector("input[name='monto']");
-  if (activo) {
+
+  function abrirMes(fila, mensajeDeError) {
+    titulo.textContent = "Presupuesto de " + (fila.dataset.nombre || "este mes");
+    mesValor.value = fila.dataset.mes || "";
+    monto.value = fila.dataset.total || "";
+    ayuda.textContent =
+      fila.dataset.propio === "true"
+        ? "Este mes tiene un total propio. Si lo cambiás, reemplaza al anterior."
+        : porDefecto > 0
+          ? "Hoy usa el valor por defecto. Al guardar, este mes pasa a tener un total propio."
+          : "Sin presupuesto por defecto: este será el total del mes.";
+    error.hidden = !mensajeDeError;
+    error.textContent = mensajeDeError || "";
+    mostrarModal();
     monto.focus();
     monto.select();
-  } else {
-    monto.value = monto.defaultValue;
   }
-}
 
-if (tablaAnualNode) {
   tablaAnualNode.addEventListener("click", (evento) => {
     const lapiz = evento.target.closest(".app-perfil-mes-lapiz");
     if (lapiz) {
-      editarMes(lapiz.closest("td"), true);
-      return;
-    }
-    const cancelar = evento.target.closest(".app-perfil-mes-cancelar");
-    if (cancelar) {
-      editarMes(cancelar.closest("td"), false);
+      abrirMes(lapiz.closest("tr"));
     }
   });
-  tablaAnualNode.addEventListener("keydown", (evento) => {
-    if (evento.key === "Escape" && evento.target.closest(".app-perfil-mes-editar")) {
-      editarMes(evento.target.closest("td"), false);
+
+  // Si el servidor rechazó un total, se reabre el modal de ese mes con el mensaje
+  const mesConError = tablaAnualNode.dataset.errorMes;
+  const alertaMes = document.getElementById("error-mes");
+  if (mesConError && alertaMes) {
+    const fila = tablaAnualNode.querySelector(`tr[data-mes="${mesConError}"]`);
+    if (fila) {
+      alertaMes.hidden = true;
+      window.addEventListener("DOMContentLoaded", () => abrirMes(fila, alertaMes.textContent.trim()));
     }
-  });
+  }
 }
