@@ -1,6 +1,8 @@
 -- Datos maestros: se ejecuta en cada arranque y no pisa nada. Solo inserta el usuario de prueba si todavía no existe.
 -- Los datos ficticios para la demo (usuarios alto, medio y bajo con su historia) están en demo.sql, que se genera.
 INSERT INTO Usuario(email, password, rol) SELECT 'test@unlam.edu.ar', 'test', 'ADMIN' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM Usuario WHERE email = 'test@unlam.edu.ar');
+-- Datos personales del usuario de prueba (HU-24): la app saluda por el nombre
+UPDATE Usuario SET nombre = 'Ana', apellido = 'Prueba', fechaNacimiento = '1990-05-20' WHERE email = 'test@unlam.edu.ar' AND nombre IS NULL;
 
 -- Categorías. fija = básica y siempre esencial: no se puede marcar como hormiga
 INSERT INTO Categoria(nombre, descripcion, esencial, fija) SELECT 'Alimentación', 'Supermercado y compras de alimentos', true, true FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM Categoria WHERE nombre = 'Alimentación');

@@ -28,12 +28,38 @@
                 </div>
             </div>
 
-            <dl class="app-perfil-datos mb-0">
+            <dl class="app-perfil-datos">
                 <div class="app-perfil-dato">
                     <dt>Email</dt>
                     <dd id="perfil-email" th:text="${usuario.email}">email@ejemplo.com</dd>
                 </div>
             </dl>
+
+            <!-- Datos personales: opcionales. Con el nombre cargado, la app saluda en el resumen -->
+            <p class="alert alert-success" role="status" th:if="${param.datosGuardados != null}">Tus datos se guardaron.</p>
+            <p class="alert alert-danger" role="alert" th:if="${errorDatos != null}" th:text="${errorDatos}"></p>
+            <form th:action="@{/perfil/datos}" method="post" class="row g-3" id="perfil-datos-form">
+                <div class="col-md-4">
+                    <label for="nombre" class="form-label">Nombre</label>
+                    <input type="text" class="form-control" id="nombre" name="nombre" maxlength="60"
+                           autocomplete="given-name" th:value="${usuario.nombre}">
+                </div>
+                <div class="col-md-4">
+                    <label for="apellido" class="form-label">Apellido</label>
+                    <input type="text" class="form-control" id="apellido" name="apellido" maxlength="60"
+                           autocomplete="family-name" th:value="${usuario.apellido}">
+                </div>
+                <div class="col-md-4">
+                    <label for="fechaNacimiento" class="form-label">Fecha de nacimiento</label>
+                    <input type="date" class="form-control" id="fechaNacimiento" name="fechaNacimiento"
+                           min="1900-01-01" th:max="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}"
+                           th:value="${usuario.fechaNacimiento}">
+                </div>
+                <div class="col-12">
+                    <p class="text-muted mb-2">Son opcionales. Si cargás tu nombre, Gastitos te saluda por él.</p>
+                    <button type="submit" class="btn btn-outline-primary">Guardar datos</button>
+                </div>
+            </form>
         </section>
 
         <details class="app-perfil-card app-perfil-seccion" id="perfil-contrasena"

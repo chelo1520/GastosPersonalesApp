@@ -17,6 +17,10 @@ UPDATE Usuario SET password = 'test' WHERE email IN ('alto@gastitos.demo', 'medi
 UPDATE Usuario SET ingresoMensual = 1200000, porcentajePresupuesto = 70 WHERE email = 'alto@gastitos.demo';
 UPDATE Usuario SET ingresoMensual = 1100000, porcentajePresupuesto = 50 WHERE email = 'medio@gastitos.demo';
 UPDATE Usuario SET ingresoMensual = 200000, porcentajePresupuesto = 40 WHERE email = 'bajo@gastitos.demo';
+-- Datos personales (HU-24): la app saluda por el nombre en el resumen
+UPDATE Usuario SET nombre = 'Valentina', apellido = 'Suárez', fechaNacimiento = '1988-03-14' WHERE email = 'alto@gastitos.demo';
+UPDATE Usuario SET nombre = 'Martín', apellido = 'Acosta', fechaNacimiento = '1995-09-02' WHERE email = 'medio@gastitos.demo';
+UPDATE Usuario SET nombre = 'Lucía', apellido = 'Fernández', fechaNacimiento = '2003-11-21' WHERE email = 'bajo@gastitos.demo';
 
 DELETE FROM Gasto WHERE usuario_id IN (SELECT id FROM Usuario WHERE email IN ('alto@gastitos.demo', 'medio@gastitos.demo', 'bajo@gastitos.demo'));
 DELETE FROM PresupuestoTotal WHERE usuario_id IN (SELECT id FROM Usuario WHERE email IN ('alto@gastitos.demo', 'medio@gastitos.demo', 'bajo@gastitos.demo'));

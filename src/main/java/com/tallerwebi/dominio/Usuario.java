@@ -4,6 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import java.time.LocalDate;
 
 @Entity
 public class Usuario {
@@ -20,6 +21,34 @@ public class Usuario {
   private Double ingresoMensual;
   private Double porcentajePresupuesto;
   private Integer guiaPaso;
+  // Datos personales, opcionales: la app saluda por el nombre si está cargado
+  private String nombre;
+  private String apellido;
+  private LocalDate fechaNacimiento;
+
+  public String getNombre() {
+    return nombre;
+  }
+
+  public void setNombre(String nombre) {
+    this.nombre = nombre;
+  }
+
+  public String getApellido() {
+    return apellido;
+  }
+
+  public void setApellido(String apellido) {
+    this.apellido = apellido;
+  }
+
+  public LocalDate getFechaNacimiento() {
+    return fechaNacimiento;
+  }
+
+  public void setFechaNacimiento(LocalDate fechaNacimiento) {
+    this.fechaNacimiento = fechaNacimiento;
+  }
 
   public Integer getGuiaPaso() {
     return guiaPaso;

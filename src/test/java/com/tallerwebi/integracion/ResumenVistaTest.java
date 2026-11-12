@@ -246,4 +246,27 @@ public class ResumenVistaTest {
     categoria.setDescripcion("Categoría de prueba");
     return categoria;
   }
+
+  @Test
+  public void debeSaludarPorElNombreSoloSiElUsuarioLoCargo() throws Exception {
+    Usuario usuario = new Usuario();
+    usuario.setEmail("diego@unlam.edu.ar");
+    usuario.setNombre("Diego");
+    sessionFactory.getCurrentSession().persist(usuario);
+
+    mockMvc
+      .perform(get("/home").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("id=\"saludo\"")))
+      .andExpect(content().string(containsString("Hola, <strong>Diego</strong>")));
+
+    Usuario sinNombre = new Usuario();
+    sinNombre.setEmail("otro@unlam.edu.ar");
+    sessionFactory.getCurrentSession().persist(sinNombre);
+
+    mockMvc
+      .perform(get("/home").sessionAttr("USUARIO", sinNombre))
+      .andExpect(status().isOk())
+      .andExpect(content().string(not(containsString("id=\"saludo\""))));
+  }
 }

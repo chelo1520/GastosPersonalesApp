@@ -9,8 +9,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import com.tallerwebi.dominio.excepcion.DatosPersonalesInvalidos;
 import com.tallerwebi.dominio.excepcion.PresupuestoInvalido;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
+import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -108,5 +110,55 @@ public class ServicioPerfilImplTest {
 
     assertThat(usuario.getIngresoMensual(), equalTo(300000.0));
     assertThat(usuario.getPorcentajePresupuesto(), equalTo(80.0));
+  }
+
+  @Test
+  void debeGuardarLosDatosPersonalesRecortandoEspacios() {
+    servicioPerfil.actualizarDatosPersonales(
+      usuario,
+      "  Diego ",
+      "Villca",
+      LocalDate.of(1990, 5, 20)
+    );
+
+    assertThat(usuario.getNombre(), equalTo("Diego"));
+    assertThat(usuario.getApellido(), equalTo("Villca"));
+    assertThat(usuario.getFechaNacimiento(), equalTo(LocalDate.of(1990, 5, 20)));
+    verify(repositorioUsuarioMock).modificar(usuario);
+  }
+
+  @Test
+  void losDatosVaciosSeGuardanComoNoCargados() {
+    usuario.setNombre("Diego");
+    servicioPerfil.actualizarDatosPersonales(usuario, "   ", null, null);
+
+    assertThat(usuario.getNombre(), equalTo(null));
+    assertThat(usuario.getApellido(), equalTo(null));
+    assertThat(usuario.getFechaNacimiento(), equalTo(null));
+    verify(repositorioUsuarioMock).modificar(usuario);
+  }
+
+  @Test
+  void noDebeAceptarUnaFechaDeNacimientoFutura() {
+    assertThrows(
+      DatosPersonalesInvalidos.class,
+      () ->
+        servicioPerfil.actualizarDatosPersonales(
+          usuario,
+          "Diego",
+          null,
+          LocalDate.now().plusDays(1)
+        )
+    );
+    verify(repositorioUsuarioMock, never()).modificar(any());
+  }
+
+  @Test
+  void noDebeAceptarUnNombreDeMasDe60Caracteres() {
+    assertThrows(
+      DatosPersonalesInvalidos.class,
+      () -> servicioPerfil.actualizarDatosPersonales(usuario, "a".repeat(61), null, null)
+    );
+    verify(repositorioUsuarioMock, never()).modificar(any());
   }
 }

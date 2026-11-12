@@ -7,11 +7,13 @@ import com.tallerwebi.dominio.ServicioPerfil;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.ContrasenaIncorrecta;
 import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
+import com.tallerwebi.dominio.excepcion.DatosPersonalesInvalidos;
 import com.tallerwebi.dominio.excepcion.PresupuestoInvalido;
 import com.tallerwebi.dominio.presupuesto.MesDePresupuesto;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -20,6 +22,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -118,6 +121,39 @@ public class ControladorPerfil {
     model.put("anioSiguiente", mes.getYear() + 1);
     model.put("mesesDelAnio", meses);
     return model;
+  }
+
+  // Datos personales: opcionales, se pueden dejar vacíos. Al guardar, el perfil muestra el aviso
+  @RequestMapping(path = "/perfil/datos", method = RequestMethod.POST)
+  public ModelAndView actualizarDatosPersonales(
+    @ModelAttribute("datosPersonales") DatosPersonales datos,
+    HttpServletRequest request
+  ) {
+    Usuario usuario = SesionUsuario.obtener(request);
+    if (usuario == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+    LocalDate fechaNacimiento;
+    try {
+      fechaNacimiento = fechaDesde(datos.getFechaNacimiento());
+    } catch (DateTimeParseException e) {
+      return conError(usuario, "errorDatos", "La fecha de nacimiento no es válida");
+    }
+    try {
+      servicioPerfil.actualizarDatosPersonales(
+        usuario,
+        datos.getNombre(),
+        datos.getApellido(),
+        fechaNacimiento
+      );
+    } catch (DatosPersonalesInvalidos e) {
+      return conError(usuario, "errorDatos", e.getMessage());
+    }
+    return new ModelAndView("redirect:/perfil?datosGuardados");
+  }
+
+  private static LocalDate fechaDesde(String texto) {
+    return texto == null || texto.isBlank() ? null : LocalDate.parse(texto.trim());
   }
 
   @RequestMapping(path = "/perfil/contrasena", method = RequestMethod.POST)

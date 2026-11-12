@@ -29,6 +29,11 @@
       ¡Listo para empezar! Ya conocés los primeros pasos de Gastitos.
     </div>
 
+    <!-- Saludo: solo si el usuario cargó su nombre en el perfil -->
+    <p class="app-resumen-saludo" id="saludo" th:if="${nombre != null and !#strings.isEmpty(nombre)}">
+      Hola, <strong th:text="${nombre}">Diego</strong>
+    </p>
+
     <!-- Encabezado -->
     <div class="app-resumen-titulo">
       <div class="app-resumen-mes">
