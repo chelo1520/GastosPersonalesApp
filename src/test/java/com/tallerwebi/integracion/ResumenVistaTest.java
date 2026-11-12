@@ -78,6 +78,8 @@ public class ResumenVistaTest {
       .andExpect(content().string(containsString("Septiembre 2026")))
       // Rediseño v2: el acceso al asistente y los últimos movimientos con el link a Mis gastos
       .andExpect(content().string(containsString("id=\"analizar-gastos\"")))
+      .andExpect(content().string(containsString("id=\"modal-analisis\"")))
+      .andExpect(content().string(containsString("Leyendo <span>2</span> movimientos")))
       .andExpect(content().string(containsString("Últimos movimientos")))
       .andExpect(content().string(containsString("Gasto de octubre")))
       .andExpect(

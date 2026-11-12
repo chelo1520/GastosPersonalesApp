@@ -255,6 +255,40 @@
 
     <!-- Gastos hormiga: chicos, frecuentes y prescindibles -->
 
+    <!-- Modal de análisis (rediseño v2): la mascota y tres pasos que se van tildando mientras "lee" el mes;
+         al terminar carga la vista del asistente. Sin JavaScript, el botón es un link directo -->
+    <div class="modal fade app-analisis" id="modal-analisis" tabindex="-1" aria-labelledby="analisis-titulo" aria-hidden="true"
+         th:attr="data-asistente=@{/asistente}">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content app-analisis-contenido">
+          <aside class="app-analisis-escena">
+            <div class="app-analisis-mascota" id="analisis-mascota-caja">
+              <gastitos-mascot id="analisis-mascota" mood="happy" covering="false" motion="animado" look="cursor"></gastitos-mascot>
+              <img th:src="@{/img/isotipo-sobre-oscuro.svg}" class="app-analisis-fallback" id="analisis-fallback" alt="" hidden>
+            </div>
+            <span class="app-analisis-nombre">Billetera Alegre</span>
+            <p class="app-analisis-titular" id="analisis-titulo">Dejame mirar tus números un segundo.</p>
+            <p class="app-analisis-pie">
+              Con tus datos al <span th:text="${hoyTexto}">12/11/2026</span> ·
+              <span th:text="${cantidadMovimientos}">21</span>
+              <span th:text="${cantidadMovimientos == 1} ? 'movimiento' : 'movimientos'">movimientos</span>
+            </p>
+          </aside>
+          <section class="app-analisis-pasos" aria-live="polite">
+            <button type="button" class="app-analisis-cerrar" data-bs-dismiss="modal" aria-label="Cerrar">✕</button>
+            <p class="app-analisis-cargando">Analizando tus gastos…</p>
+            <ol class="list-unstyled mb-0" id="analisis-lista">
+              <li class="app-analisis-paso" data-paso="1"><span class="app-analisis-tilde" aria-hidden="true"></span>
+                Leyendo <span th:text="${cantidadMovimientos}">21</span> movimientos</li>
+              <li class="app-analisis-paso" data-paso="2"><span class="app-analisis-tilde" aria-hidden="true"></span> Comparando con tu presupuesto</li>
+              <li class="app-analisis-paso" data-paso="3"><span class="app-analisis-tilde" aria-hidden="true"></span> Buscando gastos hormiga</li>
+              <li class="app-analisis-paso" data-paso="4"><span class="app-analisis-tilde" aria-hidden="true"></span> Abriendo el asistente</li>
+            </ol>
+          </section>
+        </div>
+      </div>
+    </div>
+
     <!-- Últimos movimientos: los 5 más recientes, con acceso a Mis gastos (rediseño v2) -->
     <section class="app-resumen-card app-resumen-movimientos" aria-labelledby="titulo-movimientos" id="ultimos-movimientos">
       <div class="app-resumen-movimientos-cabecera">
@@ -295,14 +329,16 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle></svg>
       <span>Presup.</span>
     </a>
-    <a th:href="@{/asistente}" aria-label="Asistente">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M6 15l4-5 4 3 4-6"></path></svg>
-      <span>Asist.</span>
+    <a th:href="@{/perfil}" aria-label="Perfil">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.6-3.5 3.1-5.5 7-5.5s6.4 2 7 5.5"></path></svg>
+      <span>Perfil</span>
     </a>
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <script th:src="@{/js/resumen.js}" charset="utf-8"></script>
+  <script th:src="@{/js/mascot3d.js}"></script>
+  <script type="module" th:src="@{/js/analisis.js}"></script>
   <script th:replace="~{fragments/layout :: scripts}"></script>
 </body>
 

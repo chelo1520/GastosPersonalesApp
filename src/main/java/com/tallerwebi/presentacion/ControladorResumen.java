@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -103,6 +104,12 @@ public class ControladorResumen {
         : 0.0
     );
     model.put("movimientos", movimientosRecientes(usuario));
+    // Para el modal de análisis: "Con tus datos al dd/MM/yyyy · N movimientos"
+    model.put(
+      "cantidadMovimientos",
+      gastoServicio.obtenerGastosDelMes(usuario, mesMostrado).size()
+    );
+    model.put("hoyTexto", LocalDate.now(reloj).format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
     model.put("alertas", resumen.getAlertas());
     model.put("historial", historial(usuario, mesMostrado));
     // Total del mes (el definido para ese mes o el del perfil), contra lo gastado

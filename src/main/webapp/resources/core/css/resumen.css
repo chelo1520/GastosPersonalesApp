@@ -425,3 +425,153 @@
 .app-resumen-mensual {
   margin-bottom: 24px;
 }
+
+/* Modal de análisis (rediseño v2): escena oscura con la mascota y pasos que se tildan */
+.app-analisis .modal-dialog {
+  max-width: 960px;
+}
+
+.app-analisis-contenido {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  min-height: min(560px, calc(100vh - 48px));
+  overflow: hidden;
+  border: 0;
+  border-radius: 22px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+}
+
+.app-analisis-escena {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 28px 28px;
+  background: #17302c;
+  color: #fff;
+}
+
+.app-analisis-mascota {
+  position: relative;
+  height: 260px;
+  margin: 0 -28px;
+  flex-shrink: 0;
+}
+
+.app-analisis-fallback {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 120px;
+  height: 120px;
+  transform: translate(-50%, -50%);
+  opacity: 0.9;
+}
+
+.app-analisis-nombre {
+  font-family: "Outfit", "IBM Plex Sans", sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: #7fc4b8;
+}
+
+.app-analisis-titular {
+  margin: 0;
+  font-size: 23px;
+  line-height: 1.25;
+  font-weight: 700;
+  text-wrap: pretty;
+}
+
+.app-analisis-pie {
+  margin: auto 0 0;
+  font-size: 13px;
+  color: #8fb3ab;
+}
+
+.app-analisis-pasos {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  padding: 40px 48px;
+}
+
+.app-analisis-cerrar {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: #f5f3ee;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.app-analisis-cargando {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.app-analisis-paso {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 16px;
+  color: #7a827f;
+  transition: color 0.3s;
+}
+
+.app-analisis-paso.is-activo {
+  color: #1c2321;
+}
+
+.app-analisis-paso.is-listo {
+  color: #15803d;
+}
+
+.app-analisis-tilde {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 2px solid #dcd8ce;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 12px;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.app-analisis-paso.is-activo .app-analisis-tilde {
+  border-color: #11786e;
+}
+
+.app-analisis-paso.is-listo .app-analisis-tilde {
+  background: #15803d;
+  border-color: #15803d;
+}
+
+.app-analisis-paso.is-listo .app-analisis-tilde::before {
+  content: "✓";
+}
+
+@media (max-width: 767.98px) {
+  .app-analisis-contenido {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .app-analisis-mascota {
+    height: 180px;
+  }
+
+  .app-analisis-pasos {
+    padding: 28px 24px 32px;
+  }
+}
