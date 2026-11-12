@@ -26,6 +26,13 @@
                     <h2 id="perfil-datos-titulo">Datos de la cuenta</h2>
                     <p>Estos son los datos actuales de tu perfil.</p>
                 </div>
+                <!-- Cerrar sesión vive con los datos de la cuenta: es la única acción de sesión que se ve en el celular -->
+                <form th:action="@{/logout}" method="post" class="app-perfil-salir"
+                      data-confirmar-titulo="¿Cerrar sesión?"
+                      data-confirmar-texto="Vas a salir de Gastitos. Para volver a entrar vas a tener que ingresar tu email y contraseña."
+                      data-confirmar-boton="Salir">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Cerrar sesión</button>
+                </form>
             </div>
 
             <dl class="app-perfil-datos mb-0">
@@ -102,9 +109,27 @@
 
         <!-- Ancla: los links "Definir presupuesto" de la app llegan acá sin scrollear (#presupuesto) -->
         <div id="presupuesto" class="app-ancla" aria-hidden="true"></div>
-        <section class="app-perfil-card" id="guia-destino-perfil" aria-labelledby="perfil-presupuesto-titulo">
-            <h2 id="perfil-presupuesto-titulo">Mi presupuesto mensual por defecto</h2>
-            <p>Indicá tu ingreso mensual y qué porcentaje querés destinar a tu presupuesto. El monto se calcula mientras escribís.</p>
+        <!-- Se carga una vez y después se ajusta mes a mes en la tabla: va plegado, salvo la primera vez,
+             con error, en el paso 1 de la guía o al llegar por el link #presupuesto (lo abre perfil.js) -->
+        <details class="app-perfil-card app-perfil-seccion" id="guia-destino-perfil"
+                 th:open="${error != null or usuario.ingresoMensual == null or usuario.guiaPaso == 1}">
+            <summary class="app-perfil-desplegable">
+                <span>
+                    <span class="app-perfil-seccion-titulo" id="perfil-presupuesto-titulo">Mi presupuesto mensual por defecto</span>
+                    <span class="app-perfil-bajada" th:if="${usuario.ingresoMensual != null}"
+                          th:text="'$ ' + ${#numbers.formatDecimal(usuario.presupuestoSegunPerfil(), 1, 'POINT', 0, 'COMMA')}
+                                   + ' por mes: el ' + ${#numbers.formatDecimal(usuario.porcentajePresupuesto != null ? usuario.porcentajePresupuesto : 100, 1, 'POINT', 0, 'COMMA')}
+                                   + ' % de un ingreso de $ ' + ${#numbers.formatDecimal(usuario.ingresoMensual, 1, 'POINT', 0, 'COMMA')}">
+                        $ 550.000 por mes: el 50 % de un ingreso de $ 1.100.000
+                    </span>
+                    <span class="app-perfil-bajada" th:unless="${usuario.ingresoMensual != null}">
+                        Todavía no lo definiste: indicá tu ingreso y qué porcentaje destinás a gastar.
+                    </span>
+                </span>
+                <svg class="app-perfil-flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+            </summary>
+            <div class="app-perfil-desplegable-contenido">
+            <p>Indicá tu ingreso mensual y qué porcentaje querés destinar a tu presupuesto. El monto se calcula mientras escribís. Los meses sin un valor propio usan este.</p>
 
             <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
 
@@ -129,10 +154,11 @@
                     <button type="submit" class="btn btn-primary">Guardar</button>
                 </div>
             </form>
-        </section>
+            </div>
+        </details>
 
-        <!-- Presupuesto por mes (devolución del 2026-11-05): el año entero de un vistazo, con lo que ya
-             se repartió por categoría y un acceso directo a repartir lo que falta -->
+        <!-- Presupuesto por mes (devolución del 2026-11-05): el año entero de un vistazo, con el total
+             de cada mes editable en la fila -->
         <section class="app-perfil-card" id="presupuesto-anual" aria-labelledby="perfil-mes-titulo">
             <div class="app-perfil-anual-cabecera">
                 <h2 id="perfil-mes-titulo">Presupuesto por mes</h2>
@@ -142,30 +168,31 @@
                     <a th:href="@{/perfil(anio=${anioSiguiente})} + '#presupuesto-anual'" th:attr="aria-label='Ver ' + ${anioSiguiente}">›</a>
                 </nav>
             </div>
-            <p>Cada mes usa tu presupuesto por defecto salvo que le definas uno propio con el lápiz. "Asignado" es lo que ya repartiste entre categorías.</p>
+            <p>Cada mes usa tu presupuesto por defecto salvo que le definas uno propio con el lápiz.</p>
 
-            <div class="alert alert-danger" role="alert" th:if="${errorMes}" th:text="${errorMes}"></div>
+            <div class="alert alert-danger" role="alert" th:if="${errorMes}" th:text="${errorMes}" id="error-mes"></div>
 
             <div class="table-responsive">
-                <table class="table app-resumen-tabla app-perfil-anual mb-0" id="tabla-anual">
+                <table class="table app-resumen-tabla app-perfil-anual mb-0" id="tabla-anual"
+                       th:attr="data-por-defecto=${usuario.presupuestoSegunPerfil()}, data-error-mes=${errorMes != null ? mesPresupuesto : ''}">
                     <thead>
                         <tr>
                             <th scope="col">Mes</th>
                             <th scope="col" class="text-end">Presupuesto</th>
-                            <th scope="col" class="text-end">Asignado</th>
-                            <th scope="col"><span class="visually-hidden">Repartir</span></th>
                         </tr>
                     </thead>
                     <tbody>
+                        <!-- data-*: lo que el modal necesita para precargarse -->
                         <tr th:each="fila : ${mesesDelAnio}"
                             th:classappend="${fila.enCurso} ? 'app-perfil-mes-en-curso' : (${fila.pasado} ? 'app-perfil-mes-pasado' : '')"
-                            th:attr="data-mes=${fila.mes}">
+                            th:attr="data-mes=${fila.mes}, data-nombre=${fila.nombre + ' ' + anio},
+                                     data-total=${fila.total > 0 ? fila.total : ''}, data-propio=${fila.propio}">
                             <th scope="row">
                                 <span th:text="${fila.nombre}">Noviembre</span>
                                 <small th:if="${fila.enCurso}" class="text-muted">(en curso)</small>
                             </th>
                             <td class="text-end">
-                                <div class="app-perfil-mes-ver" th:hidden="${errorMes != null and mesPresupuesto == fila.mes}">
+                                <div class="app-perfil-mes-ver">
                                     <span class="app-resumen-num" th:if="${fila.total > 0}"
                                           th:text="'$ ' + ${#numbers.formatDecimal(fila.total, 1, 'POINT', 0, 'COMMA')}">$ 550.000</span>
                                     <span th:unless="${fila.total > 0}">—</span>
@@ -176,42 +203,42 @@
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                                     </button>
                                 </div>
-                                <form th:action="@{/perfil/presupuesto/mes}" method="post" class="app-perfil-mes-editar"
-                                      th:hidden="${!(errorMes != null and mesPresupuesto == fila.mes)}">
-                                    <input type="hidden" name="mes" th:value="${fila.mes}">
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text">$</span>
-                                        <input type="number" name="monto" step="0.01" min="0.01" inputmode="decimal" required
-                                               class="form-control" th:value="${fila.total > 0 ? fila.total : ''}"
-                                               th:attr="aria-label='Presupuesto de ' + ${fila.nombre}">
-                                    </div>
-                                    <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
-                                    <button type="button" class="btn btn-sm btn-link app-perfil-mes-cancelar">Cancelar</button>
-                                </form>
-                            </td>
-                            <td class="text-end">
-                                <span class="app-resumen-num" th:text="'$ ' + ${#numbers.formatDecimal(fila.asignado, 1, 'POINT', 0, 'COMMA')}">$ 550.000</span>
-                                <small th:if="${fila.total > 0 and fila.sinAsignar > 0}" class="text-muted d-block"
-                                       th:text="'faltan $ ' + ${#numbers.formatDecimal(fila.sinAsignar, 1, 'POINT', 0, 'COMMA')}">faltan $ 50.000</small>
-                                <small th:if="${fila.sinAsignar < 0}" class="text-danger d-block">pasado</small>
-                            </td>
-                            <td class="text-end">
-                                <a th:href="@{/presupuestos(mes=${fila.mes})}" class="app-perfil-mes-repartir"
-                                   th:attr="aria-label='Repartir el presupuesto de ' + ${fila.nombre} + ' por categoría'">Repartir por categoría</a>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-        </section>
 
-        <form th:action="@{/logout}" method="post" class="app-perfil-salir">
-            <button type="submit" class="btn btn-outline-secondary w-100">Cerrar sesión</button>
-        </form>
+            <!-- Modal para definir el total de un mes: mismo estilo que el de categorías en Presupuestos -->
+            <div class="modal fade app-modal-presupuesto" id="modal-mes" tabindex="-1"
+                 aria-labelledby="modal-mes-titulo" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <form class="modal-content app-modal-presupuesto-contenido" th:action="@{/perfil/presupuesto/mes}" method="post" id="modal-mes-form">
+                        <input type="hidden" name="mes" id="modal-mes-valor">
+                        <h2 class="app-modal-presupuesto-titulo" id="modal-mes-titulo">Presupuesto del mes</h2>
+                        <p class="app-modal-presupuesto-total">
+                            Por defecto, según tu perfil:
+                            <strong id="modal-mes-por-defecto" class="app-resumen-num"
+                                    th:text="'$ ' + ${#numbers.formatDecimal(usuario.presupuestoSegunPerfil(), 1, 'POINT', 2, 'COMMA')}">$ 550.000,00</strong>
+                        </p>
+                        <p class="alert alert-danger py-2" role="alert" id="modal-mes-error" hidden></p>
+                        <label for="modal-mes-monto" class="form-label">Presupuesto total del mes ($)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" step="0.01" min="0.01" inputmode="decimal" class="form-control"
+                                   id="modal-mes-monto" name="monto" required>
+                        </div>
+                        <p class="app-modal-presupuesto-queda" id="modal-mes-ayuda" aria-live="polite"></p>
+                        <div class="app-confirmar-acciones">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
     </main>
 
-    <!-- Modal de confirmación de eliminar cuenta (confirmar.js) -->
-    <div th:replace="~{fragments/confirmar :: modal}"></div>
 
     <nav class="app-mobile-nav d-md-none" aria-label="Navegación principal">
         <a th:href="@{/home}" aria-label="Resumen">
@@ -236,7 +263,6 @@
     </nav>
 
     <script th:replace="~{fragments/layout :: scripts}"></script>
-    <script th:src="@{/js/confirmar.js}" charset="utf-8"></script>
     <script type="module" th:src="@{/js/perfil.js}"></script>
 </body>
 
