@@ -142,27 +142,137 @@
 }
 
 /* Gastos hormiga */
+/* Acciones de la cabecera: analizar (asistente) y registrar */
+.app-resumen-acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Gastos hormiga: tarjeta oscura (rediseño v2), arriba del detalle */
 .app-resumen-hormiga {
-  margin-top: 24px;
+  margin: 20px 0 0;
+  background: #17302c;
+  border-color: #17302c;
+  color: #fff;
+}
+
+.app-resumen-hormiga .app-resumen-card-titulo {
+  color: #d5e4e0;
+}
+
+.app-resumen-hormiga-vacio {
+  margin: 0;
+  color: #b9d6cf;
+}
+
+.app-resumen-hormiga-vacio a {
+  color: #7fc4b8;
 }
 
 .app-resumen-hormiga-cuerpo {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
   gap: 20px;
-  align-items: start;
+  align-items: center;
 }
 
-.app-resumen-hormiga-lista li {
+.app-resumen-hormiga-total {
+  color: #7fc4b8;
+}
+
+.app-resumen-hormiga-detalle {
+  display: block;
+  margin-top: 4px;
+  color: #b9d6cf;
+  font-size: 0.9rem;
+}
+
+.app-resumen-hormiga-chips {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.app-resumen-hormiga-chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 0.9rem;
+}
+
+.app-resumen-hormiga-chips strong {
+  color: #7fc4b8;
+}
+
+/* Últimos movimientos */
+.app-resumen-movimientos {
+  margin-top: 24px;
+}
+
+.app-resumen-movimientos-cabecera {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--res-border);
 }
 
-.app-resumen-hormiga-lista li:last-child {
+.app-resumen-movimientos-cabecera .app-resumen-card-titulo {
+  margin-bottom: 0;
+}
+
+.app-resumen-movimientos-lista {
+  margin-top: 12px;
+}
+
+.app-resumen-movimiento {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0ede6;
+}
+
+.app-resumen-movimiento:last-child {
   border-bottom: 0;
+}
+
+.app-resumen-movimiento-avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 700;
+}
+
+.app-resumen-movimiento-datos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.app-resumen-movimiento-desc {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-resumen-movimiento-meta {
+  color: var(--res-muted);
+  font-size: 0.85rem;
+}
+
+.app-resumen-movimiento-importe {
+  flex-shrink: 0;
 }
 
 /* Gráfico + tabla */
@@ -283,12 +393,17 @@
   .app-resumen-hormiga-cuerpo {
     grid-template-columns: 1fr;
   }
+
+  .app-resumen-hormiga-chips {
+    justify-content: flex-start;
+  }
 }
 
 /* Mobile */
 @media (max-width: 575.98px) {
   /* En mobile se usa el botón + de la barra inferior */
-  .app-resumen-registrar {
+  .app-resumen-registrar,
+  .app-resumen-analizar {
     display: none;
   }
 

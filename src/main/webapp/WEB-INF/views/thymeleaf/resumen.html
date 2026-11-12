@@ -45,7 +45,11 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
         </a>
       </div>
-      <a class="btn btn-primary app-registrar-link app-resumen-registrar" th:href="@{/registrar-gasto}">+ Registrar gasto</a>
+      <div class="app-resumen-acciones">
+        <!-- El asistente analiza los últimos meses (3, 6 o 12) contra inflación y dólar: no es "mi mes" -->
+        <a class="btn btn-outline-primary app-resumen-analizar" th:href="@{/asistente}" id="analizar-gastos">Analizar mis gastos</a>
+        <a class="btn btn-primary app-registrar-link app-resumen-registrar" th:href="@{/registrar-gasto}">+ Registrar gasto</a>
+      </div>
     </div>
 
     <!-- Alertas de gastos hormiga: informan, no bloquean. Se calculan al abrir la pantalla -->
@@ -108,6 +112,38 @@
         </div>
       </article>
     </section>
+    <!-- Gastos hormiga, arriba y en tarjeta oscura para que se note (rediseño v2) -->
+    <section class="app-resumen-card app-resumen-hormiga" id="gastos-hormiga" aria-label="Gastos hormiga del mes">
+      <h2 class="app-resumen-card-titulo">Gastos hormiga</h2>
+
+      <!-- "Chico" es el 2 % del presupuesto: sin presupuesto en el mes no hay con qué medirlo -->
+      <p class="app-resumen-hormiga-vacio" th:if="${presupuesto <= 0}">
+        Definí el presupuesto del mes para ver tus gastos hormiga.
+        <a th:href="@{/presupuestos(mes=${mesMostrado})}">Ir a presupuestos</a>
+      </p>
+      <p class="app-resumen-hormiga-vacio" th:if="${presupuesto > 0 and hormiga.total == 0}">No hay gastos hormiga este mes.</p>
+
+      <div th:if="${presupuesto > 0 and hormiga.total > 0}" class="app-resumen-hormiga-cuerpo">
+        <div>
+          <strong class="app-resumen-monto app-resumen-hormiga-total"
+                  th:text="'$ ' + ${#numbers.formatDecimal(hormiga.total, 1, 'POINT', 0, 'COMMA')}">$ 44.400</strong>
+          <small class="app-resumen-hormiga-detalle">
+            <span th:text="${hormiga.cantidad}">18</span>
+            <span th:text="${hormiga.cantidad == 1} ? 'compra chica' : 'compras chicas'">compras chicas</span>
+            · <span th:text="${#numbers.formatDecimal(hormigaPorcentajeGastado, 1, 'POINT', 1, 'COMMA')}">8,1</span> % de lo que gastaste
+            · <span th:text="${#numbers.formatDecimal(hormiga.porcentajePresupuesto, 1, 'POINT', 1, 'COMMA')}">6,5</span> % del presupuesto
+          </small>
+        </div>
+        <ul class="app-resumen-hormiga-chips list-unstyled mb-0" id="lista-hormiga">
+          <li th:each="cat : ${hormiga.categorias}">
+            <span th:text="${cat.nombre}">Café y snacks</span>
+            <strong class="app-resumen-num"
+                    th:text="'$ ' + ${#numbers.formatDecimal(cat.gastado, 1, 'POINT', 0, 'COMMA')}">$ 30.000</strong>
+          </li>
+        </ul>
+      </div>
+    </section>
+
     <!-- Gráfico + tabla -->
     <section class="app-resumen-detalle">
 
@@ -218,33 +254,27 @@
     </section>
 
     <!-- Gastos hormiga: chicos, frecuentes y prescindibles -->
-    <section class="app-resumen-card app-resumen-hormiga" id="gastos-hormiga" aria-label="Gastos hormiga del mes">
-      <h2 class="app-resumen-card-titulo">Gastos hormiga</h2>
 
-      <!-- "Chico" es el 2 % del presupuesto: sin presupuesto en el mes no hay con qué medirlo -->
-      <p class="app-gastos-vacio mb-0" th:if="${presupuesto <= 0}">
-        Definí el presupuesto del mes para ver tus gastos hormiga.
-        <a th:href="@{/presupuestos(mes=${mesMostrado})}">Ir a presupuestos</a>
-      </p>
-      <p class="app-gastos-vacio mb-0" th:if="${presupuesto > 0 and hormiga.total == 0}">No hay gastos hormiga este mes.</p>
-
-      <div th:if="${presupuesto > 0 and hormiga.total > 0}" class="app-resumen-hormiga-cuerpo">
-        <div>
-          <strong class="app-resumen-monto"
-                  th:text="'$ ' + ${#numbers.formatDecimal(hormiga.total, 1, 'POINT', 0, 'COMMA')}">$ 44.400</strong>
-          <small class="app-resumen-barra-texto">
-            <span th:text="${#numbers.formatDecimal(hormiga.porcentajePresupuesto, 1, 'POINT', 1, 'COMMA')}">8,1</span> % del presupuesto
-          </small>
-        </div>
-
-        <ul class="app-resumen-hormiga-lista list-unstyled mb-0" id="lista-hormiga">
-          <li th:each="cat : ${hormiga.categorias}">
-            <span th:text="${cat.nombre}">Café y snacks</span>
-            <span class="app-resumen-num"
-                  th:text="'$ ' + ${#numbers.formatDecimal(cat.gastado, 1, 'POINT', 0, 'COMMA')}">$ 30.000</span>
-          </li>
-        </ul>
+    <!-- Últimos movimientos: los 5 más recientes, con acceso a Mis gastos (rediseño v2) -->
+    <section class="app-resumen-card app-resumen-movimientos" aria-labelledby="titulo-movimientos" id="ultimos-movimientos">
+      <div class="app-resumen-movimientos-cabecera">
+        <h2 class="app-resumen-card-titulo" id="titulo-movimientos">Últimos movimientos</h2>
+        <a th:href="@{/mostrar-gastos}" class="app-resumen-movimientos-link">Ver todos →</a>
       </div>
+      <p class="app-gastos-vacio mb-0" th:if="${#lists.isEmpty(movimientos)}">Todavía no registraste gastos.</p>
+      <ul class="list-unstyled mb-0 app-resumen-movimientos-lista" th:unless="${#lists.isEmpty(movimientos)}">
+        <li th:each="m : ${movimientos}" class="app-resumen-movimiento">
+          <span class="app-resumen-movimiento-avatar" th:style="'background:' + ${m.color}" th:text="${m.inicial}" aria-hidden="true">A</span>
+          <span class="app-resumen-movimiento-datos">
+            <span class="app-resumen-movimiento-desc" th:text="${m.descripcion}">Supermercado Día</span>
+            <small class="app-resumen-movimiento-meta">
+              <span th:text="${m.categoria}">Alimentación</span> · <span th:text="${m.cuando}">Hoy</span>
+            </small>
+          </span>
+          <strong class="app-resumen-num app-resumen-movimiento-importe"
+                  th:text="'$ ' + ${#numbers.formatDecimal(m.importe, 1, 'POINT', 2, 'COMMA')}">$ 46.780,50</strong>
+        </li>
+      </ul>
     </section>
 
   </main>

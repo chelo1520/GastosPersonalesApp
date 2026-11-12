@@ -7,6 +7,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.Usuario;
+import com.tallerwebi.dominio.categoria.Categoria;
+import com.tallerwebi.dominio.gasto.Gasto;
+import com.tallerwebi.dominio.gasto.GastoServicio;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import com.tallerwebi.dominio.resumen.ResumenCategoria;
 import com.tallerwebi.dominio.resumen.ResumenDeMes;
@@ -17,6 +20,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.List;
@@ -34,6 +38,7 @@ public class ControladorResumenTest {
 
   private ServicioResumen servicioResumen;
   private ServicioPresupuesto servicioPresupuesto;
+  private GastoServicio gastoServicio;
   private ControladorResumen controladorResumen;
   private Usuario usuario;
   private HttpServletRequest request;
@@ -44,7 +49,9 @@ public class ControladorResumenTest {
   public void init() {
     servicioResumen = mock(ServicioResumen.class);
     servicioPresupuesto = mock(ServicioPresupuesto.class);
-    controladorResumen = new ControladorResumen(servicioResumen, servicioPresupuesto, HOY);
+    gastoServicio = mock(GastoServicio.class);
+    controladorResumen =
+      new ControladorResumen(servicioResumen, servicioPresupuesto, gastoServicio, HOY);
 
     usuario = mock(Usuario.class);
     request = mock(HttpServletRequest.class);
@@ -193,5 +200,52 @@ public class ControladorResumenTest {
     assertEquals(40000.0, resultado.getModel().get("presupuestoMensual"));
     assertEquals(-5000.0, resultado.getModel().get("disponibleMensual"));
     assertEquals(true, resultado.getModel().get("excedido"));
+  }
+
+  @Test
+  public void debeArmarLosUltimosMovimientosConLaFechaRelativaAHoy() {
+    when(servicioResumen.obtenerResumen(usuario, YearMonth.of(2026, 10))).thenReturn(resumen);
+    Categoria delivery = new Categoria();
+    delivery.setNombre("Delivery");
+    Gasto deHoy = new Gasto(14350.0, LocalDate.of(2026, 10, 8), "Rappi");
+    deHoy.setCategoria(delivery);
+    Gasto deAyer = new Gasto(6900.0, LocalDate.of(2026, 10, 7), "Café");
+    Gasto viejo = new Gasto(52000.0, LocalDate.of(2026, 9, 22), "Nafta");
+    when(gastoServicio.obtenerUltimos(usuario, ControladorResumen.MOVIMIENTOS_RECIENTES))
+      .thenReturn(List.of(deHoy, deAyer, viejo));
+
+    ModelAndView resultado = controladorResumen.mostrarResumen(null, request);
+
+    @SuppressWarnings("unchecked")
+    List<MovimientoReciente> movimientos = (List<MovimientoReciente>) resultado
+      .getModel()
+      .get("movimientos");
+    assertEquals(3, movimientos.size());
+    assertEquals("Hoy", movimientos.get(0).getCuando());
+    assertEquals("Delivery", movimientos.get(0).getCategoria());
+    assertEquals("D", movimientos.get(0).getInicial());
+    assertEquals("#c2510e", movimientos.get(0).getColor());
+    assertEquals("Ayer", movimientos.get(1).getCuando());
+    assertEquals("Sin categoría", movimientos.get(1).getCategoria());
+    assertEquals("22 sept", movimientos.get(2).getCuando());
+  }
+
+  @Test
+  public void elPorcentajeHormigaSobreLoGastadoSaleDelResumen() {
+    ResumenHormiga hormiga = new ResumenHormiga(9000.0, 3.0, List.of(), 6);
+    ResumenMensual conHormiga = new ResumenMensual(
+      45000.0,
+      300000.0,
+      255000.0,
+      15.0,
+      List.of(),
+      hormiga,
+      List.of()
+    );
+    when(servicioResumen.obtenerResumen(usuario, YearMonth.of(2026, 10))).thenReturn(conHormiga);
+
+    ModelAndView resultado = controladorResumen.mostrarResumen(null, request);
+
+    assertEquals(20.0, (Double) resultado.getModel().get("hormigaPorcentajeGastado"), 0.01);
   }
 }

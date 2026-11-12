@@ -201,4 +201,36 @@ public class GastoRepositorioImpTest {
     gasto.setUsuario(usuario);
     repositorioGasto.guardar(gasto);
   }
+
+  @Test
+  void debeDevolverLosUltimosGastosDelUsuarioDelMasNuevoAlMasViejo() {
+    Usuario usuario = new Usuario();
+    usuario.setEmail("ultimos@gastitos.demo");
+    usuario.setPassword("1234");
+    Usuario otro = new Usuario();
+    otro.setEmail("otro@gastitos.demo");
+    otro.setPassword("1234");
+    this.sessionFactory.getCurrentSession().save(usuario);
+    this.sessionFactory.getCurrentSession().save(otro);
+    for (String[] datos : new String[][] {
+      { "2026-11-01", "Viejo" },
+      { "2026-11-10", "Primero del 10" },
+      { "2026-11-10", "Segundo del 10" },
+      { "2026-11-12", "Hoy" },
+    }) {
+      Gasto gasto = new Gasto(100.0, LocalDate.parse(datos[0]), datos[1]);
+      gasto.setUsuario(usuario);
+      repositorioGasto.guardar(gasto);
+    }
+    Gasto ajeno = new Gasto(999.0, LocalDate.of(2026, 11, 13), "Ajeno");
+    ajeno.setUsuario(otro);
+    repositorioGasto.guardar(ajeno);
+
+    List<Gasto> ultimos = repositorioGasto.obtenerUltimos(usuario, 3);
+
+    assertEquals(
+      List.of("Hoy", "Segundo del 10", "Primero del 10"),
+      ultimos.stream().map(Gasto::getDescripcion).toList()
+    );
+  }
 }

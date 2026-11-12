@@ -47,6 +47,8 @@ public class CalculadoraGastosHormigaTest {
 
     assertEquals(44400.0, hormiga.getTotal());
     assertEquals(8.07, hormiga.getPorcentajePresupuesto(), 0.01);
+    // 12 cafés y 8 kioscos: los 3 delivery no llegan a 4 y el súper es esencial
+    assertEquals(20, hormiga.getCantidad());
     assertEquals(
       List.of("Café y snacks", "Kiosco"),
       hormiga.getCategorias().stream().map(ResumenCategoria::getNombre).toList()
