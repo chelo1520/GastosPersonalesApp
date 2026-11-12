@@ -67,7 +67,8 @@
         Ninguna categoría tiene presupuesto este mes. Definí uno con el lápiz de cada categoría o desactivá el filtro.
       </p>
       <div class="table-responsive">
-        <table class="table app-resumen-tabla mb-0" id="tabla-presupuestos" th:attr="data-total=${presupuestoMensual}">
+        <table class="table app-resumen-tabla mb-0" id="tabla-presupuestos"
+               th:attr="data-total=${presupuestoMensual}, data-sin-asignar=${noAsignado}, data-mes-nombre=${mesActual}">
           <thead>
             <tr>
               <th scope="col">Categoría</th>
@@ -78,7 +79,11 @@
             </tr>
           </thead>
           <tbody>
-            <tr th:each="fila : ${filas}" th:classappend="${!fila.tienePresupuesto} ? 'app-presupuesto-sin-definir'">
+            <!-- data-*: lo que el modal necesita para precargarse sin volver al servidor -->
+            <tr th:each="fila : ${filas}" th:classappend="${!fila.tienePresupuesto} ? 'app-presupuesto-sin-definir'"
+                th:attr="data-categoria-id=${fila.categoriaId}, data-nombre=${fila.nombre},
+                         data-presupuesto=${fila.tienePresupuesto ? fila.presupuesto : null},
+                         data-porcentaje=${fila.categoriaId != null ? porcentajes[fila.categoriaId] : null}">
               <td th:text="${fila.nombre}">Alimentación</td>
               <td class="text-end">
                 <div class="app-presupuesto-ver"
@@ -181,6 +186,50 @@
       <span>Asist.</span>
     </a>
   </nav>
+
+  <!-- Modal de asignación (devolución del 2026-11-05): monto y porcentaje ligados, atajos y lo que queda
+       sin asignar. Manda al mismo POST que el formulario de la fila; sin JavaScript queda el de la fila. -->
+  <div class="modal fade app-modal-presupuesto" id="modal-presupuesto" tabindex="-1"
+       aria-labelledby="modal-presupuesto-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content app-modal-presupuesto-contenido" th:action="@{/presupuestos}" method="post" id="modal-presupuesto-form">
+        <input type="hidden" name="categoriaId" id="modal-categoria-id">
+        <input type="hidden" name="mes" th:value="${mes}">
+        <input type="hidden" name="tipo" id="modal-tipo" value="pesos">
+        <input type="hidden" name="valor" id="modal-valor">
+        <h2 class="app-modal-presupuesto-titulo" id="modal-presupuesto-titulo">Asignar presupuesto</h2>
+        <p class="app-modal-presupuesto-total">
+          Tu presupuesto de <span id="modal-mes-nombre" th:text="${mesActual}">Noviembre 2026</span>:
+          <strong id="modal-total" class="app-resumen-num"
+                  th:text="'$ ' + ${#numbers.formatDecimal(presupuestoMensual, 1, 'POINT', 2, 'COMMA')}">$ 550.000,00</strong>
+        </p>
+        <p class="alert alert-danger py-2" role="alert" id="modal-error" hidden></p>
+        <div class="row g-3">
+          <div class="col-6">
+            <label for="modal-monto" class="form-label">Monto ($)</label>
+            <input type="number" step="0.01" min="0.01" inputmode="decimal" class="form-control" id="modal-monto">
+          </div>
+          <div class="col-6">
+            <label for="modal-porcentaje" class="form-label">Porcentaje (%)</label>
+            <input type="number" step="0.01" min="0.01" max="100" inputmode="decimal" class="form-control" id="modal-porcentaje">
+          </div>
+        </div>
+        <div class="app-modal-presupuesto-atajos" role="group" aria-label="Porcentajes rápidos">
+          <button type="button" class="btn btn-sm btn-outline-secondary app-atajo" data-porcentaje="5">5 %</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary app-atajo" data-porcentaje="10">10 %</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary app-atajo" data-porcentaje="15">15 %</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary app-atajo" data-porcentaje="20">20 %</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary app-atajo" data-porcentaje="25">25 %</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary app-atajo" data-porcentaje="30">30 %</button>
+        </div>
+        <p class="app-modal-presupuesto-queda" id="modal-queda" aria-live="polite"></p>
+        <div class="app-confirmar-acciones">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="modal-guardar">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script th:src="@{/js/presupuestos.js}" charset="utf-8"></script>
   <script th:replace="~{fragments/layout :: scripts}"></script>

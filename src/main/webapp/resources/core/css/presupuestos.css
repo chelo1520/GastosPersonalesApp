@@ -206,3 +206,43 @@
   background: #fbdcdc;
   color: #912018;
 }
+
+/* Modal de asignación por categoría */
+.app-modal-presupuesto .modal-content {
+  border: 1px solid var(--app-borde);
+  border-radius: 14px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+}
+
+.app-modal-presupuesto-contenido {
+  padding: 22px 24px 20px;
+}
+
+.app-modal-presupuesto-titulo {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.app-modal-presupuesto-total {
+  margin: 0 0 14px;
+  color: var(--app-texto-suave);
+}
+
+.app-modal-presupuesto-atajos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 6px;
+}
+
+.app-modal-presupuesto-queda {
+  min-height: 1.4em;
+  margin: 0 0 14px;
+  color: var(--app-texto-suave);
+}
+
+.app-modal-presupuesto-queda.is-neg {
+  color: var(--bs-danger);
+  font-weight: 600;
+}
