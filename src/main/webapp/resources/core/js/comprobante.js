@@ -1,6 +1,8 @@
 // Revisión de un comprobante, estilo revisión de código: cada gasto es una línea con aceptar o
-// descartar; al decidir se achica y se abre el siguiente sin revisar. El tilde "incluir" sigue siendo
-// lo que viaja al servidor: aceptar lo marca y descartar lo desmarca. Sin JavaScript queda todo abierto.
+// descartar; al decidir se achica, pasa al final de la lista y se abre el siguiente sin revisar, así
+// los pendientes quedan siempre arriba y los botones a mano. El tilde "incluir" sigue siendo lo que
+// viaja al servidor: aceptar lo marca y descartar lo desmarca (los name= no dependen del orden en
+// pantalla). Sin JavaScript queda todo abierto.
 (function () {
   const form = document.getElementById("form-comprobante");
   if (!form) {
@@ -73,10 +75,17 @@
     confirmar.textContent = aGuardar === 1 ? "Guardar 1 gasto" : "Guardar " + aGuardar + " gastos";
   }
 
-  // Después de decidir, el siguiente sin revisar se abre y queda a la vista
-  function siguientePendiente(desde) {
-    const resto = gastos.slice(gastos.indexOf(desde) + 1).concat(gastos.slice(0, gastos.indexOf(desde)));
-    const siguiente = resto.find((g) => estado(g) === "pendiente");
+  // El decidido pasa al final, después del último gasto (antes de los botones del formulario)
+  function moverAlFinal(gasto) {
+    const ultimo = form.querySelectorAll(".app-gasto-propuesto");
+    ultimo[ultimo.length - 1].after(gasto);
+  }
+
+  // Después de decidir, el primer gasto sin revisar (ya arriba de todo) se abre y recibe el foco
+  function siguientePendiente() {
+    const siguiente = Array.from(form.querySelectorAll(".app-gasto-propuesto")).find(
+      (g) => estado(g) === "pendiente",
+    );
     if (siguiente) {
       abrir(siguiente, true);
       siguiente.scrollIntoView({ block: "nearest", behavior: "smooth" });
@@ -105,8 +114,9 @@
     gasto.classList.toggle("is-descartado", !incluir);
     actualizarResumen(gasto);
     abrir(gasto, false);
+    moverAlFinal(gasto);
     actualizarProgreso();
-    siguientePendiente(gasto);
+    siguientePendiente();
   }
 
   gastos.forEach((gasto) => {

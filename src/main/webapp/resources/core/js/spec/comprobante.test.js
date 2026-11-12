@@ -56,6 +56,9 @@ describe("Revisión compacta del comprobante", () => {
   function items() {
     return Array.from(documento.querySelectorAll(".app-gasto-propuesto"));
   }
+  function nombres() {
+    return items().map((g) => g.querySelector(".app-gasto-propuesto-nombre").textContent);
+  }
 
   it("al entrar deja abierto solo el primero y muestra el progreso", () => {
     armar();
@@ -68,14 +71,18 @@ describe("Revisión compacta del comprobante", () => {
     expect(items()[0].querySelector(".app-gasto-propuesto-categoria").textContent).toBe("Delivery");
   });
 
-  it("aceptar marca el tilde, achica el gasto y abre el siguiente sin revisar", () => {
+  it("aceptar marca el tilde, achica el gasto, lo manda al final y abre el siguiente sin revisar", () => {
     armar();
     items()[0].querySelector(".app-gasto-propuesto-aceptar").click();
 
-    expect(items()[0].classList.contains("is-cerrado")).toBeTrue();
-    expect(items()[0].classList.contains("is-aceptado")).toBeTrue();
-    expect(items()[0].querySelector(".app-incluir").checked).toBeTrue();
-    expect(items()[1].classList.contains("is-cerrado")).toBeFalse();
+    expect(nombres()).toEqual(["Gasto 1", "Gasto 2", "Gasto 0"]);
+    const aceptado = items()[2];
+
+    expect(aceptado.classList.contains("is-cerrado")).toBeTrue();
+    expect(aceptado.classList.contains("is-aceptado")).toBeTrue();
+    expect(aceptado.querySelector(".app-incluir").checked).toBeTrue();
+    expect(aceptado.querySelector(".app-incluir").name).toBe("gastos[0].incluir");
+    expect(items()[0].classList.contains("is-cerrado")).toBeFalse();
     expect(documento.getElementById("revision-aceptados").textContent).toBe("1");
     expect(documento.getElementById("revision-pendientes").textContent).toBe("2");
   });
@@ -83,14 +90,16 @@ describe("Revisión compacta del comprobante", () => {
   it("descartar desmarca el tilde, deja de exigir los campos y sigue con el próximo", () => {
     armar();
     items()[0].querySelector(".app-gasto-propuesto-aceptar").click();
-    items()[1].querySelector(".app-gasto-propuesto-descartar").click();
+    // Gasto 1 quedó primero; al descartarlo pasa al final, detrás del aceptado
+    items()[0].querySelector(".app-gasto-propuesto-descartar").click();
 
-    const descartado = items()[1];
+    expect(nombres()).toEqual(["Gasto 2", "Gasto 0", "Gasto 1"]);
+    const descartado = items()[2];
 
     expect(descartado.classList.contains("is-descartado")).toBeTrue();
     expect(descartado.querySelector(".app-incluir").checked).toBeFalse();
     expect(descartado.querySelector("input[type='number']").required).toBeFalse();
-    expect(items()[2].classList.contains("is-cerrado")).toBeFalse();
+    expect(items()[0].classList.contains("is-cerrado")).toBeFalse();
     expect(documento.getElementById("revision-descartados").textContent).toBe("1");
     expect(documento.getElementById("btn-confirmar").textContent).toBe("Guardar 2 gastos");
   });
@@ -113,6 +122,7 @@ describe("Revisión compacta del comprobante", () => {
     primero.querySelector(".app-gasto-propuesto-resumen").click();
 
     expect(primero.classList.contains("is-cerrado")).toBeFalse();
+    expect(items()[2]).toBe(primero);
 
     const importe = primero.querySelector("input[type='number']");
     importe.value = "999";
