@@ -30,23 +30,55 @@
         </th:block>
       </p>
       <p class="text-secondary">
-        Revisá los gastos, corregilos si hace falta y destildá los que no quieras guardar.
+        Revisá cada gasto: aceptalo con el tilde o descartalo con la cruz. Al decidir, se achica y aparece el siguiente.
+        Podés corregir importe, fecha o categoría antes de aceptar.
       </p>
 
       <div th:if="${error != null}" class="alert alert-danger" role="alert" th:text="${error}">Elegí al menos un gasto para guardar.</div>
 
-      <form th:action="@{/registrar-gasto/comprobante/confirmar}" th:object="${confirmacion}" method="post" id="form-comprobante">
+      <!-- Con error del servidor se muestran todos los gastos abiertos, como antes del rediseño -->
+      <form th:action="@{/registrar-gasto/comprobante/confirmar}" th:object="${confirmacion}" method="post" id="form-comprobante"
+            th:attr="data-abrir-todo=${error != null}">
         <input type="hidden" th:field="*{tipoOperacion}">
         <input type="hidden" th:field="*{tipoComprobante}">
         <input type="hidden" th:field="*{total}">
 
-        <fieldset class="app-gasto-propuesto" th:each="g, it : *{gastos}" th:with="i=${it.index}">
+        <!-- Progreso de la revisión (lo completa comprobante.js); sin JavaScript no se ve -->
+        <div class="app-revision-progreso" id="revision-progreso" hidden aria-live="polite">
+          <span><strong id="revision-aceptados">0</strong> aceptados</span>
+          <span><strong id="revision-descartados">0</strong> descartados</span>
+          <span><strong id="revision-pendientes">0</strong> sin revisar</span>
+        </div>
+
+        <!-- Cada gasto: una línea con lo esencial y dos acciones; los campos se despliegan para corregir.
+             El tilde "incluir" sigue siendo lo que viaja al servidor: aceptar lo marca, descartar lo desmarca -->
+        <fieldset class="app-gasto-propuesto" th:each="g, it : *{gastos}" th:with="i=${it.index}"
+                  th:classappend="${g.revisarImporte or g.revisarFecha or g.revisarCategoria or g.revisarDescripcion} ? 'tiene-revisar'">
           <legend class="app-gasto-propuesto-titulo">
             <label class="app-gasto-propuesto-incluir">
               <input type="checkbox" class="form-check-input app-incluir" th:field="*{gastos[__${i}__].incluir}">
-              <span th:text="${g.descripcion}">Supermercado Día</span>
+              <span class="app-gasto-propuesto-nombre" th:text="${g.descripcion}">Supermercado Día</span>
             </label>
           </legend>
+          <div class="app-gasto-propuesto-linea">
+            <button type="button" class="app-gasto-propuesto-resumen" aria-expanded="true">
+              <span class="app-gasto-propuesto-datos">
+                <span class="app-gasto-propuesto-fecha" th:text="${g.fecha != null ? #temporals.format(g.fecha, 'dd/MM') : '—'}">05/11</span>
+                <span class="app-gasto-propuesto-importe" th:text="${g.importe != null ? '$ ' + #numbers.formatDecimal(g.importe, 1, 'POINT', 2, 'COMMA') : '$ —'}">$ 12.500,00</span>
+                <span class="app-gasto-propuesto-categoria"></span>
+                <span class="badge text-bg-warning app-gasto-propuesto-badge"
+                      th:if="${g.revisarImporte or g.revisarFecha or g.revisarCategoria or g.revisarDescripcion}">Revisar</span>
+              </span>
+            </button>
+            <span class="app-gasto-propuesto-acciones">
+              <button type="button" class="app-gasto-propuesto-aceptar" th:attr="aria-label='Aceptar ' + ${g.descripcion}" title="Aceptar">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+              </button>
+              <button type="button" class="app-gasto-propuesto-descartar" th:attr="aria-label='Descartar ' + ${g.descripcion}" title="Descartar">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+              </button>
+            </span>
+          </div>
           <p class="app-gasto-propuesto-detalle" th:if="${g.detalle != null}" th:text="${g.detalle}">Leche, pan</p>
 
           <div class="app-gasto-propuesto-campos">
@@ -105,7 +137,7 @@
 
         <div class="d-grid d-md-flex justify-content-md-end gap-2 mt-4">
           <a th:href="@{/registrar-gasto/comprobante}" class="btn btn-outline-secondary">Sacar otra foto</a>
-          <button type="submit" class="btn btn-primary">Confirmar y guardar</button>
+          <button type="submit" class="btn btn-primary" id="btn-confirmar">Confirmar y guardar</button>
         </div>
       </form>
     </section>
