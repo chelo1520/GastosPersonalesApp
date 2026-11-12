@@ -17,8 +17,10 @@ public class DatabaseInitializationConfig {
   @Bean
   public DataSourceInitializer dataSourceInitializer() {
     ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
+    // Datos maestros: categorías y usuario de prueba. No pisa nada
     populator.addScript(new ClassPathResource("data.sql"));
-    // Usuarios de demostración; va después de data.sql porque usa las categorías
+    // Datos ficticios de la demo (generado en el repo de coordinación); va después porque usa
+    // las categorías, y recarga los tres usuarios demo en cada arranque
     populator.addScript(new ClassPathResource("demo.sql"));
 
     DataSourceInitializer initializer = new DataSourceInitializer();

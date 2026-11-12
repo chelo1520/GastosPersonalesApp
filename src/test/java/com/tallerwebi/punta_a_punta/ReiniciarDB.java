@@ -16,6 +16,7 @@ public class ReiniciarDB {
       "ALTER TABLE Gasto AUTO_INCREMENT = 1;\n" +
       "DELETE FROM Presupuesto;\n" +
       "DELETE FROM PresupuestoTotal;\n" +
+      "DELETE FROM PreferenciaCategoria;\n" +
       "DELETE FROM Consejo;\n" +
       "DELETE FROM TokenRecuperacion;\n" +
       "ALTER TABLE Presupuesto AUTO_INCREMENT = 1;\n" +
