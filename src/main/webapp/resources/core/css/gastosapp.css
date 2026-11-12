@@ -176,6 +176,12 @@ a:hover {
   color: inherit;
 }
 
+.app-resumen-saludo {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  color: var(--app-texto-suave);
+}
+
 /* Anclas (#presupuesto): el navbar fijo no tapa la sección al llegar por link */
 .app-ancla {
   scroll-margin-top: 80px;

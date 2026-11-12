@@ -18,11 +18,13 @@ import com.tallerwebi.dominio.ServicioPerfil;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.ContrasenaIncorrecta;
 import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
+import com.tallerwebi.dominio.excepcion.DatosPersonalesInvalidos;
 import com.tallerwebi.dominio.excepcion.PresupuestoInvalido;
 import com.tallerwebi.dominio.presupuesto.MesDePresupuesto;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
@@ -315,5 +317,49 @@ public class ControladorPerfilTest {
 
     assertEquals(2025, resultado.getModel().get("anio"));
     verify(servicioPresupuestoMock).resumenDelAnio(usuarioMock, 2025);
+  }
+
+  @Test
+  public void debeGuardarLosDatosPersonalesYVolverAlPerfilConAviso() {
+    DatosPersonales datos = new DatosPersonales();
+    datos.setNombre("Diego");
+    datos.setApellido("Villca");
+    datos.setFechaNacimiento("1990-05-20");
+
+    ModelAndView resultado = controladorPerfil.actualizarDatosPersonales(datos, requestMock);
+
+    verify(servicioPerfilMock)
+      .actualizarDatosPersonales(usuarioMock, "Diego", "Villca", LocalDate.of(1990, 5, 20));
+    assertEquals("redirect:/perfil?datosGuardados", resultado.getViewName());
+  }
+
+  @Test
+  public void debeVolverAlPerfilConElErrorCuandoLaFechaNoEsValida() {
+    DatosPersonales datos = new DatosPersonales();
+    datos.setNombre("Diego");
+    datos.setFechaNacimiento("ayer");
+
+    ModelAndView resultado = controladorPerfil.actualizarDatosPersonales(datos, requestMock);
+
+    assertEquals("perfil", resultado.getViewName());
+    assertEquals("La fecha de nacimiento no es válida", resultado.getModel().get("errorDatos"));
+    verify(servicioPerfilMock, never()).actualizarDatosPersonales(any(), any(), any(), any());
+  }
+
+  @Test
+  public void debeMostrarElErrorDelServicioAlGuardarDatosPersonales() {
+    DatosPersonales datos = new DatosPersonales();
+    datos.setNombre("a".repeat(61));
+    doThrow(new DatosPersonalesInvalidos("El nombre no puede superar los 60 caracteres"))
+      .when(servicioPerfilMock)
+      .actualizarDatosPersonales(eq(usuarioMock), any(), any(), any());
+
+    ModelAndView resultado = controladorPerfil.actualizarDatosPersonales(datos, requestMock);
+
+    assertEquals("perfil", resultado.getViewName());
+    assertEquals(
+      "El nombre no puede superar los 60 caracteres",
+      resultado.getModel().get("errorDatos")
+    );
   }
 }

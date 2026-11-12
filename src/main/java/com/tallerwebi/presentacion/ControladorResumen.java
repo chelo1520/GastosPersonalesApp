@@ -67,6 +67,8 @@ public class ControladorResumen {
     ResumenMensual resumen = servicioResumen.obtenerResumen(usuario, mesMostrado);
 
     Map<String, Object> model = new ModelMap();
+    // Saludo por el nombre si el usuario lo cargó en su perfil
+    model.put("nombre", usuario.getNombre());
     model.put("mesActual", NombreDeMes.de(mesMostrado));
     model.put("mesAnterior", mesMostrado.minusMonths(1).toString());
     model.put("mesSiguiente", mesMostrado.plusMonths(1).toString());
