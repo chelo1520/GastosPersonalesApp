@@ -38,6 +38,28 @@
   margin-bottom: 1.25rem;
 }
 
+.app-sim-periodos {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid var(--sim-border);
+  border-radius: 14px;
+}
+
+.app-sim-periodos > div {
+  flex: 1 1 220px;
+}
+
+.app-sim-periodos .form-label {
+  margin-bottom: .35rem;
+  font-size: .85rem;
+  font-weight: 700;
+}
+
 /* Layout de dos columnas */
 .app-sim-layout {
   display: grid;

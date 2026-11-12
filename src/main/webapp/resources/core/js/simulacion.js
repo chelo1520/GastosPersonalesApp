@@ -3,7 +3,99 @@
   if (!root) return;
 
   const lista = document.getElementById("sim-lista");
+  const periodos = document.getElementById("sim-periodos");
   const presupuesto = parseFloat(root.dataset.presupuesto) || 0;
+  const estadoGuardado = document.getElementById("sim-guardado");
+  const reintentar = document.getElementById("sim-reintentar");
+  let version = 0;
+  let versionGuardada = 0;
+  let guardando = null;
+
+  function estadoActual() {
+    const items = Array.from(lista.querySelectorAll(".app-sim-item"));
+    const campo = (id) => document.getElementById(id).value;
+    return {
+      excluidos: items.filter((item) => item.dataset.id && !item.querySelector(".app-sim-check").checked)
+        .map((item) => Number(item.dataset.id)),
+      agregados: items.filter((item) => item.dataset.tipo).map((item) => ({
+        descripcion: item.dataset.descripcion,
+        importe: Number(item.dataset.importe),
+        tipo: item.dataset.tipo,
+        incluido: item.querySelector(".app-sim-check").checked,
+      })),
+      descripcionExtra: campo("sim-extra-descripcion"),
+      montoExtra: campo("sim-extra-monto"),
+      descripcionOrdinario: campo("sim-ordinario-descripcion"),
+      montoOrdinario: campo("sim-ordinario-monto"),
+    };
+  }
+
+  function guardar() {
+    if (guardando) return guardando;
+    guardando = (async () => {
+      try {
+        while (versionGuardada < version) {
+          const versionEnviada = version;
+          estadoGuardado.textContent = "Guardando cambios…";
+          const respuesta = await fetch(root.dataset.guardarUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(estadoActual()),
+          });
+          if (!respuesta.ok) throw new Error("HTTP " + respuesta.status);
+          versionGuardada = versionEnviada;
+        }
+        estadoGuardado.textContent = "Cambios guardados";
+        reintentar.hidden = true;
+        return true;
+      } catch (error) {
+        console.error("No se pudo guardar la simulación", error);
+        estadoGuardado.textContent = "No se pudieron guardar los cambios. Reintentá antes de salir.";
+        reintentar.hidden = false;
+        return false;
+      } finally {
+        guardando = null;
+      }
+    })();
+    return guardando;
+  }
+
+  function cambio() {
+    version += 1;
+    guardar();
+  }
+
+  reintentar.addEventListener("click", guardar);
+  window.addEventListener("beforeunload", (evento) => {
+    if (versionGuardada < version) {
+      evento.preventDefault();
+      evento.returnValue = "";
+    }
+  });
+  document.addEventListener("click", async (evento) => {
+    const enlace = evento.target.closest("a[href]");
+    if (!enlace || evento.defaultPrevented || evento.button !== 0 || evento.ctrlKey ||
+      evento.metaKey || evento.shiftKey || evento.altKey || enlace.target || enlace.hasAttribute("download") ||
+      versionGuardada === version) return;
+    evento.preventDefault();
+    if (await guardar()) window.location.assign(enlace.href);
+  });
+
+  if (periodos) {
+    periodos.addEventListener("submit", async (evento) => {
+      if (versionGuardada === version) return;
+      evento.preventDefault();
+      if (await guardar()) periodos.submit();
+      else periodos.reset();
+    });
+    periodos.addEventListener("change", (evento) => {
+      if (evento.target.name === "mesBase") {
+        const simulado = periodos.querySelector("[name=mesSimulado]");
+        if (simulado.value < periodos.dataset.mesActual) simulado.value = periodos.dataset.mesActual;
+      }
+      periodos.requestSubmit();
+    });
+  }
 
   const fmt = (n) => "$ " + Math.round(n).toLocaleString("es-AR");
 
@@ -107,7 +199,10 @@
 
   if (lista) {
     lista.addEventListener("change", (e) => {
-      if (e.target.classList.contains("app-sim-check")) recalcular();
+      if (e.target.classList.contains("app-sim-check")) {
+        recalcular();
+        cambio();
+      }
     });
   }
 
@@ -125,7 +220,9 @@
       montoInput.value = "";
       descInput.focus();
       recalcular();
+      cambio();
     });
+    form.addEventListener("input", cambio);
   });
 
   recalcular();

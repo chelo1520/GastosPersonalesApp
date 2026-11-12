@@ -101,6 +101,26 @@ Las asignaciones existentes continúan siendo montos fijos. Hibernate agrega la 
 La lista muestra 10 gastos por página, del más reciente al más antiguo. El total mostrado incluye
 todos los gastos del usuario, no solamente los de la página visible.
 
+### Simulación
+
+En Simulación se puede elegir un mes base y un mes a simular en los desplegables. Los gastos del
+mes base se usan como punto de partida y el resultado se compara con el presupuesto del mes elegido.
+Por defecto se usa el mes anterior como base y el próximo como mes a simular. El mes base puede
+ser el actual o cualquiera de los 24 anteriores, y el mes simulado puede ser el actual o alguno
+de los 24 siguientes. Al cambiar una selección se actualiza la simulación. Para cada usuario y
+combinación de meses se guardan automáticamente los gastos agregados, las selecciones y los
+formularios en curso. Los gastos reales y el presupuesto se consultan nuevamente al regresar.
+La última combinación se recuerda durante la sesión. Si falla el guardado se muestra un aviso y
+se puede reintentar. Las simulaciones guardadas siguen accesibles cuando su mes simulado queda
+en el pasado, pero no se pueden crear nuevas para meses pasados. Hibernate crea la tabla
+correspondiente al actualizar el esquema.
+Si se instaló una versión previa que creó `SimulacionGuardada.estado` como `tinytext`, hay que
+ampliar esa columna antes de usar el guardado:
+
+```sql
+ALTER TABLE SimulacionGuardada MODIFY estado LONGTEXT NOT NULL;
+```
+
 ### Cargar un gasto desde un comprobante
 
 En "Registrar gasto" se puede elegir una foto o una imagen JPG/PNG de hasta 5 MB. La imagen se envía

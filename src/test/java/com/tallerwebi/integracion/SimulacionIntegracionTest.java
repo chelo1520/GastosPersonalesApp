@@ -12,6 +12,7 @@ import com.tallerwebi.dominio.gasto.GastoServicioImpl;
 import com.tallerwebi.dominio.gasto.RepositorioGastoImpl;
 import com.tallerwebi.dominio.presupuesto.RepositorioPresupuestoImpl;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuestoImpl;
+import com.tallerwebi.dominio.simulacion.ServicioSimulacion;
 import com.tallerwebi.infraestructura.categoria.RepositorioPreferenciaCategoriaImpl;
 import com.tallerwebi.infraestructura.config.HibernateInfraestructuraTestConfig;
 import com.tallerwebi.presentacion.ControladorGasto;
@@ -68,7 +69,12 @@ public class SimulacionIntegracionTest {
     );
     controladorGasto =
       new ControladorGasto(gastoServicio, new CategoriaRepositorioImpl(sessionFactory));
-    controladorSimulacion = new ControladorSimulacion(gastoServicio, servicioPresupuesto);
+    controladorSimulacion =
+      new ControladorSimulacion(
+        gastoServicio,
+        servicioPresupuesto,
+        new ServicioSimulacion(sessionFactory)
+      );
 
     usuario = guardarUsuario("lourdes@gmail.com");
     request = requestConUsuario(usuario);
@@ -139,7 +145,7 @@ public class SimulacionIntegracionTest {
 
   @SuppressWarnings("unchecked")
   private List<Gasto> gastosDeLaSimulacion() {
-    ModelAndView resultado = controladorSimulacion.mostrarSimulacion(request);
+    ModelAndView resultado = controladorSimulacion.mostrarSimulacion(null, null, request);
     assertEquals("simulacion", resultado.getViewName());
     return (List<Gasto>) resultado.getModel().get("gastos");
   }
