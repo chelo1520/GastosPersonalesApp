@@ -1,3 +1,4 @@
+/* global bootstrap */
 (function () {
   const tabla = document.getElementById("tabla-presupuestos");
   if (!tabla) {
@@ -25,10 +26,112 @@
     }
   }
 
+  // Modal de asignación: monto y porcentaje ligados, atajos y lo que queda sin asignar.
+  // Si el modal no está en la página, el lápiz abre el formulario de la fila como antes
+  const modalEl = document.getElementById("modal-presupuesto");
+  const modal = modalEl ? armarModal(modalEl) : null;
+
+  function armarModal(el) {
+    const totalDelMes = Number(tabla.dataset.total) || 0;
+    const sinAsignar = Number(tabla.dataset.sinAsignar) || 0;
+    const formato = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const titulo = el.querySelector("#modal-presupuesto-titulo");
+    const categoriaId = el.querySelector("#modal-categoria-id");
+    const tipo = el.querySelector("#modal-tipo");
+    const valor = el.querySelector("#modal-valor");
+    const monto = el.querySelector("#modal-monto");
+    const porcentaje = el.querySelector("#modal-porcentaje");
+    const queda = el.querySelector("#modal-queda");
+    const error = el.querySelector("#modal-error");
+    const form = el.querySelector("form");
+    // Cuánto ya tiene esta categoría: al reemplazarlo, vuelve a quedar disponible
+    let asignadoActual = 0;
+    let ultimoEditado = "pesos";
+
+    function redondear(numero) {
+      return Math.round(numero * 100) / 100;
+    }
+    function actualizarQueda() {
+      const montoNumero = Number(monto.value);
+      if (!(totalDelMes > 0) || !(montoNumero > 0)) {
+        queda.textContent = "";
+        queda.classList.remove("is-neg");
+        return;
+      }
+      const restante = redondear(sinAsignar + asignadoActual - montoNumero);
+      queda.classList.toggle("is-neg", restante < 0);
+      queda.textContent =
+        restante < 0
+          ? "Supera tu presupuesto del mes por $ " + formato.format(-restante)
+          : "Te quedan $ " + formato.format(restante) + " sin asignar";
+    }
+    function desdePorcentaje() {
+      const pct = Number(porcentaje.value);
+      monto.value = pct > 0 && totalDelMes > 0 ? redondear((totalDelMes * pct) / 100) : "";
+      ultimoEditado = "porcentaje";
+      actualizarQueda();
+    }
+    function desdeMonto() {
+      const montoNumero = Number(monto.value);
+      porcentaje.value =
+        montoNumero > 0 && totalDelMes > 0 ? redondear((montoNumero / totalDelMes) * 100) : "";
+      ultimoEditado = "pesos";
+      actualizarQueda();
+    }
+    porcentaje.addEventListener("input", desdePorcentaje);
+    monto.addEventListener("input", desdeMonto);
+    el.querySelectorAll(".app-atajo").forEach((atajo) =>
+      atajo.addEventListener("click", () => {
+        porcentaje.value = atajo.dataset.porcentaje;
+        desdePorcentaje();
+        monto.focus();
+      }),
+    );
+    // Se guarda en la modalidad que se tocó al final: porcentaje si se eligió un %, pesos si se escribió un monto
+    form.addEventListener("submit", () => {
+      tipo.value = ultimoEditado;
+      valor.value = ultimoEditado === "porcentaje" ? porcentaje.value : monto.value;
+    });
+
+    function mostrar() {
+      if (typeof bootstrap !== "undefined") {
+        bootstrap.Modal.getOrCreateInstance(el).show();
+      } else {
+        el.classList.add("show");
+        el.style.display = "block";
+        el.removeAttribute("aria-hidden");
+      }
+    }
+
+    return {
+      abrir(fila, mensajeDeError) {
+        titulo.textContent = "Asignar presupuesto a " + (fila.dataset.nombre || "la categoría");
+        categoriaId.value = fila.dataset.categoriaId || "";
+        asignadoActual = Number(fila.dataset.presupuesto) || 0;
+        const pctActual = fila.dataset.porcentaje;
+        if (pctActual) {
+          porcentaje.value = pctActual;
+          desdePorcentaje();
+        } else {
+          monto.value = asignadoActual > 0 ? asignadoActual : "";
+          desdeMonto();
+        }
+        error.hidden = !mensajeDeError;
+        error.textContent = mensajeDeError || "";
+        mostrar();
+        (pctActual ? porcentaje : monto).focus();
+      },
+    };
+  }
+
   tabla.addEventListener("click", (evento) => {
     const lapiz = evento.target.closest(".app-presupuesto-lapiz");
     if (lapiz) {
-      editar(lapiz.closest("td"), true);
+      if (modal) {
+        modal.abrir(lapiz.closest("tr"));
+      } else {
+        editar(lapiz.closest("td"), true);
+      }
       return;
     }
     const cancelar = evento.target.closest(".app-presupuesto-cancelar");
@@ -67,6 +170,18 @@
       editar(evento.target.closest("td"), false);
     }
   });
+
+  // Si el servidor rechazó un valor, la fila vuelve con su formulario abierto: se reabre en el modal
+  // con el mismo error (Bootstrap se carga después de este script, por eso se espera al DOM)
+  if (modal) {
+    document.addEventListener("DOMContentLoaded", () => {
+      const abierto = tabla.querySelector(".app-presupuesto-editar:not([hidden])");
+      const alerta = document.querySelector(".alert-danger[role='alert']:not(#modal-error)");
+      if (abierto && alerta) {
+        modal.abrir(abierto.closest("tr"), alerta.textContent.trim());
+      }
+    });
+  }
 
   // Ocultar las categorías sin presupuesto; la preferencia se recuerda en este navegador
   const ocultar = document.getElementById("ocultar-sin-presupuesto");
