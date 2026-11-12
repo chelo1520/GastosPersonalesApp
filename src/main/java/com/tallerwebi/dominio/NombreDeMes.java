@@ -17,6 +17,11 @@ public final class NombreDeMes {
     return nombre(mes, TextStyle.FULL) + " " + mes.getYear();
   }
 
+  // "Octubre", sin el año: para listas donde el año ya está en el encabezado
+  public static String sinAnio(YearMonth mes) {
+    return nombre(mes, TextStyle.FULL);
+  }
+
   public static String corto(YearMonth mes) {
     return nombre(mes, TextStyle.SHORT).replace(".", "") + " " + mes.getYear();
   }

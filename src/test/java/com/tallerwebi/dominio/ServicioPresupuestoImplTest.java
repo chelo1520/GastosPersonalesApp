@@ -2,7 +2,10 @@ package com.tallerwebi.dominio;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -11,6 +14,7 @@ import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.excepcion.PresupuestoInvalido;
+import com.tallerwebi.dominio.presupuesto.MesDePresupuesto;
 import com.tallerwebi.dominio.presupuesto.Presupuesto;
 import com.tallerwebi.dominio.presupuesto.PresupuestoTotal;
 import com.tallerwebi.dominio.presupuesto.RepositorioPresupuesto;
@@ -359,5 +363,33 @@ public class ServicioPresupuestoImplTest {
     servicioPresupuesto.definir(usuario, alimentacion, OCTUBRE, 999999.0);
 
     verify(repositorioPresupuestoMock).guardar(any());
+  }
+
+  @Test
+  public void elResumenDelAnioTraeDoceMesesConElTotalPropioOElDelPerfilYLoAsignado() {
+    usuario.setIngresoMensual(1000000.0);
+    usuario.setPorcentajePresupuesto(50.0);
+    PresupuestoTotal marzo = new PresupuestoTotal(usuario, YearMonth.of(2026, 3), 700000.0);
+    when(repositorioPresupuestoMock.buscarTotal(usuario, YearMonth.of(2026, 3))).thenReturn(marzo);
+    Presupuesto alimentacionMarzo = new Presupuesto(
+      usuario,
+      alimentacion,
+      YearMonth.of(2026, 3),
+      200000.0
+    );
+    when(repositorioPresupuestoMock.obtenerDelMes(usuario, YearMonth.of(2026, 3)))
+      .thenReturn(List.of(alimentacionMarzo));
+
+    List<MesDePresupuesto> meses = servicioPresupuesto.resumenDelAnio(usuario, 2026);
+
+    assertEquals(12, meses.size());
+    assertEquals(YearMonth.of(2026, 1), meses.get(0).mes());
+    assertEquals(500000.0, meses.get(0).total(), 0.01);
+    assertFalse(meses.get(0).propio());
+    assertEquals(0.0, meses.get(0).asignado(), 0.01);
+    assertEquals(700000.0, meses.get(2).total(), 0.01);
+    assertTrue(meses.get(2).propio());
+    assertEquals(200000.0, meses.get(2).asignado(), 0.01);
+    assertEquals(500000.0, meses.get(2).sinAsignar(), 0.01);
   }
 }

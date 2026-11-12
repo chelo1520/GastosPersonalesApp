@@ -8,11 +8,14 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.ContrasenaIncorrecta;
 import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
 import com.tallerwebi.dominio.excepcion.PresupuestoInvalido;
+import com.tallerwebi.dominio.presupuesto.MesDePresupuesto;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -50,16 +53,19 @@ public class ControladorPerfil {
     this.servicioGuia = servicioGuia;
   }
 
+  // anio: el de la tabla anual de presupuestos; mes: se acepta por compatibilidad y fija el año
   @RequestMapping(path = "/perfil", method = RequestMethod.GET)
   public ModelAndView mostrarPerfil(
     @RequestParam(value = "mes", required = false) String mes,
+    @RequestParam(value = "anio", required = false) Integer anio,
     HttpServletRequest request
   ) {
     Usuario usuario = SesionUsuario.obtener(request);
     if (usuario == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
-    return new ModelAndView(VISTA, conMes(usuario, elegirMes(mes)));
+    YearMonth elegido = anio != null ? YearMonth.of(anio, 1) : elegirMes(mes);
+    return new ModelAndView(VISTA, conMes(usuario, elegido));
   }
 
   @RequestMapping(path = "/perfil/presupuesto/mes", method = RequestMethod.POST)
@@ -96,11 +102,21 @@ public class ControladorPerfil {
     }
   }
 
+  // La tabla anual muestra el año del mes elegido; los meses se arman con el total y lo asignado
   private Map<String, Object> conMes(Usuario usuario, YearMonth mes) {
     Map<String, Object> model = new ModelMap();
     model.put(USUARIO, usuario);
     model.put("mesPresupuesto", mes.toString());
     model.put("totalDelMes", servicioPresupuesto.presupuestoDelMes(usuario, mes));
+    YearMonth mesActual = YearMonth.now();
+    List<MesDelAnio> meses = new ArrayList<>();
+    for (MesDePresupuesto datos : servicioPresupuesto.resumenDelAnio(usuario, mes.getYear())) {
+      meses.add(new MesDelAnio(datos, mesActual));
+    }
+    model.put("anio", mes.getYear());
+    model.put("anioAnterior", mes.getYear() - 1);
+    model.put("anioSiguiente", mes.getYear() + 1);
+    model.put("mesesDelAnio", meses);
     return model;
   }
 

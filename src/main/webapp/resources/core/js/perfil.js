@@ -39,3 +39,42 @@ if (btnCambiarNode) {
   );
   actualizar();
 }
+
+// Tabla anual: el lápiz muestra el campo del total en la misma fila; cancelar o Escape lo cierran
+const tablaAnualNode = document.getElementById("tabla-anual");
+
+function editarMes(celda, activo) {
+  const ver = celda.querySelector(".app-perfil-mes-ver");
+  const form = celda.querySelector(".app-perfil-mes-editar");
+  if (!ver || !form) {
+    return;
+  }
+  ver.hidden = activo;
+  form.hidden = !activo;
+  const monto = form.querySelector("input[name='monto']");
+  if (activo) {
+    monto.focus();
+    monto.select();
+  } else {
+    monto.value = monto.defaultValue;
+  }
+}
+
+if (tablaAnualNode) {
+  tablaAnualNode.addEventListener("click", (evento) => {
+    const lapiz = evento.target.closest(".app-perfil-mes-lapiz");
+    if (lapiz) {
+      editarMes(lapiz.closest("td"), true);
+      return;
+    }
+    const cancelar = evento.target.closest(".app-perfil-mes-cancelar");
+    if (cancelar) {
+      editarMes(cancelar.closest("td"), false);
+    }
+  });
+  tablaAnualNode.addEventListener("keydown", (evento) => {
+    if (evento.key === "Escape" && evento.target.closest(".app-perfil-mes-editar")) {
+      editarMes(evento.target.closest("td"), false);
+    }
+  });
+}

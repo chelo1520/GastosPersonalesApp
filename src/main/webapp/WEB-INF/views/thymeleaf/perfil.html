@@ -131,28 +131,78 @@
             </form>
         </section>
 
-        <section class="app-perfil-card" aria-labelledby="perfil-mes-titulo">
-            <h2 id="perfil-mes-titulo">Presupuesto de un mes</h2>
-            <p>Elegí un mes y definí su presupuesto total. Los meses sin valor propio usan el presupuesto por defecto.</p>
+        <!-- Presupuesto por mes (devolución del 2026-11-05): el año entero de un vistazo, con lo que ya
+             se repartió por categoría y un acceso directo a repartir lo que falta -->
+        <section class="app-perfil-card" id="presupuesto-anual" aria-labelledby="perfil-mes-titulo">
+            <div class="app-perfil-anual-cabecera">
+                <h2 id="perfil-mes-titulo">Presupuesto por mes</h2>
+                <nav class="app-perfil-anual-nav" aria-label="Cambiar de año">
+                    <a th:href="@{/perfil(anio=${anioAnterior})} + '#presupuesto-anual'" th:attr="aria-label='Ver ' + ${anioAnterior}">‹</a>
+                    <strong th:text="${anio}">2026</strong>
+                    <a th:href="@{/perfil(anio=${anioSiguiente})} + '#presupuesto-anual'" th:attr="aria-label='Ver ' + ${anioSiguiente}">›</a>
+                </nav>
+            </div>
+            <p>Cada mes usa tu presupuesto por defecto salvo que le definas uno propio con el lápiz. "Asignado" es lo que ya repartiste entre categorías.</p>
 
             <div class="alert alert-danger" role="alert" th:if="${errorMes}" th:text="${errorMes}"></div>
 
-            <form id="perfil-mes-form" th:action="@{/perfil/presupuesto/mes}" method="post" class="row g-3">
-                <div class="col-md-6">
-                    <label for="mes-selector" class="form-label">Mes</label>
-                    <input type="month" class="form-control" id="mes-selector" name="mes"
-                           th:value="${mesPresupuesto}" required
-                           onchange="if (this.value) { window.location.href = window.location.pathname + '?mes=' + this.value; }">
-                </div>
-                <div class="col-md-6">
-                    <label for="monto-mes" class="form-label">Presupuesto total del mes ($)</label>
-                    <input type="number" step="0.01" min="0.01" class="form-control" id="monto-mes"
-                           name="monto" th:value="${totalDelMes}" required>
-                </div>
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary">Guardar mes</button>
-                </div>
-            </form>
+            <div class="table-responsive">
+                <table class="table app-resumen-tabla app-perfil-anual mb-0" id="tabla-anual">
+                    <thead>
+                        <tr>
+                            <th scope="col">Mes</th>
+                            <th scope="col" class="text-end">Presupuesto</th>
+                            <th scope="col" class="text-end">Asignado</th>
+                            <th scope="col"><span class="visually-hidden">Repartir</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="fila : ${mesesDelAnio}"
+                            th:classappend="${fila.enCurso} ? 'app-perfil-mes-en-curso' : (${fila.pasado} ? 'app-perfil-mes-pasado' : '')"
+                            th:attr="data-mes=${fila.mes}">
+                            <th scope="row">
+                                <span th:text="${fila.nombre}">Noviembre</span>
+                                <small th:if="${fila.enCurso}" class="text-muted">(en curso)</small>
+                            </th>
+                            <td class="text-end">
+                                <div class="app-perfil-mes-ver" th:hidden="${errorMes != null and mesPresupuesto == fila.mes}">
+                                    <span class="app-resumen-num" th:if="${fila.total > 0}"
+                                          th:text="'$ ' + ${#numbers.formatDecimal(fila.total, 1, 'POINT', 0, 'COMMA')}">$ 550.000</span>
+                                    <span th:unless="${fila.total > 0}">—</span>
+                                    <small th:if="${fila.total > 0 and !fila.propio}" class="text-muted">por defecto</small>
+                                    <button type="button" class="app-perfil-mes-lapiz"
+                                            th:attr="aria-label='Definir el presupuesto de ' + ${fila.nombre} + ' ' + ${anio}"
+                                            th:title="'Definir el presupuesto de ' + ${fila.nombre}">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                    </button>
+                                </div>
+                                <form th:action="@{/perfil/presupuesto/mes}" method="post" class="app-perfil-mes-editar"
+                                      th:hidden="${!(errorMes != null and mesPresupuesto == fila.mes)}">
+                                    <input type="hidden" name="mes" th:value="${fila.mes}">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" name="monto" step="0.01" min="0.01" inputmode="decimal" required
+                                               class="form-control" th:value="${fila.total > 0 ? fila.total : ''}"
+                                               th:attr="aria-label='Presupuesto de ' + ${fila.nombre}">
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                                    <button type="button" class="btn btn-sm btn-link app-perfil-mes-cancelar">Cancelar</button>
+                                </form>
+                            </td>
+                            <td class="text-end">
+                                <span class="app-resumen-num" th:text="'$ ' + ${#numbers.formatDecimal(fila.asignado, 1, 'POINT', 0, 'COMMA')}">$ 550.000</span>
+                                <small th:if="${fila.total > 0 and fila.sinAsignar > 0}" class="text-muted d-block"
+                                       th:text="'faltan $ ' + ${#numbers.formatDecimal(fila.sinAsignar, 1, 'POINT', 0, 'COMMA')}">faltan $ 50.000</small>
+                                <small th:if="${fila.sinAsignar < 0}" class="text-danger d-block">pasado</small>
+                            </td>
+                            <td class="text-end">
+                                <a th:href="@{/presupuestos(mes=${fila.mes})}" class="app-perfil-mes-repartir"
+                                   th:attr="aria-label='Repartir el presupuesto de ' + ${fila.nombre} + ' por categoría'">Repartir por categoría</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </section>
 
         <form th:action="@{/logout}" method="post" class="app-perfil-salir">

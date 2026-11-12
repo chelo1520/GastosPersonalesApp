@@ -19,10 +19,13 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.excepcion.ContrasenaIncorrecta;
 import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
 import com.tallerwebi.dominio.excepcion.PresupuestoInvalido;
+import com.tallerwebi.dominio.presupuesto.MesDePresupuesto;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.servlet.ModelAndView;
@@ -60,7 +63,7 @@ public class ControladorPerfilTest {
 
   @Test
   public void cuandoHayUnUsuarioAuntenticadoEnLaSesionMuestraElPerfilYRetornaUsuarioALaVista() {
-    ModelAndView resultado = controladorPerfil.mostrarPerfil(null, requestMock);
+    ModelAndView resultado = controladorPerfil.mostrarPerfil(null, null, requestMock);
 
     assertEquals("perfil", resultado.getViewName());
     assertSame(usuarioMock, resultado.getModel().get("usuario"));
@@ -70,7 +73,7 @@ public class ControladorPerfilTest {
   public void cuandoNoHayUsuarioEnLaSesionRedirigeAlLogin() {
     when(sessionMock.getAttribute("USUARIO")).thenReturn(null);
 
-    ModelAndView resultado = controladorPerfil.mostrarPerfil(null, requestMock);
+    ModelAndView resultado = controladorPerfil.mostrarPerfil(null, null, requestMock);
 
     assertEquals("redirect:/login", resultado.getViewName());
   }
@@ -79,7 +82,7 @@ public class ControladorPerfilTest {
   public void cuandoNoExisteLaSesionRedirigeAlLogin() {
     when(requestMock.getSession(false)).thenReturn(null);
 
-    ModelAndView resultado = controladorPerfil.mostrarPerfil(null, requestMock);
+    ModelAndView resultado = controladorPerfil.mostrarPerfil(null, null, requestMock);
 
     assertEquals("redirect:/login", resultado.getViewName());
   }
@@ -248,7 +251,7 @@ public class ControladorPerfilTest {
     when(servicioPresupuestoMock.presupuestoDelMes(usuarioMock, YearMonth.of(2026, 12)))
       .thenReturn(500000.0);
 
-    ModelAndView resultado = controladorPerfil.mostrarPerfil("2026-12", requestMock);
+    ModelAndView resultado = controladorPerfil.mostrarPerfil("2026-12", null, requestMock);
 
     assertEquals("2026-12", resultado.getModel().get("mesPresupuesto"));
     assertEquals(500000.0, resultado.getModel().get("totalDelMes"));
@@ -281,5 +284,36 @@ public class ControladorPerfilTest {
 
     assertEquals("perfil", resultado.getViewName());
     assertEquals("El total no puede ser menor", resultado.getModel().get("errorMes"));
+  }
+
+  @Test
+  public void debeArmarLaTablaAnualConLosDoceMesesDelAnioElegido() {
+    List<MesDePresupuesto> meses = new ArrayList<>();
+    for (int numero = 1; numero <= 12; numero++) {
+      meses.add(new MesDePresupuesto(YearMonth.of(2027, numero), 500000.0, false, 0.0));
+    }
+    when(servicioPresupuestoMock.resumenDelAnio(usuarioMock, 2027)).thenReturn(meses);
+
+    ModelAndView resultado = controladorPerfil.mostrarPerfil(null, 2027, requestMock);
+
+    assertEquals(2027, resultado.getModel().get("anio"));
+    assertEquals(2026, resultado.getModel().get("anioAnterior"));
+    assertEquals(2028, resultado.getModel().get("anioSiguiente"));
+    @SuppressWarnings("unchecked")
+    List<MesDelAnio> filas = (List<MesDelAnio>) resultado.getModel().get("mesesDelAnio");
+    assertEquals(12, filas.size());
+    assertEquals("Enero", filas.get(0).getNombre());
+    assertEquals("2027-12", filas.get(11).getMes());
+    assertEquals(500000.0, filas.get(0).getSinAsignar());
+  }
+
+  @Test
+  public void sinAnioLaTablaAnualMuestraElAnioDelMesElegido() {
+    when(servicioPresupuestoMock.resumenDelAnio(usuarioMock, 2025)).thenReturn(List.of());
+
+    ModelAndView resultado = controladorPerfil.mostrarPerfil("2025-03", null, requestMock);
+
+    assertEquals(2025, resultado.getModel().get("anio"));
+    verify(servicioPresupuestoMock).resumenDelAnio(usuarioMock, 2025);
   }
 }

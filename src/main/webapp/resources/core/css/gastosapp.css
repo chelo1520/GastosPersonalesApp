@@ -111,6 +111,86 @@ a:hover {
   display: inline;
 }
 
+/* Tabla anual de presupuestos del perfil */
+.app-perfil-anual-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.app-perfil-anual-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.05rem;
+}
+
+.app-perfil-anual-nav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--app-borde);
+  border-radius: 50%;
+  color: inherit;
+  text-decoration: none;
+  font-size: 1.2rem;
+}
+
+.app-perfil-anual th[scope="row"] {
+  font-weight: 600;
+}
+
+.app-perfil-mes-pasado {
+  color: var(--app-texto-suave);
+}
+
+.app-perfil-mes-en-curso {
+  background: var(--app-fondo-suave, #f6f7f9);
+}
+
+.app-perfil-mes-ver {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.app-perfil-mes-lapiz {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--app-texto-suave);
+  cursor: pointer;
+}
+
+.app-perfil-mes-lapiz:hover {
+  background: var(--app-fondo-suave, #f6f7f9);
+  color: inherit;
+}
+
+.app-perfil-mes-editar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.app-perfil-mes-editar .input-group {
+  width: 170px;
+}
+
+.app-perfil-mes-repartir {
+  white-space: nowrap;
+}
+
 /* Anclas (#presupuesto): el navbar fijo no tapa la sección al llegar por link */
 .app-ancla {
   scroll-margin-top: 80px;
