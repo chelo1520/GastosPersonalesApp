@@ -3,63 +3,90 @@
 
 <head th:replace="~{fragments/layout :: head('Iniciar sesión')}"></head>
 
-<body>
+<body class="login-body">
 
-  <main class="app-login">
-    <div class="app-login-card">
+  <!-- Rediseño v2 (diseno/v2 del coord), paso 1: login a dos columnas con la mascota "Billetera Alegre".
+       Los ids del formulario (#email, #password, #btn-login, #link-olvide, #btn-register) se mantienen
+       porque los usan los tests de vista y los E2E. -->
+  <link rel="stylesheet" th:href="@{/css/login.css}">
 
-      <div class="app-login-marca">
-        <img th:src="@{/img/isotipo.svg}" width="44" height="44" alt="">
+  <main class="login">
+
+    <!-- Escena: fondo oscuro, logo, mascota 3D, globo de diálogo y titular -->
+    <section class="login-escena" aria-hidden="true">
+      <div class="login-escena-luz"></div>
+      <!-- La mascota llena su caja (se pone inset:0 sola): el tamaño y la posición los da la caja -->
+      <div class="login-mascota" id="mascota-caja">
+        <gastitos-mascot id="mascota" mood="neutral" covering="false" motion="sobrio" look="cursor"></gastitos-mascot>
+      </div>
+      <!-- Sin WebGL (o si three no carga) se muestra el logo estático -->
+      <img th:src="@{/img/isotipo-sobre-oscuro.svg}" class="login-mascota-fallback" id="mascota-fallback" alt="" hidden>
+      <div class="login-marca">
+        <img th:src="@{/img/isotipo-sobre-oscuro.svg}" width="32" height="32" alt="">
         <span>Gastitos</span>
       </div>
+      <div class="login-globo" id="login-globo" aria-live="polite">¡Hola! ¿Cómo viene el mes?</div>
+      <div class="login-titular">
+        <h1>Tus gastos, con buena cara.</h1>
+        <p>Registrá, presupuestá y simulá tu mes.</p>
+      </div>
+    </section>
 
-      <!-- Llega desde el registro: la cuenta ya se creó -->
-      <p th:if="${param.registrado != null}" class="alert alert-success" role="status">
-        Tu cuenta ya está creada. Ingresá con tu email y contraseña.
-      </p>
-
-      <!-- Llega desde el link del mail: la contraseña ya se cambió -->
-      <p th:if="${param.restablecida != null}" class="alert alert-success" role="status">
-        Tu contraseña se cambió. Ingresá con la nueva.
-      </p>
-
-      <p th:if="${param.cuentaEliminada != null}" class="alert alert-success" role="status">
-        Tu cuenta y todos tus datos se eliminaron.
-      </p>
-
-      <p th:if="${param.salida != null}" class="alert alert-success" role="status">
-        Cerraste sesión.
-      </p>
-
-      <form action="#" th:action="@{/validar-login}" method="POST" th:object="${datosLogin}">
-
-        <div class="mb-3">
-          <label for="email" class="form-label">Email <span class="app-requerido" aria-hidden="true">*</span></label>
-          <input th:field="*{email}" id="email" type="email" class="form-control" autocomplete="username" required />
+    <!-- Formulario -->
+    <section class="login-panel">
+      <div class="login-form">
+        <div class="login-form-titulo">
+          <h2>Ingresá a tu cuenta</h2>
+          <p>Billetera Alegre te estaba esperando.</p>
         </div>
 
-        <div class="mb-4">
-          <label for="password" class="form-label">Contraseña <span class="app-requerido" aria-hidden="true">*</span></label>
-          <input th:field="*{password}" id="password" type="password" class="form-control"
-            autocomplete="current-password" required />
-          <a id="link-olvide" class="app-login-olvide" th:href="@{/olvide-contrasena}">¿Olvidaste tu contraseña?</a>
-        </div>
+        <!-- Avisos que llegan por la URL: cuenta creada, contraseña cambiada, cuenta eliminada, sesión cerrada -->
+        <p th:if="${param.registrado != null}" class="login-aviso" role="status">
+          Tu cuenta ya está creada. Ingresá con tu email y contraseña.
+        </p>
+        <p th:if="${param.restablecida != null}" class="login-aviso" role="status">
+          Tu contraseña se cambió. Ingresá con la nueva.
+        </p>
+        <p th:if="${param.cuentaEliminada != null}" class="login-aviso" role="status">
+          Tu cuenta y todos tus datos se eliminaron.
+        </p>
+        <p th:if="${param.salida != null}" class="login-aviso" role="status">
+          Cerraste sesión.
+        </p>
 
-        <p th:if="${error != null}" class="alert alert-danger" th:text="${error}"></p>
+        <form action="#" th:action="@{/validar-login}" method="POST" th:object="${datosLogin}" id="form-login"
+              th:attr="data-error=${error != null}">
+          <label class="login-campo" for="email">
+            Email
+            <input th:field="*{email}" id="email" type="email" autocomplete="username" required
+                   placeholder="vos@ejemplo.com">
+          </label>
 
-        <div class="d-grid">
-          <button id="btn-login" class="btn btn-primary" type="submit" disabled>Ingresar</button>
-        </div>
-      </form>
+          <label class="login-campo" for="password">
+            Contraseña
+            <span class="login-password">
+              <input th:field="*{password}" id="password" type="password" autocomplete="current-password" required>
+              <button type="button" class="login-mostrar" id="btn-mostrar" aria-pressed="false"
+                      aria-label="Mostrar la contraseña">Mostrar</button>
+            </span>
+          </label>
 
-      <p class="app-login-registro">
-        ¿Primera vez? <a id="btn-register" th:href="@{/nuevo-usuario}">Crear una cuenta</a>
-      </p>
+          <p th:if="${error != null}" class="login-error" role="alert" id="login-error" th:text="${error}"></p>
 
-    </div>
+          <a id="link-olvide" class="login-olvide" th:href="@{/olvide-contrasena}">¿Olvidaste tu contraseña?</a>
+
+          <button id="btn-login" class="login-ingresar" type="submit" disabled>Ingresar</button>
+        </form>
+
+        <p class="login-registro">
+          ¿Primera vez? <a id="btn-register" th:href="@{/nuevo-usuario}">Crear una cuenta</a>
+        </p>
+      </div>
+    </section>
   </main>
 
   <script th:replace="~{fragments/layout :: scripts}"></script>
+  <script th:src="@{/js/mascot3d.js}"></script>
   <script type="module" th:src="@{/js/login.js}"></script>
 </body>
 

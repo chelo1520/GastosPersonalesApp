@@ -1,0 +1,330 @@
+/* Login, rediseño v2 (diseno/v2 del coord, "Design Tokens" y "1. Login"). Los tokens v2 viven acá
+   como variables con prefijo v2- hasta que el resto de la app los adopte (paso 2 del plan). */
+.login-body {
+  --v2-nav: #17302c;
+  --v2-bg: #f5f3ee;
+  --v2-surface: #ffffff;
+  --v2-border-input: #dcd8ce;
+  --v2-primary: #11786e;
+  --v2-primary-hover: #0d625a;
+  --v2-primary-tint: #eef4f2;
+  --v2-mint: #7fc4b8;
+  --v2-text: #1c2321;
+  --v2-muted: #5f6764;
+  --v2-on-dark-muted: #b9d6cf;
+  --v2-crema: #fbfaf6;
+  --v2-danger: #b91c1c;
+  --v2-success: #15803d;
+  --v2-success-bg: #dff1ea;
+
+  margin: 0;
+  background: var(--v2-bg);
+  color: var(--v2-text);
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.login {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+}
+
+/* Escena oscura con la mascota */
+.login-escena {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: var(--v2-nav);
+}
+
+.login-escena-luz {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 52%, rgba(127, 196, 184, 0.16), rgba(23, 48, 44, 0) 55%);
+}
+
+/* Caja de la mascota (el componente se pone inset:0 en línea, así que el tamaño lo da esta caja).
+   El prototipo usa 12 % / 18 %; acá 18 % / 24 % para que quede un 25 % más chica (pedido de Diego) */
+.login-mascota {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 18%;
+  bottom: 24%;
+}
+
+.login-mascota-fallback {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 180px;
+  height: 180px;
+  transform: translate(-50%, -50%);
+  opacity: 0.9;
+}
+
+.login-marca {
+  position: absolute;
+  top: 32px;
+  left: 40px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: "Outfit", "IBM Plex Sans", sans-serif;
+  font-weight: 700;
+  font-size: 26px;
+  color: #fff;
+}
+
+.login-globo {
+  position: absolute;
+  top: 13%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 18px;
+  border-radius: 16px;
+  background: var(--v2-crema);
+  color: var(--v2-nav);
+  font-weight: 600;
+  font-size: 16px;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  transition: opacity 0.2s;
+}
+
+.login-titular {
+  position: absolute;
+  left: 40px;
+  right: 40px;
+  bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login-titular h1 {
+  margin: 0;
+  font-size: 40px;
+  line-height: 1.1;
+  font-weight: 700;
+  color: var(--v2-crema);
+  letter-spacing: -0.01em;
+  text-wrap: pretty;
+}
+
+.login-titular p {
+  margin: 0;
+  max-width: 460px;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--v2-on-dark-muted);
+}
+
+/* Formulario */
+.login-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+}
+
+.login-form {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.login-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.login-form-titulo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.login-form-titulo h2 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.login-form-titulo p {
+  margin: 0;
+  font-size: 16px;
+  color: var(--v2-muted);
+}
+
+.login-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.login-campo input {
+  height: 50px;
+  padding: 0 14px;
+  border: 1px solid var(--v2-border-input);
+  border-radius: 10px;
+  background: var(--v2-surface);
+  font: inherit;
+  font-weight: 400;
+  font-size: 16px;
+  outline: none;
+}
+
+.login-campo input:focus {
+  border-color: var(--v2-primary);
+  box-shadow: 0 0 0 3px rgba(17, 120, 110, 0.15);
+}
+
+.login-password {
+  position: relative;
+  display: flex;
+}
+
+.login-password input {
+  flex: 1;
+  padding-right: 84px;
+}
+
+.login-mostrar {
+  position: absolute;
+  right: 8px;
+  top: 9px;
+  height: 32px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 8px;
+  background: var(--v2-primary-tint);
+  color: var(--v2-primary);
+  font: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.login-error {
+  margin: -8px 0 0;
+  color: var(--v2-danger);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.login-aviso {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--v2-success-bg);
+  color: var(--v2-success);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.login-olvide {
+  margin-top: -8px;
+  font-size: 14px;
+  color: var(--v2-primary);
+}
+
+.login-olvide:hover,
+.login-registro a:hover {
+  color: var(--v2-primary-hover);
+}
+
+.login-ingresar {
+  height: 52px;
+  border: none;
+  border-radius: 10px;
+  background: var(--v2-primary);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  font-size: 17px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.login-ingresar:hover:not(:disabled) {
+  background: var(--v2-primary-hover);
+}
+
+.login-ingresar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.login-registro {
+  margin: 0;
+  text-align: center;
+  font-size: 15px;
+  color: var(--v2-muted);
+}
+
+.login-registro a {
+  color: var(--v2-primary);
+}
+
+/* Celular: una columna; la escena queda como cabecera corta con la mascota */
+@media (max-width: 767.98px) {
+  .login {
+    grid-template-columns: 1fr;
+  }
+
+  .login-escena {
+    min-height: 300px;
+  }
+
+  .login-mascota {
+    top: 26%;
+    bottom: 8%;
+  }
+
+  .login-mascota-fallback {
+    width: 120px;
+    height: 120px;
+    top: 55%;
+  }
+
+  .login-marca {
+    top: 16px;
+    left: 16px;
+    font-size: 22px;
+  }
+
+  .login-globo {
+    top: 16px;
+    left: auto;
+    right: 16px;
+    transform: none;
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+
+  .login-titular {
+    display: none;
+  }
+
+  .login-panel {
+    padding: 28px 16px 40px;
+  }
+
+  .login-form-titulo h2 {
+    font-size: 26px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-globo,
+  .login-ingresar {
+    transition: none;
+  }
+}
