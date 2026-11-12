@@ -15,14 +15,15 @@ function habilitarIngresar() {
   btnLoginNode.disabled = !validarCamposDeLogin(inputEmailNode.value, inputPasswordNode.value);
 }
 
-// Estado del formulario que mira la mascota. El error del servidor dura hasta que se escribe algo
+// Estado del formulario que mira la mascota. El error del servidor dura hasta que se escribe algo.
+// No hay "pulse" por tecla a propósito: la mascota flota, mira y se tapa los ojos según el foco,
+// pero no salta con cada letra (decisión de Diego, 2026-11-12)
 const estado = {
   email: inputEmailNode.value,
   foco: null,
   mostrando: false,
   error: formNode.dataset.error === "true",
 };
-let pulso = 0;
 
 function actualizarMascota() {
   const m = estadoMascota(estado);
@@ -37,10 +38,6 @@ function actualizarMascota() {
 function tecla() {
   estado.email = inputEmailNode.value;
   estado.error = false;
-  pulso += 1;
-  if (mascotaNode) {
-    mascotaNode.setAttribute("pulse", String(pulso));
-  }
   habilitarIngresar();
   actualizarMascota();
 }
@@ -79,15 +76,20 @@ function hayWebGl() {
   }
 }
 
-if (mascotaNode && (!hayWebGl() || !window.customElements.get("gastitos-mascot"))) {
-  mascotaNode.remove();
+const cajaMascotaNode = document.getElementById("mascota-caja");
+
+function mostrarFallback() {
+  (cajaMascotaNode || mascotaNode).remove();
   fallbackNode.hidden = false;
+}
+
+if (mascotaNode && (!hayWebGl() || !window.customElements.get("gastitos-mascot"))) {
+  mostrarFallback();
 } else if (mascotaNode) {
   // Si three no llegó en unos segundos (sin red), se muestra el logo
   setTimeout(() => {
     if (!mascotaNode.querySelector("canvas")) {
-      mascotaNode.remove();
-      fallbackNode.hidden = false;
+      mostrarFallback();
     }
   }, 6000);
 }

@@ -15,7 +15,10 @@
     <!-- Escena: fondo oscuro, logo, mascota 3D, globo de diálogo y titular -->
     <section class="login-escena" aria-hidden="true">
       <div class="login-escena-luz"></div>
-      <gastitos-mascot id="mascota" mood="neutral" covering="false" motion="sobrio" look="cursor" pulse="0"></gastitos-mascot>
+      <!-- La mascota llena su caja (se pone inset:0 sola): el tamaño y la posición los da la caja -->
+      <div class="login-mascota" id="mascota-caja">
+        <gastitos-mascot id="mascota" mood="neutral" covering="false" motion="sobrio" look="cursor"></gastitos-mascot>
+      </div>
       <!-- Sin WebGL (o si three no carga) se muestra el logo estático -->
       <img th:src="@{/img/isotipo-sobre-oscuro.svg}" class="login-mascota-fallback" id="mascota-fallback" alt="" hidden>
       <div class="login-marca">
@@ -25,7 +28,7 @@
       <div class="login-globo" id="login-globo" aria-live="polite">¡Hola! ¿Cómo viene el mes?</div>
       <div class="login-titular">
         <h1>Tus gastos, con buena cara.</h1>
-        <p>Registrá, presupuestá y simulá tu mes junto a Billetera Alegre.</p>
+        <p>Registrá, presupuestá y simulá tu mes.</p>
       </div>
     </section>
 

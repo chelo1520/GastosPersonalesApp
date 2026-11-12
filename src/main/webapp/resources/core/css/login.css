@@ -44,12 +44,13 @@
   background: radial-gradient(circle at 50% 52%, rgba(127, 196, 184, 0.16), rgba(23, 48, 44, 0) 55%);
 }
 
-/* La mascota se dimensiona al 100 % de su caja: de 12 % arriba a 18 % abajo */
-#mascota {
+/* Caja de la mascota (el componente se pone inset:0 en línea, así que el tamaño lo da esta caja).
+   El prototipo usa 12 % / 18 %; acá 18 % / 24 % para que quede un 25 % más chica (pedido de Diego) */
+.login-mascota {
   position: absolute;
   left: 0;
   right: 0;
-  top: 14%;
+  top: 18%;
   bottom: 24%;
 }
 
@@ -282,8 +283,8 @@
     min-height: 300px;
   }
 
-  #mascota {
-    top: 28%;
+  .login-mascota {
+    top: 26%;
     bottom: 8%;
   }
 
