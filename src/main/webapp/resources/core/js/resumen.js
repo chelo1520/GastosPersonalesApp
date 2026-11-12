@@ -50,8 +50,10 @@
   });
 })();
 
-// Historial: barras apiladas por mes (hormiga abajo, el resto arriba) y una marca con el presupuesto
-// de cada mes. Es una marca por barra y no una línea que los una: el presupuesto es un valor por mes
+// Historial: barras apiladas por mes (hormiga abajo, el resto arriba) sobre una barra de fondo, más
+// ancha y suave, con el presupuesto de ese mes. Así se ve cuánto del presupuesto se usó sin que el
+// límite se pierda como una línea fina. Es una barra por mes y no una línea que los una: el
+// presupuesto es un valor por mes
 (function () {
   const canvas = document.getElementById("grafico-historial");
   const tabla = document.getElementById("tabla-historial");
@@ -77,6 +79,9 @@
   const NARANJA = "#c2500a";
   const TINTA = "#1b1b18";
   const SUPERFICIE = "#ffffff";
+  // Presupuesto: relleno muy suave y un borde arriba que marca el límite
+  const PRESUPUESTO_FONDO = "rgba(27, 27, 24, 0.09)";
+  const PRESUPUESTO_BORDE = "rgba(27, 27, 24, 0.45)";
 
   // El mes en curso va más claro: todavía no cerró y su total va a seguir subiendo
   const color = (base) => meses.map((m) => (m.enCurso ? base + "73" : base));
@@ -95,8 +100,10 @@
           data: meses.map((m) => m.hormiga),
           backgroundColor: color(NARANJA),
           stack: "gastado",
+          grouped: false,
           order: 1,
-          maxBarThickness: 48,
+          barPercentage: 0.55,
+          maxBarThickness: 44,
           borderRadius: 0,
         },
         {
@@ -105,8 +112,10 @@
           data: meses.map((m) => m.resto),
           backgroundColor: color(VERDE),
           stack: "gastado",
+          grouped: false,
           order: 1,
-          maxBarThickness: 48,
+          barPercentage: 0.55,
+          maxBarThickness: 44,
           // 2px de separación con el segmento hormiga y la punta redondeada
           borderColor: SUPERFICIE,
           borderWidth: { bottom: 2 },
@@ -114,18 +123,20 @@
           borderRadius: { topLeft: 4, topRight: 4 },
         },
         {
-          type: "line",
+          // Se dibuja detrás (order mayor) y más ancha: las barras de gastos quedan "adentro" del presupuesto
+          type: "bar",
           label: "Presupuesto del mes",
           data: meses.map((m) => m.presupuesto),
-          showLine: false,
-          pointStyle: "line",
-          pointRadius: 18,
-          pointHoverRadius: 18,
-          pointBorderWidth: 3,
-          pointHoverBorderWidth: 3,
-          borderColor: TINTA,
-          backgroundColor: TINTA,
-          order: 0,
+          backgroundColor: PRESUPUESTO_FONDO,
+          borderColor: PRESUPUESTO_BORDE,
+          borderWidth: { top: 2 },
+          borderSkipped: false,
+          borderRadius: { topLeft: 6, topRight: 6 },
+          stack: "presupuesto",
+          grouped: false,
+          order: 2,
+          barPercentage: 0.9,
+          maxBarThickness: 72,
         },
       ],
     },
@@ -150,7 +161,21 @@
       plugins: {
         legend: {
           position: "bottom",
-          labels: { usePointStyle: true, color: "#1b1b18", boxHeight: 8 },
+          labels: {
+            usePointStyle: true,
+            color: TINTA,
+            boxHeight: 8,
+            // El presupuesto se ve como su barra: fondo suave con el borde que marca el límite
+            generateLabels: (chart) =>
+              Chart.defaults.plugins.legend.labels.generateLabels(chart).map((item) => {
+                if (chart.data.datasets[item.datasetIndex].stack === "presupuesto") {
+                  item.fillStyle = "rgba(27, 27, 24, 0.18)";
+                  item.strokeStyle = PRESUPUESTO_BORDE;
+                  item.lineWidth = 2;
+                }
+                return item;
+              }),
+          },
         },
         tooltip: {
           callbacks: {
