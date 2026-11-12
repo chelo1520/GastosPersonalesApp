@@ -17,6 +17,7 @@
     if (activo) {
       monto.focus();
       monto.select();
+      equivalencia(form);
     } else {
       monto.value = monto.defaultValue;
       form.querySelector("select[name='tipo']").value =
@@ -33,6 +34,31 @@
     const cancelar = evento.target.closest(".app-presupuesto-cancelar");
     if (cancelar) {
       editar(cancelar.closest("td"), false);
+    }
+  });
+
+  // Mientras se escribe: un porcentaje muestra a cuántos pesos equivale, y un monto a qué % del total
+  const total = Number(tabla.dataset.total) || 0;
+  const pesos = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function equivalencia(form) {
+    const salida = form.querySelector(".app-presupuesto-equivale");
+    if (!salida) {
+      return;
+    }
+    const tipo = form.querySelector("select[name='tipo']").value;
+    const valor = Number(form.querySelector("input[name='valor']").value);
+    if (!(valor > 0) || !(total > 0)) {
+      salida.textContent = "";
+    } else if (tipo === "porcentaje") {
+      salida.textContent = "= $ " + pesos.format(Math.round(total * valor) / 100);
+    } else {
+      salida.textContent = "= " + pesos.format(Math.round((valor / total) * 10000) / 100) + " % del total";
+    }
+  }
+  tabla.addEventListener("input", (evento) => {
+    const form = evento.target.closest(".app-presupuesto-editar");
+    if (form) {
+      equivalencia(form);
     }
   });
 

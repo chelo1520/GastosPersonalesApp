@@ -80,7 +80,8 @@ public class ControladorPerfil {
       model.put("errorMes", e.getMessage());
       return new ModelAndView(VISTA, model);
     }
-    return new ModelAndView("redirect:/perfil?mesGuardado&mes=" + elegido);
+    // Al resumen de ese mes: ahí se ve el efecto del presupuesto (devolución del 2026-11-05)
+    return new ModelAndView("redirect:/home?mes=" + elegido + "&presupuestoGuardado");
   }
 
   // Sin mes, o con uno inválido, usa el actual
@@ -175,7 +176,8 @@ public class ControladorPerfil {
       servicioGuia.guardarPaso(usuario, 2);
       return new ModelAndView("redirect:/presupuestos");
     }
-    return new ModelAndView("redirect:/perfil");
+    // Al resumen, donde se ve el presupuesto recién definido (devolución del 2026-11-05)
+    return new ModelAndView("redirect:/home?presupuestoGuardado");
   }
 
   private ModelAndView conError(Usuario usuario, String clave, String error) {

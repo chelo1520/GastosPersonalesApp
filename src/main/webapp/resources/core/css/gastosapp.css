@@ -111,6 +111,21 @@ a:hover {
   display: inline;
 }
 
+/* Anclas (#presupuesto): el navbar fijo no tapa la sección al llegar por link */
+.app-ancla {
+  scroll-margin-top: 80px;
+}
+
+.app-resumen-accion {
+  margin-top: 6px;
+}
+
+.app-presupuesto-equivale {
+  display: block;
+  margin-top: 4px;
+  min-height: 1.2em;
+}
+
 .app-cuenta-salir button {
   padding: 6px 10px;
   border: 0;
