@@ -189,12 +189,12 @@ public class ControladorPerfilTest {
   }
 
   @Test
-  public void debeGuardarElIngresoYElPorcentajeYRedirigirAlPerfil() {
+  public void debeGuardarElIngresoYElPorcentajeYRedirigirAlResumen() {
     ModelAndView resultado = controladorPerfil.definirPresupuesto(400000.0, 50.0, requestMock);
 
     verify(servicioPerfilMock).definirPresupuesto(usuarioMock, 400000.0, 50.0);
     verify(servicioGuiaMock, never()).guardarPaso(any(), anyInt());
-    assertEquals("redirect:/perfil", resultado.getViewName());
+    assertEquals("redirect:/home?presupuestoGuardado", resultado.getViewName());
   }
 
   @Test
@@ -230,7 +230,7 @@ public class ControladorPerfilTest {
     ModelAndView resultado = controladorPerfil.definirPresupuesto(400000.0, 50.0, requestMock);
 
     verify(servicioGuiaMock, never()).guardarPaso(any(), anyInt());
-    assertEquals("redirect:/perfil", resultado.getViewName());
+    assertEquals("redirect:/home?presupuestoGuardado", resultado.getViewName());
   }
 
   @Test
@@ -255,7 +255,7 @@ public class ControladorPerfilTest {
   }
 
   @Test
-  public void debeDefinirElPresupuestoDeUnMesYVolverAlPerfilEnEseMes() {
+  public void debeDefinirElPresupuestoDeUnMesYLlevarAlResumenDeEseMes() {
     ModelAndView resultado = controladorPerfil.definirPresupuestoDelMes(
       "2026-12",
       500000.0,
@@ -264,7 +264,7 @@ public class ControladorPerfilTest {
 
     verify(servicioPresupuestoMock)
       .definirPresupuestoDelMes(usuarioMock, YearMonth.of(2026, 12), 500000.0);
-    assertEquals("redirect:/perfil?mesGuardado&mes=2026-12", resultado.getViewName());
+    assertEquals("redirect:/home?mes=2026-12&presupuestoGuardado", resultado.getViewName());
   }
 
   @Test

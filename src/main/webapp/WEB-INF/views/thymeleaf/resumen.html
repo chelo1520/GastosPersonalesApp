@@ -21,6 +21,10 @@
   -->
   <main class="app-main app-resumen-main">
     <div th:replace="~{fragments/guia :: recorrido}"></div>
+    <!-- Llega del perfil después de guardar el presupuesto: acá se ve el efecto -->
+    <div class="alert alert-success" role="status" th:if="${param.presupuestoGuardado != null}" id="presupuesto-guardado">
+      Presupuesto guardado. Así queda el mes.
+    </div>
     <div class="alert alert-success" role="status" th:if="${guiaFinalizada}">
       ¡Listo para empezar! Ya conocés los primeros pasos de Gastitos.
     </div>
@@ -58,9 +62,10 @@
         <span class="app-resumen-card-label">Presupuesto total del mes</span>
         <div th:if="${presupuestoMensual <= 0}">
           <strong class="app-resumen-monto">—</strong>
-          <small class="app-resumen-barra-texto">
-            <a th:href="@{/perfil}">Definí cuánto tenés disponible en tu perfil</a>
-          </small>
+          <!-- Sin presupuesto no hay disponible, hormiga ni alertas: el botón lleva directo al campo -->
+          <a th:href="@{/perfil#presupuesto}" class="btn btn-primary btn-sm app-resumen-accion" id="definir-presupuesto">
+            Definir presupuesto
+          </a>
         </div>
         <div th:if="${presupuestoMensual > 0}">
           <strong class="app-resumen-monto"
@@ -68,6 +73,7 @@
           <small class="app-resumen-barra-texto">
             Asignado <span th:text="'$ ' + ${#numbers.formatDecimal(asignado, 1, 'POINT', 0, 'COMMA')}">$ 300.000</span>
             · Sin asignar <span th:text="'$ ' + ${#numbers.formatDecimal(sinAsignar, 1, 'POINT', 0, 'COMMA')}">$ 100.000</span>
+            <a th:if="${sinAsignar > 0}" th:href="@{/presupuestos(mes=${mesMostrado})}" id="repartir-presupuesto">Repartir por categoría</a>
           </small>
         </div>
       </article>

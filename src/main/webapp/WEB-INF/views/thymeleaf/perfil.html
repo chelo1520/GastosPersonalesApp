@@ -100,9 +100,11 @@
             </div>
         </details>
 
+        <!-- Ancla: los links "Definir presupuesto" de la app llegan acá sin scrollear (#presupuesto) -->
+        <div id="presupuesto" class="app-ancla" aria-hidden="true"></div>
         <section class="app-perfil-card" id="guia-destino-perfil" aria-labelledby="perfil-presupuesto-titulo">
             <h2 id="perfil-presupuesto-titulo">Mi presupuesto mensual por defecto</h2>
-            <p>Indicá tu ingreso mensual y qué porcentaje querés destinar a tu presupuesto.</p>
+            <p>Indicá tu ingreso mensual y qué porcentaje querés destinar a tu presupuesto. El monto se calcula mientras escribís.</p>
 
             <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
 
@@ -114,11 +116,13 @@
                 </div>
                 <div class="col-md-6">
                     <label for="porcentaje" class="form-label">% usado como presupuesto</label>
+                    <!-- Sin porcentaje definido arranca en 100: todo el ingreso es presupuesto -->
                     <input type="number" step="0.01" min="0.01" max="100" class="form-control" id="porcentaje"
-                           name="porcentaje" th:value="${usuario.porcentajePresupuesto}" required>
+                           name="porcentaje" required
+                           th:value="${usuario.porcentajePresupuesto != null ? usuario.porcentajePresupuesto : 100}">
                 </div>
                 <div class="col-12">
-                    <p class="mb-2">Presupuesto mensual:
+                    <p class="mb-2" aria-live="polite">Presupuesto mensual:
                         <strong id="perfil-presupuesto-calculado"
                                 th:text="${#numbers.formatDecimal(usuario.presupuestoSegunPerfil(), 1, 'POINT', 2, 'COMMA')}">0,00</strong>
                     </p>
@@ -132,8 +136,6 @@
             <p>Elegí un mes y definí su presupuesto total. Los meses sin valor propio usan el presupuesto por defecto.</p>
 
             <div class="alert alert-danger" role="alert" th:if="${errorMes}" th:text="${errorMes}"></div>
-
-            <p class="alert alert-success" role="status" th:if="${param.mesGuardado != null}">Presupuesto del mes guardado.</p>
 
             <form id="perfil-mes-form" th:action="@{/perfil/presupuesto/mes}" method="post" class="row g-3">
                 <div class="col-md-6">

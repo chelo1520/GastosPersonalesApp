@@ -237,7 +237,7 @@ public class PresupuestosVistaTest {
           .param("mes", mes)
           .param("monto", "2000")
       )
-      .andExpect(redirectedUrl("/perfil?mesGuardado&mes=" + mes));
+      .andExpect(redirectedUrl("/home?mes=" + mes + "&presupuestoGuardado"));
     mockMvc
       .perform(get("/presupuestos").param("mes", mes).sessionAttr("USUARIO", usuario))
       .andExpect(content().string(containsString("25.0 % del total")))
@@ -260,7 +260,7 @@ public class PresupuestosVistaTest {
           .param("mes", mes)
           .param("monto", "4000")
       )
-      .andExpect(redirectedUrl("/perfil?mesGuardado&mes=" + mes));
+      .andExpect(redirectedUrl("/home?mes=" + mes + "&presupuestoGuardado"));
     mockMvc
       .perform(get("/presupuestos").param("mes", mes).sessionAttr("USUARIO", usuario))
       .andExpect(content().string(containsString("$ 300")));
@@ -327,7 +327,7 @@ public class PresupuestosVistaTest {
           .param("ingresoMensual", "2000")
           .param("porcentaje", "100")
       )
-      .andExpect(redirectedUrl("/perfil"));
+      .andExpect(redirectedUrl("/home?presupuestoGuardado"));
     mockMvc
       .perform(get("/presupuestos").param("mes", mes).sessionAttr("USUARIO", usuario))
       .andExpect(content().string(containsString("$ 500")));

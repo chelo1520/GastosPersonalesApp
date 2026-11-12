@@ -37,7 +37,7 @@
         Presupuesto total:
         <strong id="presupuesto-mensual" class="app-resumen-num"
           th:text="'$ ' + ${#numbers.formatDecimal(presupuestoMensual, 1, 'POINT', 2, 'COMMA')}">$ 400.000</strong>
-        · se define en tu <a th:href="@{/perfil}">perfil</a>
+        · se define en tu <a th:href="@{/perfil#presupuesto}">perfil</a>
       </p>
       <p class="app-presupuestos-ayuda mb-1">
         Asignado a categorías:
@@ -48,7 +48,7 @@
         Sin asignar:
         <strong id="sin-asignar" class="app-resumen-num" th:classappend="${noAsignado < 0} ? 'is-neg'"
           th:text="'$ ' + ${#numbers.formatDecimal(noAsignado, 1, 'POINT', 2, 'COMMA')}">$ 100.000</strong>
-        <span th:if="${presupuestoMensual <= 0}">(definí tu ingreso en el perfil para repartirlo)</span>
+        <a th:if="${presupuestoMensual <= 0}" th:href="@{/perfil#presupuesto}" class="btn btn-primary btn-sm ms-2">Definir presupuesto</a>
       </p>
     </section>
 
@@ -67,7 +67,7 @@
         Ninguna categoría tiene presupuesto este mes. Definí uno con el lápiz de cada categoría o desactivá el filtro.
       </p>
       <div class="table-responsive">
-        <table class="table app-resumen-tabla mb-0" id="tabla-presupuestos">
+        <table class="table app-resumen-tabla mb-0" id="tabla-presupuestos" th:attr="data-total=${presupuestoMensual}">
           <thead>
             <tr>
               <th scope="col">Categoría</th>
@@ -113,6 +113,8 @@
                            th:value="${conError ? datosPresupuesto.valor : (tipoActual == 'porcentaje' ? porcentajes[fila.categoriaId] : fila.presupuesto)}"
                            th:attr="aria-label='Valor del presupuesto de ' + ${fila.nombre}">
                   </div>
+                  <!-- Equivalencia en vivo: un % muestra los pesos que representa, y al revés -->
+                  <small class="app-presupuesto-equivale text-muted" aria-live="polite"></small>
                   <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
                   <button type="button" class="btn btn-sm btn-link app-presupuesto-cancelar">Cancelar</button>
                 </form>
