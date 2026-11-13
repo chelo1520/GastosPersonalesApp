@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.startsWith;
 
 import com.microsoft.playwright.*;
 import com.tallerwebi.punta_a_punta.vistas.VistaLogin;
@@ -14,7 +15,6 @@ import com.tallerwebi.punta_a_punta.vistas.VistaWeb;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -22,8 +22,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class VistaRegistrarGastoE2E {
-
-  private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
   static Playwright playwright;
   static Browser browser;
@@ -72,7 +70,8 @@ public class VistaRegistrarGastoE2E {
     LocalDate hoy = LocalDate.now();
     cuandoElUsuarioRegistraUnGasto("46200", hoy, "Compra semanal");
     entoncesDeberiaEstarEnMisGastos();
-    entoncesLaTablaDeberiaTenerLaFila(hoy.format(FORMATO_FECHA) + " Compra semanal $ 46.200,00");
+    entoncesLaTablaDeberiaTenerLaFila("Compra semanal $ 46.200,00");
+    entoncesElGastoDeberiaEstarEnElDiaDeHoy();
     entoncesElTotalDeberiaSer("$ 46.200,00");
   }
 
@@ -137,6 +136,10 @@ public class VistaRegistrarGastoE2E {
 
   private void entoncesLaTablaDeberiaTenerLaFila(String fila) {
     assertThat(new VistaMisGastos(page).obtenerFilasDeLaTabla(), contains(fila));
+  }
+
+  private void entoncesElGastoDeberiaEstarEnElDiaDeHoy() {
+    assertThat(new VistaMisGastos(page).obtenerTituloDelPrimerDia(), startsWith("Hoy · "));
   }
 
   private void entoncesElTotalDeberiaSer(String total) {

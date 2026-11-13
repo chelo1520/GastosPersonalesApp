@@ -13,7 +13,10 @@ import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +42,12 @@ public class ControladorGastoTest {
     gastoServicio = mock(GastoServicio.class);
     categoriaRepositorio = mock(CategoriaRepositorio.class);
 
-    controladorGasto = new ControladorGasto(gastoServicio, categoriaRepositorio);
+    // "Hoy" es el 28/09/2026: el gasto de prueba (26/09) es del mes actual
+    Clock reloj = Clock.fixed(
+      LocalDate.of(2026, 9, 28).atStartOfDay(ZoneId.systemDefault()).toInstant(),
+      ZoneId.systemDefault()
+    );
+    controladorGasto = new ControladorGasto(gastoServicio, categoriaRepositorio, reloj);
     categoria = new Categoria();
     categoria.setId(1L);
     categoria.setNombre("Alimentación");
@@ -58,20 +66,58 @@ public class ControladorGastoTest {
   }
 
   @Test
-  public void debeMostrarLosGastosOrdenadosConTotal20000CuandoElUsuarioTieneGastosDe15000Y5000() {
+  public void debeMostrarLosGastosDelMesActualAgrupadosPorDiaConTotal20000() {
     Gasto gastoAnterior = new Gasto(5000.0, LocalDate.of(2026, 9, 20), "Farmacia");
     List<Gasto> gastos = List.of(gastoAnterior, gasto);
 
-    when(gastoServicio.obtenerGastos(usuario)).thenReturn(gastos);
+    when(gastoServicio.obtenerGastosDelMes(usuario, YearMonth.of(2026, 9))).thenReturn(gastos);
 
     ModelAndView resultado = controladorGasto.mostrarGastos(request);
 
     assertEquals("mostrar-gastos", resultado.getViewName());
-
-    assertEquals(List.of(gasto, gastoAnterior), resultado.getModel().get("gastos"));
+    MesDeGastos mes = (MesDeGastos) resultado.getModel().get("mesDeGastos");
+    assertEquals(
+      List.of("Supermercado", "Farmacia"),
+      mes.getGrupos().stream().map(g -> g.getFilas().get(0).getDescripcion()).toList()
+    );
     assertEquals(20000.0, resultado.getModel().get("total"));
+    assertEquals("Septiembre 2026", resultado.getModel().get("mesActual"));
+    assertEquals("2026-08", resultado.getModel().get("mesAnterior"));
+    assertEquals("2026-10", resultado.getModel().get("mesSiguiente"));
+  }
 
-    verify(gastoServicio).obtenerGastos(usuario);
+  @Test
+  public void debeMostrarElMesPedidoYElActualSiElMesEsInvalido() {
+    when(request.getParameter("mes")).thenReturn("2026-07");
+
+    ModelAndView julio = controladorGasto.mostrarGastos(request);
+
+    assertEquals("2026-07", julio.getModel().get("mesMostrado"));
+    verify(gastoServicio).obtenerGastosDelMes(usuario, YearMonth.of(2026, 7));
+
+    when(request.getParameter("mes")).thenReturn("julio");
+
+    assertEquals("2026-09", controladorGasto.mostrarGastos(request).getModel().get("mesMostrado"));
+  }
+
+  @Test
+  public void alRegistrarUnGastoDeOtroMesDebeVolverAEseMes() {
+    Gasto deAgosto = new Gasto(800.0, LocalDate.of(2026, 8, 30), "Kiosco");
+    deAgosto.setCategoria(categoria);
+
+    ModelAndView resultado = controladorGasto.registrarGasto(deAgosto, request, redirectAttributes);
+
+    assertEquals("redirect:/mostrar-gastos?mes=2026-08", resultado.getViewName());
+  }
+
+  @Test
+  public void alEliminarDebeVolverAlMesQueSeEstabaMirando() {
+    when(request.getParameter("mes")).thenReturn("2026-07");
+
+    ModelAndView resultado = controladorGasto.eliminarGasto(10L, request);
+
+    assertEquals("redirect:/mostrar-gastos?mes=2026-07", resultado.getViewName());
+    verify(gastoServicio).eliminarGasto(10L, usuario);
   }
 
   @Test

@@ -1,0 +1,496 @@
+/* Mis gastos, rediseño v2 (diseno/v2 del coord, "4. Mis gastos"). Versión de escritorio. */
+.app-mg {
+  --mg-borde: #e3dfd5;
+  --mg-texto: #1c2321;
+  --mg-suave: #5f6764;
+  --mg-cabecera: #faf9f5;
+  --mg-verde: #11786e;
+  --mg-tinte: #eef4f2;
+  --mg-elegido: #c2510e;
+
+  max-width: 1180px;
+}
+
+/* hidden manda aunque la clase ponga display (filas, tarjetas y botones que filtra el JS) */
+.app-mg [hidden] {
+  display: none !important;
+}
+
+.app-mg-card {
+  background: #fff;
+  border: 1px solid var(--mg-borde);
+  border-radius: 14px;
+}
+
+/* Cabecera: flechas de mes, título, buscador y registrar */
+.app-mg-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.app-mg-mes {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-mg-mes-btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--mg-borde);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--mg-texto);
+}
+
+.app-mg-mes-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.app-mg-titulo {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.app-mg-titulo-mes {
+  color: var(--mg-suave);
+  font-weight: 600;
+}
+
+.app-mg-acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-mg-buscar {
+  width: 240px;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid #dcd8ce;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 15px;
+  outline: none;
+}
+
+.app-mg-buscar:focus {
+  border-color: var(--mg-verde);
+  box-shadow: 0 0 0 3px rgba(17, 120, 110, 0.15);
+}
+
+.app-mg-acciones .app-registrar-link {
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 22px;
+  font-weight: 600;
+}
+
+/* Mapa de calor */
+.app-mg-calor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding: 20px 24px;
+}
+
+.app-mg-calor-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.app-mg-subtitulo {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.app-mg-pista {
+  font-size: 13px;
+  color: var(--mg-suave);
+}
+
+.app-mg-dias {
+  display: grid;
+  gap: 4px;
+}
+
+.app-mg-dia-casilla {
+  aspect-ratio: 1;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  color: #3b4442;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.35s;
+}
+
+button.app-mg-dia-casilla:not(:disabled):hover {
+  transform: scale(1.08);
+}
+
+.app-mg-dia-casilla.nivel-0 {
+  background: #ece9e2;
+}
+
+.app-mg-dia-casilla.nivel-1 {
+  background: #cfe7e1;
+}
+
+.app-mg-dia-casilla.nivel-2 {
+  background: #8fcbbf;
+}
+
+.app-mg-dia-casilla.nivel-3 {
+  background: #2f9384;
+  color: #fff;
+}
+
+.app-mg-dia-casilla.nivel-4 {
+  background: #0f4c47;
+  color: #fff;
+}
+
+.app-mg-dia-casilla.is-futuro {
+  border: 1px dashed var(--mg-borde);
+  background: #fff;
+  color: #c9c4b8;
+  cursor: default;
+}
+
+.app-mg-dia-casilla.is-elegida {
+  outline: 2px solid var(--mg-elegido);
+  outline-offset: 2px;
+}
+
+.app-mg-dia-casilla:focus-visible {
+  outline: 2px solid var(--mg-verde);
+  outline-offset: 2px;
+}
+
+.app-mg-leyenda {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--mg-suave);
+}
+
+.app-mg-leyenda .app-mg-dia-casilla {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  cursor: default;
+}
+
+/* Cuerpo: lista a la izquierda, panel fijo a la derecha */
+.app-mg-cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+.app-mg-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.app-mg-sin-coincidencias {
+  margin: 0;
+  padding: 24px;
+  color: var(--mg-suave);
+  text-align: center;
+}
+
+.app-mg .app-gastos-vacio {
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.app-mg-grupo {
+  overflow: hidden;
+}
+
+.app-mg-grupo-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--mg-borde);
+  background: var(--mg-cabecera);
+  font-size: 14px;
+}
+
+.app-mg-grupo-titulo {
+  font-weight: 600;
+}
+
+.app-mg-grupo-total {
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 600;
+  color: var(--mg-suave);
+}
+
+.app-mg-filas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.app-mg-fila {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #f0ede6;
+}
+
+.app-mg-fila:last-child {
+  border-bottom: none;
+}
+
+.app-mg-avatar {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.app-mg-fila-texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.app-mg-fila-descripcion {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-mg-fila-sub {
+  font-size: 13px;
+  color: var(--mg-suave);
+}
+
+.app-mg-fila-importe {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.app-mg-fila-acciones {
+  display: flex;
+  gap: 6px;
+}
+
+.app-mg-icono {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--mg-borde);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--mg-suave);
+  cursor: pointer;
+}
+
+.app-mg-icono svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.app-mg-icono.app-gasto-editar:hover {
+  border-color: var(--mg-verde);
+  background: var(--mg-tinte);
+  color: var(--mg-verde);
+}
+
+.app-mg-icono.app-gasto-eliminar:hover {
+  border-color: #f0c4b0;
+  background: #fbeee7;
+  color: #b42318;
+}
+
+/* Panel lateral */
+.app-mg-lateral {
+  position: sticky;
+  top: 88px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px;
+}
+
+.app-mg-lateral-etiqueta {
+  font-size: 13px;
+  color: var(--mg-suave);
+}
+
+.app-mg-lateral-total {
+  margin-top: -12px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.app-mg-lateral-cantidad {
+  margin-top: -14px;
+  font-size: 14px;
+  color: var(--mg-suave);
+}
+
+.app-mg-orden {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  border-radius: 10px;
+  background: #f0ede6;
+}
+
+.app-mg-orden button {
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--mg-texto);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.app-mg-orden button.is-activo {
+  background: #fff;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.app-mg-categorias {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.app-mg-categorias-titulo {
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3b4442;
+}
+
+.app-mg-categoria {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.app-mg-categoria:hover {
+  background: #f5f3ee;
+}
+
+.app-mg-categoria.is-activa {
+  background: var(--mg-tinte);
+}
+
+.app-mg-categoria-fila {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  font-size: 14px;
+}
+
+.app-mg-categoria-monto {
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.app-mg-barra {
+  width: 100%;
+  height: 5px;
+  border-radius: 3px;
+  background: #ece9e2;
+}
+
+.app-mg-barra span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s;
+}
+
+.app-mg-limpiar {
+  height: 40px;
+  border: 1px solid #dcd8ce;
+  border-radius: 10px;
+  background: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.app-mg-limpiar:hover {
+  border-color: var(--mg-verde);
+  color: var(--mg-verde);
+}
+
+/* Ventana angosta: el panel baja debajo de la lista (no hay diseño específico para celular) */
+@media (max-width: 991.98px) {
+  .app-mg-cuerpo {
+    grid-template-columns: 1fr;
+  }
+
+  .app-mg-lateral {
+    position: static;
+    order: -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-mg-dia-casilla,
+  .app-mg-barra span {
+    transition: none;
+  }
+}

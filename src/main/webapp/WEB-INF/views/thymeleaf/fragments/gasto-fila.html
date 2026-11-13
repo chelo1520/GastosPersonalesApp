@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!-- Una fila de "Mis gastos" (rediseño v2). conFecha: en la lista por importe se agrega el día.
+       Los data-* son los que usa mis_gastos.js para filtrar sin volver al servidor. -->
+  <li th:fragment="fila(fila, conFecha)" class="app-mg-fila"
+      th:attr="data-id=${fila.id},data-dia=${fila.dia},data-categoria=${fila.categoria},data-importe=${fila.importe},data-descripcion=${fila.descripcion}">
+    <span class="app-mg-avatar" th:style="'background:' + ${fila.color}" th:text="${fila.inicial}" aria-hidden="true">C</span>
+    <span class="app-mg-fila-texto">
+      <span class="app-mg-fila-descripcion" th:text="${fila.descripcion}">Café con medialunas</span>
+      <span class="app-mg-fila-sub"
+            th:text="${conFecha} ? ${fila.categoria} + ' · ' + ${fila.fechaCorta} : ${fila.categoria}">Café y snacks</span>
+    </span>
+    <strong class="app-mg-fila-importe">$ <span
+        th:text="${#numbers.formatDecimal(fila.importe, 1, 'POINT', 2, 'COMMA')}">2.500,00</span></strong>
+    <span class="app-mg-fila-acciones">
+      <a class="app-mg-icono app-gasto-editar" th:href="@{/modificar-gasto/{id}(id=${fila.id})}"
+         th:attr="aria-label='Editar ' + ${fila.descripcion}" title="Editar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"></path></svg>
+      </a>
+      <button type="button" class="app-mg-icono app-gasto-eliminar" title="Eliminar"
+              data-bs-toggle="modal" data-bs-target="#modal-eliminar-gasto"
+              th:attr="aria-label='Eliminar ' + ${fila.descripcion}"
+              th:data-accion="@{/eliminar-gasto/{id}(id=${fila.id})}"
+              th:data-descripcion="${fila.descripcion}"
+              th:data-importe="${#numbers.formatDecimal(fila.importe, 1, 'POINT', 2, 'COMMA')}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+      </button>
+    </span>
+  </li>
+</body>
+</html>
