@@ -4,10 +4,14 @@ import {
   etiquetaDelFiltro,
   formatearPesos,
   formatearPesosSinDecimales,
+  NIVEL_MAXIMO,
+  nivelesPorPuesto,
 } from "./mis_gastos_filtros.js";
+import { eliminarConDeshacer } from "./eliminacion_diferida.js";
 
 // "Mis gastos" (rediseño v2): conecta el mapa de calor, el buscador, el orden y las categorías del panel
 // con la lista. Todo se resuelve en el navegador sobre los gastos del mes que mandó el servidor.
+// Eliminar: la fila sale al instante y aparece "Deshacer" 4 segundos; recién después se avisa al servidor.
 const raiz = document.getElementById("mis-gastos");
 const grupos = [...document.querySelectorAll("[data-grupo-dia]")];
 const listaPorImporte = document.getElementById("lista-por-importe");
@@ -74,8 +78,20 @@ if (raiz && grupos.length) {
       boton.querySelector("[data-barra]").style.width = `${datos ? datos.ancho : 0}%`;
     });
 
+    // El mapa refleja el mes entero (no los filtros): cambia solo al eliminar o deshacer
+    const niveles = nivelesPorPuesto(gastos);
     casillas.forEach((casilla) => {
-      const elegida = filtros.dia === Number(casilla.dataset.dia);
+      const dia = Number(casilla.dataset.dia);
+      if (!casilla.disabled) {
+        const delDia = niveles[dia];
+        for (let nivel = 0; nivel <= NIVEL_MAXIMO; nivel += 1) {
+          casilla.classList.toggle(`nivel-${nivel}`, (delDia ? delDia.nivel : 0) === nivel);
+        }
+        const descripcion = `${dia}/${numeroDeMes} · $ ${formatearPesos(delDia ? delDia.total : 0)}`;
+        casilla.title = descripcion;
+        casilla.setAttribute("aria-label", descripcion);
+      }
+      const elegida = filtros.dia === dia;
       casilla.classList.toggle("is-elegida", elegida);
       casilla.setAttribute("aria-pressed", String(elegida));
     });
@@ -124,6 +140,83 @@ if (raiz && grupos.length) {
     filtros.texto = "";
     buscador.value = "";
     mostrar();
+  });
+
+  // Eliminar con Deshacer
+  const aviso = document.getElementById("aviso-eliminar");
+  const avisoTexto = document.getElementById("aviso-eliminar-texto");
+  const botonDeshacer = document.getElementById("aviso-deshacer");
+  let eliminacionActual = null;
+
+  function mostrarAviso(texto, conDeshacer) {
+    avisoTexto.textContent = texto;
+    botonDeshacer.hidden = !conDeshacer;
+    aviso.hidden = false;
+  }
+
+  function ocultarAviso() {
+    aviso.hidden = true;
+  }
+
+  function devolver(gasto) {
+    gastos.push(gasto);
+    mostrar();
+  }
+
+  // keepalive: el pedido sale aunque la página se esté cerrando. 404 = ya no existía, da igual
+  function avisarAlServidor(url, gasto) {
+    fetch(url, { method: "POST", keepalive: true, credentials: "same-origin" })
+      .then((respuesta) => {
+        if (!respuesta.ok && respuesta.status !== 404) {
+          throw new Error(`HTTP ${respuesta.status}`);
+        }
+      })
+      .catch(() => {
+        devolver(gasto);
+        mostrarAviso(`No se pudo eliminar “${gasto.descripcion}”. Probá de nuevo.`, false);
+        setTimeout(ocultarAviso, 5000);
+      });
+  }
+
+  document.querySelectorAll(".app-mg-eliminar").forEach((formulario) => {
+    formulario.addEventListener("submit", (evento) => {
+      evento.preventDefault();
+      const id = Number(formulario.closest(".app-mg-fila").dataset.id);
+      const gasto = gastos.find((g) => g.id === id);
+      if (!gasto) {
+        return;
+      }
+      // Si había otro esperando, se elimina ya
+      if (eliminacionActual) {
+        eliminacionActual.confirmar();
+      }
+      gastos.splice(gastos.indexOf(gasto), 1);
+      mostrar();
+      mostrarAviso(`Eliminaste “${gasto.descripcion}”`, true);
+      eliminacionActual = eliminarConDeshacer({
+        ejecutar: () => {
+          ocultarAviso();
+          avisarAlServidor(formulario.dataset.diferido, gasto);
+        },
+        alDeshacer: () => {
+          ocultarAviso();
+          devolver(gasto);
+        },
+      });
+    });
+  });
+
+  botonDeshacer.addEventListener("click", () => {
+    if (eliminacionActual) {
+      eliminacionActual.deshacer();
+    }
+  });
+
+  // Al irse de la página (otro mes, otra sección, cerrar) lo pendiente se elimina en el momento
+  window.addEventListener("pagehide", () => {
+    if (eliminacionActual) {
+      eliminacionActual.confirmar();
+    }
   });
 
   mostrar();

@@ -476,6 +476,61 @@ button.app-mg-dia-casilla:not(:disabled):hover {
   color: var(--mg-verde);
 }
 
+.app-mg-eliminar {
+  display: flex;
+  margin: 0;
+}
+
+/* Aviso al eliminar, con Deshacer (abajo al centro, oscuro como la barra) */
+.app-mg-aviso {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  z-index: 1080;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  border-radius: 14px;
+  background: #17302c;
+  color: #fff;
+  font-size: 15px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  transform: translateX(-50%);
+  animation: app-mg-aviso-entra 0.25s ease-out;
+}
+
+.app-mg-aviso[hidden],
+.app-mg-aviso button[hidden] {
+  display: none;
+}
+
+.app-mg-aviso button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #7fc4b8;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.app-mg-aviso button:hover {
+  color: #a8dcd2;
+}
+
+@keyframes app-mg-aviso-entra {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+}
+
 /* Ventana angosta: el panel baja debajo de la lista (no hay diseño específico para celular) */
 @media (max-width: 991.98px) {
   .app-mg-cuerpo {
@@ -492,5 +547,9 @@ button.app-mg-dia-casilla:not(:disabled):hover {
   .app-mg-dia-casilla,
   .app-mg-barra span {
     transition: none;
+  }
+
+  .app-mg-aviso {
+    animation: none;
   }
 }

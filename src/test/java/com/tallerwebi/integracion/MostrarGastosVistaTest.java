@@ -149,7 +149,8 @@ public class MostrarGastosVistaTest {
   }
 
   @Test
-  public void debeConfirmarElEliminarConElModalEnVezDelConfirmDelNavegador() throws Exception {
+  public void eliminarEsUnFormularioQueVuelveAlMesYTieneLaRutaDelDeshacerSinModal()
+    throws Exception {
     Usuario usuario = new Usuario();
     Gasto gasto = new Gasto(46200.0, LocalDate.of(2026, 9, 30), "Compra semanal");
     gasto.setUsuario(usuario);
@@ -161,14 +162,49 @@ public class MostrarGastosVistaTest {
     mockMvc
       .perform(get("/mostrar-gastos").param("mes", "2026-09").sessionAttr("USUARIO", usuario))
       .andExpect(status().isOk())
-      .andExpect(content().string(containsString("id=\"modal-eliminar-gasto\"")))
-      .andExpect(content().string(containsString("name=\"mes\" value=\"2026-09\"")))
+      .andExpect(content().string(not(containsString("modal-eliminar-gasto"))))
       .andExpect(
-        content().string(containsString("data-accion=\"/eliminar-gasto/" + gasto.getId() + "\""))
+        content().string(containsString("action=\"/eliminar-gasto/" + gasto.getId() + "\""))
       )
-      .andExpect(content().string(containsString("data-descripcion=\"Compra semanal\"")))
-      .andExpect(content().string(containsString("data-importe=\"46.200,00\"")))
+      .andExpect(
+        content().string(containsString("data-diferido=\"/gastos/" + gasto.getId() + "/eliminar\""))
+      )
+      .andExpect(content().string(containsString("name=\"mes\" value=\"2026-09\"")))
+      .andExpect(content().string(containsString("id=\"aviso-deshacer\"")))
       .andExpect(content().string(not(containsString("confirm("))));
+  }
+
+  @Test
+  public void elEliminarDiferidoBorraSoloGastosPropiosYRespondeSinRedirigir() throws Exception {
+    Usuario usuario = new Usuario();
+    Usuario otro = new Usuario();
+    sessionFactory.getCurrentSession().persist(usuario);
+    sessionFactory.getCurrentSession().persist(otro);
+    Gasto propio = new Gasto(1000.0, LocalDate.of(2026, 9, 3), "Propio");
+    propio.setUsuario(usuario);
+    Gasto ajeno = new Gasto(2000.0, LocalDate.of(2026, 9, 3), "Ajeno");
+    ajeno.setUsuario(otro);
+    sessionFactory.getCurrentSession().persist(propio);
+    sessionFactory.getCurrentSession().persist(ajeno);
+    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+    mockMvc
+      .perform(post("/gastos/" + propio.getId() + "/eliminar").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isNoContent());
+    mockMvc
+      .perform(post("/gastos/" + ajeno.getId() + "/eliminar").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isNotFound());
+    mockMvc
+      .perform(post("/gastos/" + ajeno.getId() + "/eliminar"))
+      .andExpect(status().isUnauthorized());
+
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+    assertEquals(null, sessionFactory.getCurrentSession().get(Gasto.class, propio.getId()));
+    assertEquals(
+      "Ajeno",
+      sessionFactory.getCurrentSession().get(Gasto.class, ajeno.getId()).getDescripcion()
+    );
   }
 
   @Test
