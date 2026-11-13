@@ -149,9 +149,30 @@
   gap: 10px;
 }
 
+/* "Analizar mis gastos" es el botón secundario: verde de la paleta pero claro, para que "Registrar gasto"
+   (verde lleno) siga siendo la acción principal */
+.app-resumen-analizar {
+  border: 1px solid rgba(15, 118, 110, 0.35);
+  background: #eef4f2;
+  color: var(--app-verde);
+  font-weight: 600;
+}
+
+.app-resumen-analizar:hover,
+.app-resumen-analizar:focus-visible {
+  border-color: var(--app-verde);
+  background: #dcebe7;
+  color: var(--app-verde-hover);
+}
+
+.app-resumen-analizar:active {
+  background: #cfe3de;
+}
+
 /* Gastos hormiga: tarjeta oscura (rediseño v2), arriba del detalle */
+/* Mismo aire que los demás bloques del resumen: 24px abajo, separada del gráfico y las categorías */
 .app-resumen-hormiga {
-  margin: 20px 0 0;
+  margin: 0 0 24px;
   background: #17302c;
   border-color: #17302c;
   color: #fff;
