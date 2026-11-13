@@ -289,6 +289,28 @@ public class ControladorGastoTest {
   }
 
   @Test
+  public void elEliminarDiferidoRespondeSinContenidoCuandoElimina() {
+    assertEquals(204, controladorGasto.eliminarGastoDiferido(10L, request).getStatusCode().value());
+
+    verify(gastoServicio).eliminarGasto(10L, usuario);
+  }
+
+  @Test
+  public void elEliminarDiferidoRespondeNoEncontradoSiElGastoNoEsDelUsuario() {
+    doThrow(new GastoNoEncontrado()).when(gastoServicio).eliminarGasto(99L, usuario);
+
+    assertEquals(404, controladorGasto.eliminarGastoDiferido(99L, request).getStatusCode().value());
+  }
+
+  @Test
+  public void elEliminarDiferidoRespondeNoAutorizadoSinSesion() {
+    when(session.getAttribute("USUARIO")).thenReturn(null);
+
+    assertEquals(401, controladorGasto.eliminarGastoDiferido(10L, request).getStatusCode().value());
+    verifyNoInteractions(gastoServicio);
+  }
+
+  @Test
   public void debeRedirigirALoginSinEliminarCuandoNoHayUsuarioEnSesion() {
     when(session.getAttribute("USUARIO")).thenReturn(null);
 

@@ -17,11 +17,14 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -209,6 +212,26 @@ public class ControladorGasto {
 
     // El formulario manda el mes que se estaba mirando, para volver a él
     return volverAlMes(elegirMes(request.getParameter(PARAMETRO_MES)));
+  }
+
+  // Lo usa "Mis gastos" para eliminar después de los 4 segundos del "Deshacer": sin redirección.
+  // 204 si se eliminó; 404 si no existe o es de otro usuario; 401 sin sesión.
+  @RequestMapping(path = "/gastos/{id}/eliminar", method = RequestMethod.POST)
+  @ResponseBody
+  public ResponseEntity<Void> eliminarGastoDiferido(
+    @PathVariable("id") Long id,
+    HttpServletRequest request
+  ) {
+    Usuario usuario = SesionUsuario.obtener(request);
+    if (usuario == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+    try {
+      gastoServicio.eliminarGasto(id, usuario);
+    } catch (GastoNoEncontrado e) {
+      return ResponseEntity.notFound().build();
+    }
+    return ResponseEntity.noContent().build();
   }
 
   private ModelAndView vistaRegistrarGasto(Gasto gasto, String error) {

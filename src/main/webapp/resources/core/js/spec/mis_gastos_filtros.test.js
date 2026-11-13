@@ -5,6 +5,7 @@ import {
   etiquetaDelFiltro,
   formatearPesos,
   formatearPesosSinDecimales,
+  nivelesPorPuesto,
   normalizar,
 } from "../mis_gastos_filtros.js";
 
@@ -81,5 +82,24 @@ describe("Filtros de Mis gastos", () => {
     expect(formatearPesosSinDecimales(48700.4)).toBe("48.700");
     expect(cantidadDeGastos(1)).toBe("1 gasto");
     expect(cantidadDeGastos(3)).toBe("3 gastos");
+  });
+
+  it("calcula los niveles del mapa por puesto, como el servidor", () => {
+    const niveles = nivelesPorPuesto([
+      { dia: 1, importe: 500000 },
+      { dia: 5, importe: 10000 },
+      { dia: 6, importe: 4000 },
+      { dia: 7, importe: 500 },
+    ]);
+
+    expect(niveles[1]).toEqual({ total: 500000, nivel: 4 });
+    expect(niveles[5].nivel).toBe(3);
+    expect(niveles[6].nivel).toBe(2);
+    expect(niveles[7].nivel).toBe(1);
+    expect(niveles[2]).toBeUndefined();
+  });
+
+  it("con un solo día con gasto ese día tiene el nivel máximo", () => {
+    expect(nivelesPorPuesto([{ dia: 9, importe: 800 }])[9].nivel).toBe(4);
   });
 });

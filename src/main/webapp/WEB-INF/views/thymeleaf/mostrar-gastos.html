@@ -179,41 +179,14 @@
     </div>
   </div>
 
-  <!-- Confirmación de eliminar: un solo modal; el botón de cada gasto le pasa la acción y los datos -->
-  <div class="modal fade" id="modal-eliminar-gasto" tabindex="-1"
-       aria-labelledby="modal-eliminar-gasto-titulo" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <form class="modal-content" method="post" id="form-eliminar-gasto">
-        <!-- Para volver al mes que se estaba mirando -->
-        <input type="hidden" name="mes" th:value="${mesMostrado}">
-        <div class="modal-header">
-          <h2 class="modal-title h5 fw-bold" id="modal-eliminar-gasto-titulo">Eliminar gasto</h2>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-          <div class="app-alerta is-roja mb-0">
-            <span>¿Seguro que querés eliminar «<span id="eliminar-gasto-descripcion">Compra semanal</span>»
-              ($ <span id="eliminar-gasto-importe">46.200,00</span>)? No se puede deshacer.</span>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-danger">Eliminar</button>
-        </div>
-      </form>
-    </div>
+  <!-- Aviso al eliminar (rediseño v2): "Eliminaste “X”" con Deshacer durante 4 segundos -->
+  <div class="app-mg-aviso" id="aviso-eliminar" role="status" aria-live="polite" hidden>
+    <span id="aviso-eliminar-texto">Eliminaste “Compra semanal”</span>
+    <button type="button" id="aviso-deshacer">Deshacer</button>
   </div>
 
   <script th:replace="~{fragments/layout :: scripts}"></script>
   <script type="module" th:src="@{/js/mis_gastos.js}"></script>
-  <script>
-    document.getElementById("modal-eliminar-gasto").addEventListener("show.bs.modal", (e) => {
-      const boton = e.relatedTarget;
-      document.getElementById("form-eliminar-gasto").action = boton.dataset.accion;
-      document.getElementById("eliminar-gasto-descripcion").textContent = boton.dataset.descripcion;
-      document.getElementById("eliminar-gasto-importe").textContent = boton.dataset.importe;
-    });
-  </script>
   <script th:if="${alertaPresupuesto != null}">
     new bootstrap.Modal(document.getElementById("modal-alerta-presupuesto")).show();
   </script>

@@ -75,3 +75,25 @@ export function aplicarFiltros(gastos, filtros) {
     hayFiltros: Boolean(filtros.dia || filtros.categoria || normalizar(filtros.texto)),
   };
 }
+
+// Niveles del mapa de calor, igual que MesDeGastos (Java): 0 sin gastos; de 1 a 4 según el puesto del día
+// entre los días con gasto (sin repetir montos). Se recalcula al eliminar o deshacer.
+export const NIVEL_MAXIMO = 4;
+
+export function nivelesPorPuesto(gastos) {
+  const porDia = {};
+  gastos.forEach((g) => {
+    porDia[g.dia] = (porDia[g.dia] || 0) + g.importe;
+  });
+  const montos = [...new Set(Object.values(porDia))].sort((a, b) => a - b);
+  const ultimoPuesto = montos.length - 1;
+  const niveles = {};
+  Object.entries(porDia).forEach(([dia, total]) => {
+    const puesto = montos.indexOf(total);
+    niveles[dia] = {
+      total,
+      nivel: ultimoPuesto === 0 ? NIVEL_MAXIMO : 1 + Math.round(((NIVEL_MAXIMO - 1) * puesto) / ultimoPuesto),
+    };
+  });
+  return niveles;
+}
