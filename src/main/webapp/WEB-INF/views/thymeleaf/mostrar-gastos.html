@@ -8,11 +8,31 @@
   <header th:replace="~{fragments/layout :: navbar('mis-gastos')}"></header>
   <header th:replace="~{fragments/layout :: header-mobile('Mis gastos')}"></header>
 
-  <main class="app-main app-gastos-main">
+  <link rel="stylesheet" th:href="@{/css/mis-gastos.css}">
+
+  <!-- Mis gastos, rediseño v2 (diseno/v2 del coord): mapa de calor del mes, lista agrupada por día y
+       panel lateral con total y categorías. Los filtros (día, categoría, texto, orden) los aplica
+       mis_gastos.js en el navegador sobre los gastos del mes; sin JavaScript se ve la lista completa. -->
+  <main class="app-main app-gastos-main app-mg" id="mis-gastos"
+        th:attr="data-mes-numero=${#strings.substringAfter(mesMostrado, '-')}">
     <div th:replace="~{fragments/guia :: recorrido}"></div>
-    <div class="app-gastos-titulo">
-      <h1 class="h3 fw-bold mb-0">Mis gastos</h1>
-      <a class="btn btn-primary app-registrar-link" th:href="@{/registrar-gasto}">+ Registrar gasto</a>
+
+    <div class="app-mg-cabecera">
+      <div class="app-mg-mes">
+        <a class="app-mg-mes-btn" th:href="@{/mostrar-gastos(mes=${mesAnterior})}" aria-label="Mes anterior">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
+        </a>
+        <h1 class="app-mg-titulo">Mis gastos <span class="app-mg-titulo-mes">· <span
+            th:text="${mesActual}">Noviembre 2026</span></span></h1>
+        <a class="app-mg-mes-btn" th:href="@{/mostrar-gastos(mes=${mesSiguiente})}" aria-label="Mes siguiente">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+        </a>
+      </div>
+      <div class="app-mg-acciones">
+        <input type="search" class="app-mg-buscar" id="buscar-gasto" placeholder="Buscar gasto…"
+               aria-label="Buscar gasto por descripción o categoría" th:disabled="${mesDeGastos.vacio}">
+        <a class="btn btn-primary app-registrar-link" th:href="@{/registrar-gasto}">+ Registrar gasto</a>
+      </div>
     </div>
 
     <!-- Alerta de repetición: llega una sola vez, después de registrar un gasto -->
@@ -21,87 +41,95 @@
       <form th:replace="~{fragments/hormiga :: boton(${alertaRepeticion.categoriaId}, null, false, '/mostrar-gastos')}"></form>
     </div>
 
-    <section class="app-total-card" aria-label="Total de gastos">
-      <span>Total de gastos</span>
-      <strong>$ <span th:text="${#numbers.formatDecimal(total, 1, 'POINT', 2, 'COMMA')}">0,00</span></strong>
+    <!-- Cada día del mes: más oscuro cuanto más se gastó (relativo al día de más gasto). Tocar un día filtra -->
+    <section class="app-mg-card app-mg-calor" aria-labelledby="titulo-calor">
+      <div class="app-mg-calor-cabecera">
+        <h2 class="app-mg-subtitulo" id="titulo-calor">Cada día del mes</h2>
+        <span class="app-mg-pista" id="calor-pista">Tocá un día para ver sus gastos</span>
+      </div>
+      <div class="app-mg-dias" th:style="'grid-template-columns: repeat(' + ${#lists.size(mesDeGastos.dias)} + ', minmax(0, 1fr))'">
+        <button type="button" th:each="dia : ${mesDeGastos.dias}" class="app-mg-dia-casilla"
+                th:classappend="${dia.futuro} ? 'is-futuro' : ('nivel-' + ${dia.nivel})"
+                th:disabled="${dia.futuro}" th:title="${dia.futuro} ? null : ${dia.descripcion}"
+                th:attr="data-dia=${dia.numero},aria-label=${dia.futuro} ? null : ${dia.descripcion}"
+                aria-pressed="false" th:text="${dia.numero}">1</button>
+      </div>
+      <div class="app-mg-leyenda" aria-hidden="true">
+        Menos
+        <span class="app-mg-dia-casilla nivel-0"></span><span class="app-mg-dia-casilla nivel-1"></span><span
+          class="app-mg-dia-casilla nivel-2"></span><span class="app-mg-dia-casilla nivel-3"></span><span
+          class="app-mg-dia-casilla nivel-4"></span>
+        Más
+      </div>
     </section>
 
-    <div class="app-gastos-tabla-card" id="guia-destino-lista">
-      <div th:if="${#lists.isEmpty(gastos)}" class="app-gastos-vacio">
-        <h2 class="h5 fw-bold">Todavía no registraste gastos</h2>
-        <p class="mb-3">Cuando registres uno, aparecerá en esta lista.</p>
-        <a class="btn btn-primary" th:href="@{/registrar-gasto}">Registrar gasto</a>
+    <div class="app-mg-cuerpo" id="guia-destino-lista">
+      <div class="app-mg-lista">
+        <div th:if="${mesDeGastos.vacio}" class="app-mg-card app-gastos-vacio">
+          <h2 class="h5 fw-bold">Todavía no registraste gastos este mes</h2>
+          <p class="mb-3">Cuando registres uno, aparecerá en esta lista agrupado por día.</p>
+          <a class="btn btn-primary" th:href="@{/registrar-gasto}">Registrar gasto</a>
+        </div>
+
+        <p class="app-mg-card app-mg-sin-coincidencias" id="sin-coincidencias" hidden>
+          Ningún gasto coincide con los filtros.
+        </p>
+
+        <!-- Por día: una tarjeta por día con su total -->
+        <section class="app-mg-card app-mg-grupo" th:each="grupo : ${mesDeGastos.grupos}"
+                 th:attr="data-grupo-dia=${grupo.dia}" th:aria-label="${grupo.titulo}">
+          <header class="app-mg-grupo-cabecera">
+            <span class="app-mg-grupo-titulo" th:text="${grupo.titulo}">Hoy · 12 de noviembre</span>
+            <span class="app-mg-grupo-total" data-total-grupo>$ <span
+                th:text="${#numbers.formatDecimal(grupo.total, 1, 'POINT', 2, 'COMMA')}">4.000,00</span></span>
+          </header>
+          <ul class="app-mg-filas">
+            <th:block th:each="fila : ${grupo.filas}"><li th:replace="~{fragments/gasto-fila :: fila(${fila}, false)}"></li></th:block>
+          </ul>
+        </section>
+
+        <!-- Por importe: una sola tarjeta, de mayor a menor, con el día en cada fila -->
+        <section class="app-mg-card app-mg-grupo" id="lista-por-importe" th:unless="${mesDeGastos.vacio}"
+                 aria-label="De mayor a menor importe" hidden>
+          <header class="app-mg-grupo-cabecera">
+            <span class="app-mg-grupo-titulo">De mayor a menor importe</span>
+            <span class="app-mg-grupo-total" data-total-grupo>$ <span
+                th:text="${#numbers.formatDecimal(mesDeGastos.total, 1, 'POINT', 2, 'COMMA')}">0,00</span></span>
+          </header>
+          <ul class="app-mg-filas">
+            <th:block th:each="fila : ${mesDeGastos.porImporte}"><li th:replace="~{fragments/gasto-fila :: fila(${fila}, true)}"></li></th:block>
+          </ul>
+        </section>
       </div>
 
-      <div th:unless="${#lists.isEmpty(gastos)}" class="table-responsive d-none d-md-block">
-        <table class="table app-gastos-tabla mb-0">
-          <thead>
-            <tr>
-              <th scope="col">Fecha</th>
-              <th scope="col">Descripción</th>
-              <th scope="col">Categoría</th>
-              <th scope="col" class="text-end">Importe</th>
-              <th scope="col"><span class="visually-hidden">Acciones</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr th:each="gasto : ${gastos}">
-              <td class="app-gasto-fecha">
-                <time th:datetime="${gasto.fecha}"
-                  th:text="${#temporals.format(gasto.fecha, 'dd/MM/yyyy')}">30/09/2026</time>
-              </td>
-              <td th:text="${gasto.descripcion}">Compra semanal</td>
-              <!-- Si la categoría es hormiga se cambia desde el resumen (check "¿Es hormiga?") -->
-              <td th:text="${gasto.categoria?.nombre}">Alimentación</td>
-              <td class="app-gasto-importe text-end">
-                $ <span th:text="${#numbers.formatDecimal(gasto.importe, 1, 'POINT', 2, 'COMMA')}">46.200,00</span>
-              </td>
-              <td class="text-end">
-                <div class="app-gasto-acciones">
-                  <a class="btn btn-sm btn-outline-secondary app-gasto-editar"
-                    th:href="@{/modificar-gasto/{id}(id=${gasto.id})}">Editar</a>
-                  <button type="button" class="btn btn-sm btn-outline-danger app-gasto-eliminar"
-                    data-bs-toggle="modal" data-bs-target="#modal-eliminar-gasto"
-                    th:data-accion="@{/eliminar-gasto/{id}(id=${gasto.id})}"
-                    th:data-descripcion="${gasto.descripcion}"
-                    th:data-importe="${#numbers.formatDecimal(gasto.importe, 1, 'POINT', 2, 'COMMA')}">Eliminar</button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <aside class="app-mg-card app-mg-lateral" aria-label="Total y filtros">
+        <span class="app-mg-lateral-etiqueta" id="filtro-etiqueta">Total del mes</span>
+        <strong class="app-mg-lateral-total" id="filtro-total">$ <span
+            th:text="${#numbers.formatDecimal(total, 1, 'POINT', 2, 'COMMA')}">0,00</span></strong>
+        <span class="app-mg-lateral-cantidad" id="filtro-cantidad"
+              th:text="${mesDeGastos.cantidad == 1} ? '1 gasto' : ${mesDeGastos.cantidad} + ' gastos'">0 gastos</span>
 
-      <div th:unless="${#lists.isEmpty(gastos)}" class="app-gastos-mobile-list d-md-none">
-        <article class="app-gasto-mobile" th:each="gasto : ${gastos}">
-          <time class="app-gasto-mobile-fecha" th:datetime="${gasto.fecha}"
-            th:text="${#temporals.format(gasto.fecha, 'dd/MM/yyyy')}">30/09/2026</time>
-          <div class="app-gasto-mobile-detalle">
-            <span class="app-gasto-mobile-descripcion" th:text="${gasto.descripcion}">Compra semanal</span>
-            <span class="app-gasto-mobile-categoria" th:if="${gasto.categoria != null}"
-                  th:text="${gasto.categoria.nombre}">Alimentación</span>
-            <strong class="app-gasto-importe">
-              $ <span th:text="${#numbers.formatDecimal(gasto.importe, 1, 'POINT', 2, 'COMMA')}">46.200,00</span>
-            </strong>
-          </div>
-          <div class="app-gasto-acciones">
-            <a class="btn btn-sm btn-outline-secondary app-gasto-editar"
-              th:href="@{/modificar-gasto/{id}(id=${gasto.id})}">Editar</a>
-            <button type="button" class="btn btn-sm btn-outline-danger app-gasto-eliminar"
-              data-bs-toggle="modal" data-bs-target="#modal-eliminar-gasto"
-              th:data-accion="@{/eliminar-gasto/{id}(id=${gasto.id})}"
-              th:data-descripcion="${gasto.descripcion}"
-              th:data-importe="${#numbers.formatDecimal(gasto.importe, 1, 'POINT', 2, 'COMMA')}">Eliminar</button>
-          </div>
-        </article>
-      </div>
-      <nav th:if="${totalPaginas > 1}" class="app-gastos-paginacion" aria-label="Páginas de gastos">
-        <a class="btn btn-sm btn-outline-secondary" th:if="${paginaActual > 1}"
-           th:href="@{/mostrar-gastos(pagina=${paginaActual - 1})}">Anterior</a>
-        <span th:text="'Página ' + ${paginaActual} + ' de ' + ${totalPaginas}">Página 1 de 2</span>
-        <a class="btn btn-sm btn-outline-secondary" th:if="${paginaActual < totalPaginas}"
-           th:href="@{/mostrar-gastos(pagina=${paginaActual + 1})}">Siguiente</a>
-      </nav>
+        <div class="app-mg-orden" role="group" aria-label="Ordenar" th:unless="${mesDeGastos.vacio}">
+          <button type="button" class="is-activo" data-orden="fecha" aria-pressed="true">Por día</button>
+          <button type="button" data-orden="importe" aria-pressed="false">Por importe</button>
+        </div>
+
+        <div class="app-mg-categorias" th:unless="${mesDeGastos.vacio}">
+          <span class="app-mg-categorias-titulo">Por categoría</span>
+          <button type="button" class="app-mg-categoria" th:each="cat : ${mesDeGastos.categorias}"
+                  th:attr="data-categoria=${cat.nombre}" aria-pressed="false">
+            <span class="app-mg-categoria-fila">
+              <span th:text="${cat.nombre}">Alimentación</span>
+              <span class="app-mg-categoria-monto">$ <span data-monto
+                  th:text="${#numbers.formatDecimal(cat.total, 1, 'POINT', 0, 'COMMA')}">90.200</span></span>
+            </span>
+            <span class="app-mg-barra"><span data-barra
+                th:style="'width:' + ${cat.ancho} + '%; background:' + ${cat.color}"></span></span>
+          </button>
+        </div>
+
+        <button type="button" class="app-mg-limpiar" id="limpiar-filtros" hidden>Limpiar filtros</button>
+      </aside>
     </div>
   </main>
 
@@ -156,6 +184,8 @@
        aria-labelledby="modal-eliminar-gasto-titulo" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <form class="modal-content" method="post" id="form-eliminar-gasto">
+        <!-- Para volver al mes que se estaba mirando -->
+        <input type="hidden" name="mes" th:value="${mesMostrado}">
         <div class="modal-header">
           <h2 class="modal-title h5 fw-bold" id="modal-eliminar-gasto-titulo">Eliminar gasto</h2>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -175,6 +205,7 @@
   </div>
 
   <script th:replace="~{fragments/layout :: scripts}"></script>
+  <script type="module" th:src="@{/js/mis_gastos.js}"></script>
   <script>
     document.getElementById("modal-eliminar-gasto").addEventListener("show.bs.modal", (e) => {
       const boton = e.relatedTarget;

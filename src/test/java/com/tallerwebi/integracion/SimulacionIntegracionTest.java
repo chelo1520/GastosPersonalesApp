@@ -136,7 +136,11 @@ public class SimulacionIntegracionTest {
     );
     List<Gasto> gastos = gastosDeLaSimulacion();
 
-    assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
+    // Mis gastos vuelve al mes del gasto registrado
+    assertEquals(
+      "redirect:/mostrar-gastos?mes=" + java.time.YearMonth.from(mesAnterior),
+      resultado.getViewName()
+    );
     assertEquals(
       List.of("Clases de guitarra"),
       gastos.stream().map(Gasto::getDescripcion).toList()
