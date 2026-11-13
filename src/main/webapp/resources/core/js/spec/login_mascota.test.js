@@ -1,14 +1,25 @@
-import { emailParece, estadoMascota } from "../login_mascota.js";
+import { emailParece, estadoMascota, salteaIntro } from "../login_mascota.js";
 
 describe("Mascota del login", () => {
-  const base = { email: "", foco: null, mostrando: false, error: false };
+  const base = { intro: false, email: "", foco: null, mostrando: false, error: false, ingresando: false };
 
-  it("saluda y mira al cursor cuando nadie está escribiendo", () => {
+  it("en la intro se presenta contenta, animada y mirando al cursor", () => {
+    expect(estadoMascota({ ...base, intro: true })).toEqual({
+      globo: "¡Buenas! ¿Arrancamos con tus gastos?",
+      mood: "happy",
+      covering: "false",
+      look: "cursor",
+      motion: "animado",
+    });
+  });
+
+  it("con el formulario a la vista pregunta por el mes y se calma", () => {
     expect(estadoMascota(base)).toEqual({
-      globo: "¡Hola! ¿Cómo viene el mes?",
+      globo: "¿Cómo viene el mes?",
       mood: "neutral",
       covering: "false",
       look: "cursor",
+      motion: "sobrio",
     });
   });
 
@@ -41,9 +52,24 @@ describe("Mascota del login", () => {
     expect(conError.mood).toBe("worried");
   });
 
+  it("festeja mientras ingresa", () => {
+    const ingresando = estadoMascota({ ...base, foco: "password", ingresando: true });
+
+    expect(ingresando.globo).toBe("¡Vamos adentro!");
+    expect(ingresando.mood).toBe("happy");
+  });
+
   it("reconoce un email con forma de mail", () => {
     expect(emailParece("a@b.co")).toBeTrue();
     expect(emailParece("sin-arroba")).toBeFalse();
     expect(emailParece("")).toBeFalse();
+  });
+
+  it("saltea la intro con menos movimiento o al volver con un aviso", () => {
+    expect(salteaIntro({ menosMovimiento: false, hayAviso: false })).toBeFalse();
+
+    expect(salteaIntro({ menosMovimiento: true, hayAviso: false })).toBeTrue();
+
+    expect(salteaIntro({ menosMovimiento: false, hayAviso: true })).toBeTrue();
   });
 });

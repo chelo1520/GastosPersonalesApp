@@ -26,7 +26,6 @@ public class GastoServicioImpl implements GastoServicio {
 
   private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
   static final int MESES_HACIA_ATRAS = 12;
-
   private final RepositorioGasto repositorioGasto;
   private final ServicioPresupuesto servicioPresupuesto;
   private final ServicioCategoria servicioCategoria;
@@ -58,9 +57,7 @@ public class GastoServicioImpl implements GastoServicio {
   @Override
   public void registrarGasto(Gasto gasto, Usuario usuario) {
     validar(gasto);
-
     gasto.setUsuario(usuario);
-
     repositorioGasto.guardar(gasto);
   }
 
@@ -152,12 +149,10 @@ public class GastoServicioImpl implements GastoServicio {
   public void modificarGasto(Long id, Gasto datos, Usuario usuario) {
     Gasto gasto = obtenerGasto(id, usuario);
     validar(datos);
-
     gasto.setImporte(datos.getImporte());
     gasto.setFecha(datos.getFecha());
     gasto.setDescripcion(datos.getDescripcion());
     gasto.setCategoria(datos.getCategoria());
-
     repositorioGasto.modificar(gasto);
   }
 
@@ -183,7 +178,6 @@ public class GastoServicioImpl implements GastoServicio {
     if (gasto.getImporte() == null || gasto.getImporte() <= 0) {
       throw new GastoInvalidoExeption(prefijoDelError + "El importe debe ser mayor a cero");
     }
-
     LocalDate minima = obtenerFechaMinimaPermitida();
     LocalDate maxima = obtenerFechaMaximaPermitida();
     LocalDate fecha = gasto.getFecha();
@@ -201,6 +195,11 @@ public class GastoServicioImpl implements GastoServicio {
   @Override
   public List<Gasto> obtenerGastos(Usuario usuario) {
     return repositorioGasto.buscarGastosPorUsuario(usuario);
+  }
+
+  @Override
+  public List<Gasto> obtenerUltimos(Usuario usuario, int cantidad) {
+    return repositorioGasto.obtenerUltimos(usuario, cantidad);
   }
 
   @Override

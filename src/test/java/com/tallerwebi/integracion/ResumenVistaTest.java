@@ -76,6 +76,16 @@ public class ResumenVistaTest {
       .andExpect(status().isOk())
       .andExpect(view().name("resumen"))
       .andExpect(content().string(containsString("Septiembre 2026")))
+      // Rediseño v2: el acceso al asistente y los últimos movimientos con el link a Mis gastos
+      .andExpect(content().string(containsString("id=\"analizar-gastos\"")))
+      .andExpect(content().string(containsString("id=\"modal-analisis\"")))
+      .andExpect(content().string(containsString("Leyendo <span>2</span> movimientos")))
+      .andExpect(content().string(containsString("Últimos movimientos")))
+      .andExpect(content().string(containsString("Gasto de octubre")))
+      .andExpect(
+        content()
+          .string(containsString("href=\"/mostrar-gastos\" class=\"app-resumen-movimientos-link\""))
+      )
       // Historial: de abril a septiembre, con lo de septiembre en la última fila
       .andExpect(content().string(containsString("id=\"tabla-historial\"")))
       .andExpect(content().string(containsString("data-etiqueta=\"Abr 2026\"")))
@@ -157,7 +167,7 @@ public class ResumenVistaTest {
         content().string(containsString("Destildá para marcar Café y snacks como esencial"))
       )
       // Agosto de 2025 ya cerró: no hay alertas
-      .andExpect(content().string(not(containsString("app-alerta"))));
+      .andExpect(content().string(not(containsString("app-notificacion"))));
   }
 
   @Test
@@ -177,7 +187,8 @@ public class ResumenVistaTest {
     mockMvc
       .perform(get("/home").sessionAttr("USUARIO", usuario))
       .andExpect(status().isOk())
-      .andExpect(content().string(containsString("app-alerta")))
+      .andExpect(content().string(containsString("class=\"app-notificacion is-amarilla\"")))
+      .andExpect(content().string(not(containsString("Ver gastos hormiga"))))
       .andExpect(
         content()
           .string(containsString("Llevás $32.000 en gastos hormiga, el 6% de tu presupuesto"))

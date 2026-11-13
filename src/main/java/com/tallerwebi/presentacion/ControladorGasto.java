@@ -1,5 +1,6 @@
 package com.tallerwebi.presentacion;
 
+import com.tallerwebi.dominio.NombreDeMes;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.categoria.Categoria;
@@ -9,18 +10,21 @@ import com.tallerwebi.dominio.excepcion.GastoNoEncontrado;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Clock;
 import java.time.LocalDate;
-import java.util.Comparator;
+import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -34,16 +38,29 @@ public class ControladorGasto {
   private static final String CLAVE_TITULO = "titulo";
   private static final String CLAVE_URL_CANCELAR = "urlCancelar";
   private static final String CLAVE_SECCION = "seccion";
-  private static final int GASTOS_POR_PAGINA = 10;
+  private static final String PARAMETRO_MES = "mes";
   private final GastoServicio gastoServicio;
   private final CategoriaRepositorio categoriaRepositorio;
+  private final Clock reloj;
 
   @Autowired
   public ControladorGasto(GastoServicio gastoServicio, CategoriaRepositorio categoriaRepositorio) {
-    this.gastoServicio = gastoServicio;
-    this.categoriaRepositorio = categoriaRepositorio;
+    this(gastoServicio, categoriaRepositorio, Clock.systemDefaultZone());
   }
 
+  // Con reloj fijo para los tests: "hoy" decide el mes por defecto, los días futuros y "Hoy"/"Ayer"
+  public ControladorGasto(
+    GastoServicio gastoServicio,
+    CategoriaRepositorio categoriaRepositorio,
+    Clock reloj
+  ) {
+    this.gastoServicio = gastoServicio;
+    this.categoriaRepositorio = categoriaRepositorio;
+    this.reloj = reloj;
+  }
+
+  // Mis gastos de un mes (rediseño v2): mapa de calor, lista por día y totales por categoría.
+  // mes: opcional, yyyy-MM (ej. 2026-09). Sin mes, o con uno inválido, muestra el actual
   @RequestMapping(path = "/mostrar-gastos", method = RequestMethod.GET)
   public ModelAndView mostrarGastos(HttpServletRequest request) {
     Usuario usuario = SesionUsuario.obtener(request);
@@ -51,47 +68,41 @@ public class ControladorGasto {
       return new ModelAndView(REDIRECT_LOGIN);
     }
 
-    List<Gasto> gastos = gastoServicio
-      .obtenerGastos(usuario)
-      .stream()
-      .sorted(
-        Comparator
-          .comparing(Gasto::getFecha, Comparator.reverseOrder())
-          .thenComparing(Gasto::getId, Comparator.nullsLast(Comparator.reverseOrder()))
-      )
-      .toList();
-    double total = gastos.stream().mapToDouble(Gasto::getImporte).sum();
-    int totalPaginas = Math.max(
-      1,
-      (int) (((long) gastos.size() + GASTOS_POR_PAGINA - 1) / GASTOS_POR_PAGINA)
+    YearMonth mes = elegirMes(request.getParameter(PARAMETRO_MES));
+    MesDeGastos mesDeGastos = new MesDeGastos(
+      gastoServicio.obtenerGastosDelMes(usuario, mes),
+      mes,
+      LocalDate.now(reloj)
     );
-    int pagina = Math.min(paginaSolicitada(request), totalPaginas);
-    int desde = (pagina - 1) * GASTOS_POR_PAGINA;
-    int hasta = Math.min(desde + GASTOS_POR_PAGINA, gastos.size());
 
     Map<String, Object> model = new ModelMap();
-    model.put("gastos", gastos.subList(desde, hasta));
-    model.put("total", total);
-    model.put("paginaActual", pagina);
-    model.put("totalPaginas", totalPaginas);
+    model.put("mesDeGastos", mesDeGastos);
+    model.put("total", mesDeGastos.getTotal());
+    model.put("mesActual", NombreDeMes.de(mes));
+    model.put("mesMostrado", mes.toString());
+    model.put("mesAnterior", mes.minusMonths(1).toString());
+    model.put("mesSiguiente", mes.plusMonths(1).toString());
 
     return new ModelAndView("mostrar-gastos", model);
   }
 
-  private int paginaSolicitada(HttpServletRequest request) {
-    String valor = request.getParameter("pagina");
-    if (valor == null) {
-      return 1;
+  private YearMonth elegirMes(String mes) {
+    if (mes == null || mes.isBlank()) {
+      return YearMonth.now(reloj);
     }
     try {
-      int pagina = Integer.parseInt(valor);
-      if (pagina > 0) {
-        return pagina;
-      }
-    } catch (NumberFormatException e) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Número de página inválido", e);
+      return YearMonth.parse(mes);
+    } catch (DateTimeParseException e) {
+      return YearMonth.now(reloj);
     }
-    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Número de página inválido");
+  }
+
+  // Después de guardar se vuelve al mes del gasto, así se ve dónde quedó
+  private ModelAndView volverAlMes(YearMonth mes) {
+    if (mes.equals(YearMonth.now(reloj))) {
+      return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);
+    }
+    return new ModelAndView(REDIRECT_MOSTRAR_GASTOS + "?" + PARAMETRO_MES + "=" + mes);
   }
 
   @RequestMapping(path = RUTA_REGISTRAR_GASTO, method = RequestMethod.GET)
@@ -138,7 +149,7 @@ public class ControladorGasto {
       redirectAttributes.addFlashAttribute("alertaPresupuesto", alertaPresupuesto);
     }
 
-    return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);
+    return volverAlMes(YearMonth.from(gasto.getFecha()));
   }
 
   @RequestMapping(path = "/modificar-gasto/{id}", method = RequestMethod.GET)
@@ -182,7 +193,7 @@ public class ControladorGasto {
       return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);
     }
 
-    return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);
+    return volverAlMes(YearMonth.from(gasto.getFecha()));
   }
 
   @RequestMapping(path = "/eliminar-gasto/{id}", method = RequestMethod.POST)
@@ -199,7 +210,28 @@ public class ControladorGasto {
       return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);
     }
 
-    return new ModelAndView(REDIRECT_MOSTRAR_GASTOS);
+    // El formulario manda el mes que se estaba mirando, para volver a él
+    return volverAlMes(elegirMes(request.getParameter(PARAMETRO_MES)));
+  }
+
+  // Lo usa "Mis gastos" para eliminar después de los 4 segundos del "Deshacer": sin redirección.
+  // 204 si se eliminó; 404 si no existe o es de otro usuario; 401 sin sesión.
+  @RequestMapping(path = "/gastos/{id}/eliminar", method = RequestMethod.POST)
+  @ResponseBody
+  public ResponseEntity<Void> eliminarGastoDiferido(
+    @PathVariable("id") Long id,
+    HttpServletRequest request
+  ) {
+    Usuario usuario = SesionUsuario.obtener(request);
+    if (usuario == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+    try {
+      gastoServicio.eliminarGasto(id, usuario);
+    } catch (GastoNoEncontrado e) {
+      return ResponseEntity.notFound().build();
+    }
+    return ResponseEntity.noContent().build();
   }
 
   private ModelAndView vistaRegistrarGasto(Gasto gasto, String error) {

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 
-<head th:replace="~{fragments/layout :: head('Asistente')}"></head>
+<head th:replace="~{fragments/layout :: head('Análisis de tus gastos')}"></head>
 
 <body>
 
@@ -9,7 +9,7 @@
   <link rel="stylesheet" th:href="@{/css/asistente.css}" />
 
   <header th:replace="~{fragments/layout :: navbar('asistente')}"></header>
-  <header th:replace="~{fragments/layout :: header-mobile('Asistente')}"></header>
+  <header th:replace="~{fragments/layout :: header-mobile('Análisis')}"></header>
 
   <!--
     Modelo esperado:
@@ -29,7 +29,7 @@
 
     <div class="app-resumen-titulo" id="guia-destino-asistente">
       <div>
-        <h1 class="h3 fw-bold mb-0">Asistente</h1>
+        <h1 class="h3 fw-bold mb-0">Análisis de tus gastos</h1>
         <p class="app-asistente-subtitulo">Tu gasto real<span th:if="${periodoTexto != null}" th:text="' de ' + ${periodoTexto}"> de Mayo a Septiembre 2026</span>, descontada la inflación · solo meses cerrados</p>
       </div>
       <nav class="app-asistente-periodos" aria-label="Período">
@@ -209,9 +209,9 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle></svg>
       <span>Presup.</span>
     </a>
-    <a class="active" th:href="@{/asistente}" aria-current="page" aria-label="Asistente">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M6 15l4-5 4 3 4-6"></path></svg>
-      <span>Asist.</span>
+    <a th:href="@{/perfil}" aria-label="Perfil">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.6-3.5 3.1-5.5 7-5.5s6.4 2 7 5.5"></path></svg>
+      <span>Perfil</span>
     </a>
   </nav>
 

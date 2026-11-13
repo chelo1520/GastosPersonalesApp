@@ -60,61 +60,59 @@ public class MostrarGastosVistaTest {
     MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
 
     mockMvc
-      .perform(get("/mostrar-gastos").sessionAttr("USUARIO", usuario))
+      .perform(get("/mostrar-gastos").param("mes", "2026-09").sessionAttr("USUARIO", usuario))
       .andExpect(status().isOk())
       .andExpect(view().name("mostrar-gastos"))
       .andExpect(content().string(containsString("Compra de prueba")))
-      .andExpect(content().string(containsString("30/09/2026")))
+      .andExpect(content().string(containsString("Miércoles 30 de septiembre")))
       .andExpect(content().string(containsString("1.800,00")));
   }
 
   @Test
-  public void debePaginarDiezGastosPorPaginaConTotalGeneralYOrdenEstable() throws Exception {
+  public void debeMostrarSoloLosGastosDelMesPedidoConElMapaDeCalorYElTotalDelMes()
+    throws Exception {
     Usuario usuario = new Usuario();
     Usuario otroUsuario = new Usuario();
     sessionFactory.getCurrentSession().persist(usuario);
     sessionFactory.getCurrentSession().persist(otroUsuario);
-    for (int i = 1; i <= 21; i++) {
-      Gasto gasto = new Gasto(10.0, LocalDate.of(2026, 9, 30), String.format("Registro %02d", i));
-      gasto.setUsuario(usuario);
-      sessionFactory.getCurrentSession().persist(gasto);
-    }
-    Gasto ajeno = new Gasto(500.0, LocalDate.of(2026, 10, 1), "Gasto ajeno");
-    ajeno.setUsuario(otroUsuario);
-    sessionFactory.getCurrentSession().persist(ajeno);
+    persistir(usuario, 1000.0, LocalDate.of(2026, 9, 3), "Gasto de septiembre");
+    persistir(usuario, 500.0, LocalDate.of(2026, 9, 3), "Otro de septiembre");
+    persistir(usuario, 9000.0, LocalDate.of(2026, 10, 1), "Gasto de octubre");
+    persistir(otroUsuario, 700.0, LocalDate.of(2026, 9, 3), "Gasto ajeno");
     MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
 
-    mockMvc
-      .perform(get("/mostrar-gastos").sessionAttr("USUARIO", usuario))
-      .andExpect(model().attribute("gastos", hasSize(10)))
-      .andExpect(model().attribute("total", 210.0))
-      .andExpect(content().string(containsString("Página 1 de 3")))
-      .andExpect(content().string(containsString("Registro 21")))
-      .andExpect(content().string(containsString("Registro 12")))
-      .andExpect(content().string(not(containsString("Registro 11"))))
+    MvcResult resultado = mockMvc
+      .perform(get("/mostrar-gastos").param("mes", "2026-09").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(model().attribute("total", 1500.0))
+      .andExpect(model().attribute("mesActual", "Septiembre 2026"))
+      .andExpect(content().string(containsString("Cada día del mes")))
+      .andExpect(content().string(containsString("data-grupo-dia=\"3\"")))
+      .andExpect(content().string(containsString("Gasto de septiembre")))
+      .andExpect(content().string(not(containsString("Gasto de octubre"))))
       .andExpect(content().string(not(containsString("Gasto ajeno"))))
-      .andExpect(content().string(containsString("pagina=2")));
-    mockMvc
-      .perform(get("/mostrar-gastos").param("pagina", "2").sessionAttr("USUARIO", usuario))
-      .andExpect(model().attribute("gastos", hasSize(10)))
-      .andExpect(model().attribute("total", 210.0))
-      .andExpect(content().string(containsString("Página 2 de 3")))
-      .andExpect(content().string(containsString("Registro 11")))
-      .andExpect(content().string(containsString("Registro 02")))
-      .andExpect(content().string(not(containsString("Registro 01"))));
-    mockMvc
-      .perform(get("/mostrar-gastos").param("pagina", "3").sessionAttr("USUARIO", usuario))
-      .andExpect(model().attribute("gastos", hasSize(1)))
-      .andExpect(content().string(containsString("Registro 01")))
-      .andExpect(content().string(containsString("Página 3 de 3")));
-    mockMvc
-      .perform(get("/mostrar-gastos").param("pagina", "99").sessionAttr("USUARIO", usuario))
-      .andExpect(model().attribute("paginaActual", 3))
-      .andExpect(model().attribute("gastos", hasSize(1)));
+      .andExpect(content().string(containsString("href=\"/mostrar-gastos?mes=2026-08\"")))
+      .andExpect(content().string(containsString("href=\"/mostrar-gastos?mes=2026-10\"")))
+      .andExpect(content().string(containsString("De mayor a menor importe")))
+      .andExpect(content().string(containsString("data-categoria=\"Sin categoría\"")))
+      .andReturn();
+    String html = resultado.getResponse().getContentAsString();
+    // Una casilla por día de septiembre, y el día 3 (el único con gastos) con el nivel máximo
+    org.junit.jupiter.api.Assertions.assertEquals(
+      30,
+      html.split("class=\"app-mg-dia-casilla ", -1).length - 1 - 5
+    );
+    org.junit.jupiter.api.Assertions.assertTrue(
+      java.util.regex.Pattern
+        .compile("<button[^>]*nivel-4[^>]*data-dia=\"3\"[^>]*>")
+        .matcher(html)
+        .find()
+    );
+    org.junit.jupiter.api.Assertions.assertTrue(html.contains("title=\"3/9 · $ 1.500,00\""));
   }
 
   @Test
-  public void noMuestraPaginacionSinGastosYRechazaPaginasInvalidas() throws Exception {
+  public void sinGastosEnElMesMuestraElVacioYUnMesInvalidoMuestraElActual() throws Exception {
     Usuario usuario = new Usuario();
     sessionFactory.getCurrentSession().persist(usuario);
     MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
@@ -122,36 +120,37 @@ public class MostrarGastosVistaTest {
       .perform(get("/mostrar-gastos").sessionAttr("USUARIO", usuario))
       .andExpect(status().isOk())
       .andExpect(content().string(containsString("Todavía no registraste gastos")))
-      .andExpect(content().string(not(containsString("Páginas de gastos"))));
-    for (String pagina : new String[] { "0", "-1", "abc", "999999999999" }) {
-      mockMvc
-        .perform(get("/mostrar-gastos").param("pagina", pagina).sessionAttr("USUARIO", usuario))
-        .andExpect(status().isBadRequest());
-    }
+      .andExpect(content().string(not(containsString("De mayor a menor importe"))));
+    mockMvc
+      .perform(get("/mostrar-gastos").param("mes", "abc").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(model().attribute("mesMostrado", java.time.YearMonth.now().toString()));
   }
 
   @Test
-  public void diezGastosCabenEnUnaPaginaOrdenadosPorFechaMasReciente() throws Exception {
+  public void losDiasVanDelMasRecienteAlMasViejo() throws Exception {
     Usuario usuario = new Usuario();
     sessionFactory.getCurrentSession().persist(usuario);
     for (int i = 1; i <= 10; i++) {
-      Gasto gasto = new Gasto(1.0, LocalDate.of(2026, 9, i), "Día " + i);
-      gasto.setUsuario(usuario);
-      sessionFactory.getCurrentSession().persist(gasto);
+      persistir(usuario, 1.0, LocalDate.of(2026, 9, i), "Día " + i);
     }
     MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
     MvcResult resultado = mockMvc
-      .perform(get("/mostrar-gastos").sessionAttr("USUARIO", usuario))
-      .andExpect(model().attribute("gastos", hasSize(10)))
-      .andExpect(model().attribute("totalPaginas", 1))
-      .andExpect(content().string(not(containsString("Páginas de gastos"))))
+      .perform(get("/mostrar-gastos").param("mes", "2026-09").sessionAttr("USUARIO", usuario))
       .andReturn();
     String html = resultado.getResponse().getContentAsString();
     org.junit.jupiter.api.Assertions.assertTrue(html.indexOf("Día 10") < html.indexOf("Día 1<"));
   }
 
+  private void persistir(Usuario usuario, Double importe, LocalDate fecha, String descripcion) {
+    Gasto gasto = new Gasto(importe, fecha, descripcion);
+    gasto.setUsuario(usuario);
+    sessionFactory.getCurrentSession().persist(gasto);
+  }
+
   @Test
-  public void debeConfirmarElEliminarConElModalEnVezDelConfirmDelNavegador() throws Exception {
+  public void eliminarEsUnFormularioQueVuelveAlMesYTieneLaRutaDelDeshacerSinModal()
+    throws Exception {
     Usuario usuario = new Usuario();
     Gasto gasto = new Gasto(46200.0, LocalDate.of(2026, 9, 30), "Compra semanal");
     gasto.setUsuario(usuario);
@@ -161,15 +160,51 @@ public class MostrarGastosVistaTest {
     MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
 
     mockMvc
-      .perform(get("/mostrar-gastos").sessionAttr("USUARIO", usuario))
+      .perform(get("/mostrar-gastos").param("mes", "2026-09").sessionAttr("USUARIO", usuario))
       .andExpect(status().isOk())
-      .andExpect(content().string(containsString("id=\"modal-eliminar-gasto\"")))
+      .andExpect(content().string(not(containsString("modal-eliminar-gasto"))))
       .andExpect(
-        content().string(containsString("data-accion=\"/eliminar-gasto/" + gasto.getId() + "\""))
+        content().string(containsString("action=\"/eliminar-gasto/" + gasto.getId() + "\""))
       )
-      .andExpect(content().string(containsString("data-descripcion=\"Compra semanal\"")))
-      .andExpect(content().string(containsString("data-importe=\"46.200,00\"")))
+      .andExpect(
+        content().string(containsString("data-diferido=\"/gastos/" + gasto.getId() + "/eliminar\""))
+      )
+      .andExpect(content().string(containsString("name=\"mes\" value=\"2026-09\"")))
+      .andExpect(content().string(containsString("id=\"aviso-deshacer\"")))
       .andExpect(content().string(not(containsString("confirm("))));
+  }
+
+  @Test
+  public void elEliminarDiferidoBorraSoloGastosPropiosYRespondeSinRedirigir() throws Exception {
+    Usuario usuario = new Usuario();
+    Usuario otro = new Usuario();
+    sessionFactory.getCurrentSession().persist(usuario);
+    sessionFactory.getCurrentSession().persist(otro);
+    Gasto propio = new Gasto(1000.0, LocalDate.of(2026, 9, 3), "Propio");
+    propio.setUsuario(usuario);
+    Gasto ajeno = new Gasto(2000.0, LocalDate.of(2026, 9, 3), "Ajeno");
+    ajeno.setUsuario(otro);
+    sessionFactory.getCurrentSession().persist(propio);
+    sessionFactory.getCurrentSession().persist(ajeno);
+    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+    mockMvc
+      .perform(post("/gastos/" + propio.getId() + "/eliminar").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isNoContent());
+    mockMvc
+      .perform(post("/gastos/" + ajeno.getId() + "/eliminar").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isNotFound());
+    mockMvc
+      .perform(post("/gastos/" + ajeno.getId() + "/eliminar"))
+      .andExpect(status().isUnauthorized());
+
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+    assertEquals(null, sessionFactory.getCurrentSession().get(Gasto.class, propio.getId()));
+    assertEquals(
+      "Ajeno",
+      sessionFactory.getCurrentSession().get(Gasto.class, ajeno.getId()).getDescripcion()
+    );
   }
 
   @Test
@@ -186,7 +221,7 @@ public class MostrarGastosVistaTest {
     MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
 
     mockMvc
-      .perform(get("/mostrar-gastos").sessionAttr("USUARIO", usuario))
+      .perform(get("/mostrar-gastos").param("mes", "2026-09").sessionAttr("USUARIO", usuario))
       .andExpect(status().isOk())
       .andExpect(content().string(containsString("Golosina")))
       .andExpect(content().string(containsString("Kiosco")))
@@ -389,7 +424,7 @@ public class MostrarGastosVistaTest {
     String urlEditar = "/modificar-gasto/" + gasto.getId();
 
     mockMvc
-      .perform(get("/mostrar-gastos").sessionAttr("USUARIO", usuario))
+      .perform(get("/mostrar-gastos").param("mes", "2026-09").sessionAttr("USUARIO", usuario))
       .andExpect(content().string(containsString("href=\"" + urlEditar + "\"")));
 
     mockMvc

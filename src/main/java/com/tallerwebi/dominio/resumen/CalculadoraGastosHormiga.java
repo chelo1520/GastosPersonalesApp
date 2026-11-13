@@ -37,14 +37,12 @@ public class CalculadoraGastosHormiga {
           .add(gasto);
       }
     }
-
     List<List<Gasto>> frecuentes = chicosPorCategoria
       .values()
       .stream()
       .filter(gastos -> gastos.size() >= MINIMO_GASTOS_FRECUENTE)
       .toList();
     double total = frecuentes.stream().mapToDouble(CalculadoraGastosHormiga::sumar).sum();
-
     List<ResumenCategoria> categorias = new ArrayList<>();
     for (List<Gasto> gastos : frecuentes) {
       double totalCategoria = sumar(gastos);
@@ -60,8 +58,8 @@ public class CalculadoraGastosHormiga {
       );
     }
     categorias.sort(Comparator.comparing(ResumenCategoria::getGastado).reversed());
-
-    return new ResumenHormiga(total, porcentaje(total, presupuesto), categorias);
+    int cantidad = frecuentes.stream().mapToInt(List::size).sum();
+    return new ResumenHormiga(total, porcentaje(total, presupuesto), categorias, cantidad);
   }
 
   /** Con las marcas del maestro de categorías, sin preferencias del usuario. */
