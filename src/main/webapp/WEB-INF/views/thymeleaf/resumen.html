@@ -52,11 +52,17 @@
       </div>
     </div>
 
-    <!-- Alertas de gastos hormiga: informan, no bloquean. Se calculan al abrir la pantalla -->
-    <div class="app-alerta" role="status" th:each="alerta : ${alertas}"
-         th:classappend="${alerta.nivel.name() == 'ROJA'} ? 'is-roja' : 'is-amarilla'">
-      <span th:text="${alerta.mensaje}">Llevás $44.400 en gastos hormiga, el 8% de tu presupuesto</span>
-      <a class="app-alerta-link" href="#gastos-hormiga">Ver gastos hormiga</a>
+    <!-- Alertas de gastos hormiga como notificación emergente: aparecen cuando el servidor las calcula
+         (igual que antes el banner) y se van solas (notificaciones.js). El detalle está en la tarjeta de abajo. -->
+    <div class="app-notificaciones" th:unless="${#lists.isEmpty(alertas)}">
+      <div class="app-notificacion" role="status" th:each="alerta : ${alertas}"
+           th:classappend="${alerta.nivel.name() == 'ROJA'} ? 'is-roja' : 'is-amarilla'">
+        <span class="app-notificacion-punto" aria-hidden="true"></span>
+        <span class="app-notificacion-texto" th:text="${alerta.mensaje}">Llevás $44.400 en gastos hormiga, el 8% de tu presupuesto</span>
+        <button type="button" class="app-notificacion-cerrar" aria-label="Cerrar aviso">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
     </div>
 
     <!-- Tarjetas de totales -->
@@ -339,6 +345,7 @@
   <script th:src="@{/js/resumen.js}" charset="utf-8"></script>
   <script th:src="@{/js/mascot3d.js}"></script>
   <script type="module" th:src="@{/js/analisis.js}"></script>
+  <script type="module" th:src="@{/js/notificaciones.js}"></script>
   <script th:replace="~{fragments/layout :: scripts}"></script>
 </body>
 

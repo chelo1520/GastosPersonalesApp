@@ -167,7 +167,7 @@ public class ResumenVistaTest {
         content().string(containsString("Destildá para marcar Café y snacks como esencial"))
       )
       // Agosto de 2025 ya cerró: no hay alertas
-      .andExpect(content().string(not(containsString("app-alerta"))));
+      .andExpect(content().string(not(containsString("app-notificacion"))));
   }
 
   @Test
@@ -187,7 +187,8 @@ public class ResumenVistaTest {
     mockMvc
       .perform(get("/home").sessionAttr("USUARIO", usuario))
       .andExpect(status().isOk())
-      .andExpect(content().string(containsString("app-alerta")))
+      .andExpect(content().string(containsString("class=\"app-notificacion is-amarilla\"")))
+      .andExpect(content().string(not(containsString("Ver gastos hormiga"))))
       .andExpect(
         content()
           .string(containsString("Llevás $32.000 en gastos hormiga, el 6% de tu presupuesto"))
