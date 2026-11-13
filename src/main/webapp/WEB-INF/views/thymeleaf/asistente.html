@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 
-<head th:replace="~{fragments/layout :: head('Asistente')}"></head>
+<head th:replace="~{fragments/layout :: head('Análisis de tus gastos')}"></head>
 
 <body>
 
@@ -9,7 +9,7 @@
   <link rel="stylesheet" th:href="@{/css/asistente.css}" />
 
   <header th:replace="~{fragments/layout :: navbar('asistente')}"></header>
-  <header th:replace="~{fragments/layout :: header-mobile('Asistente')}"></header>
+  <header th:replace="~{fragments/layout :: header-mobile('Análisis')}"></header>
 
   <!--
     Modelo esperado:
@@ -29,7 +29,7 @@
 
     <div class="app-resumen-titulo" id="guia-destino-asistente">
       <div>
-        <h1 class="h3 fw-bold mb-0">Asistente</h1>
+        <h1 class="h3 fw-bold mb-0">Análisis de tus gastos</h1>
         <p class="app-asistente-subtitulo">Tu gasto real<span th:if="${periodoTexto != null}" th:text="' de ' + ${periodoTexto}"> de Mayo a Septiembre 2026</span>, descontada la inflación · solo meses cerrados</p>
       </div>
       <nav class="app-asistente-periodos" aria-label="Período">
