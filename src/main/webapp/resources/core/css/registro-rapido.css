@@ -1,0 +1,263 @@
+/* Registro rápido (rediseño v2, "Modal Registrar / Editar gasto"): ancho 520, radio 20, padding 32 */
+.app-registro .modal-dialog {
+  max-width: 520px;
+}
+
+.app-registro-contenido {
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+}
+
+.app-registro-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 32px;
+}
+
+.app-registro-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.app-registro-titulo {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.app-registro-cerrar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--app-texto-suave);
+}
+
+.app-registro-cerrar:hover {
+  background: #f5f3ee;
+  color: var(--app-texto);
+}
+
+.app-registro-cerrar svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.app-registro-error {
+  padding: 10px 14px;
+  border: 1px solid #f0c4c4;
+  border-radius: 10px;
+  background: #fde8e8;
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+.app-registro-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.app-registro-campo label {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.app-registro-campo input,
+.app-registro-campo select {
+  height: 48px;
+  padding: 0 12px;
+  border: 1px solid #dcd8ce;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--app-texto);
+  font-size: 16px;
+  outline: none;
+}
+
+.app-registro-campo input:focus,
+.app-registro-campo select:focus,
+.app-registro-importe:focus-within {
+  border-color: #11786e;
+  box-shadow: 0 0 0 3px rgba(17, 120, 110, 0.15);
+}
+
+.app-registro-importe {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid #dcd8ce;
+  border-radius: 10px;
+}
+
+.app-registro-importe span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  border-right: 1px solid #dcd8ce;
+  background: #f5f3ee;
+  font-weight: 600;
+}
+
+.app-registro-campo .app-registro-importe input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 17px;
+}
+
+.app-registro-fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+/* Desde un comprobante: zona punteada debajo del formulario; elegir el archivo ya lo envía */
+.app-registro-comprobante {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 32px 32px;
+  padding-top: 18px;
+  border-top: 1px solid #f0ede6;
+}
+
+.app-registro-subir {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px dashed #b9d6cf;
+  border-radius: 12px;
+  background: #f7faf9;
+  cursor: pointer;
+}
+
+.app-registro-subir:hover,
+.app-registro-comprobante:focus-within .app-registro-subir {
+  border-color: #11786e;
+  background: #eef4f2;
+}
+
+.app-registro-subir svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: #11786e;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.app-registro-subir strong {
+  display: block;
+  color: #11786e;
+  font-size: 15px;
+}
+
+.app-registro-subir small {
+  display: block;
+  color: var(--app-texto-suave);
+  font-size: 13px;
+}
+
+/* Con JavaScript el input queda accesible por teclado pero invisible: la zona de arriba es su etiqueta */
+.js-registro .app-registro-archivo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.app-registro-analizar {
+  height: 44px;
+  border: 1px solid #dcd8ce;
+  border-radius: 10px;
+  background: #fff;
+  font-weight: 600;
+}
+
+/* Con JavaScript el archivo se envía al elegirlo: el botón sobra */
+.js-registro .app-registro-analizar {
+  display: none;
+}
+
+.app-registro-analizando {
+  display: flex;
+  flex-basis: 100%;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #11786e;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.app-registro-analizando[hidden] {
+  display: none;
+}
+
+.app-registro-comprobante.is-enviando .app-registro-subir {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Guardar es el primero del HTML (Enter guarda) pero se ve a la derecha */
+.app-registro-acciones {
+  display: flex;
+  flex-direction: row-reverse;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.app-registro-acciones .btn {
+  height: 48px;
+  padding: 0 22px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.app-registro-otro {
+  border: 1px solid rgba(15, 118, 110, 0.35);
+  background: #eef4f2;
+  color: var(--app-verde);
+}
+
+.app-registro-otro:hover,
+.app-registro-otro:focus-visible {
+  border-color: var(--app-verde);
+  background: #dcebe7;
+  color: var(--app-verde-hover);
+}
+
+.app-registro-cancelar {
+  border: 1px solid #dcd8ce;
+  background: #fff;
+  color: var(--app-texto);
+}
+
+.app-registro-cancelar:hover {
+  background: #f5f3ee;
+}

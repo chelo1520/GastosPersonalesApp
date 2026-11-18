@@ -64,7 +64,7 @@ public class ControladorComprobante {
     if (SesionUsuario.obtener(request) == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
-    return vistaCargaComprobante(null);
+    return vistaCargaComprobante(null, origen(request));
   }
 
   @RequestMapping(path = RUTA_COMPROBANTE, method = RequestMethod.POST)
@@ -75,32 +75,40 @@ public class ControladorComprobante {
     if (SesionUsuario.obtener(request) == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
+    // Si se subió desde el modal de registro rápido, la revisión vuelve después a esa vista
+    OrigenDelRegistro origen = origen(request);
     if (imagen == null || imagen.isEmpty()) {
-      return vistaCargaComprobante("Elegí un archivo " + FORMATOS_ACEPTADOS + " para continuar.");
+      return vistaCargaComprobante(
+        "Elegí un archivo " + FORMATOS_ACEPTADOS + " para continuar.",
+        origen
+      );
     }
     if (imagen.getSize() > MAX_IMAGEN_BYTES) {
-      return vistaCargaComprobante("El archivo supera los 5 MB. Elegí otro.");
+      return vistaCargaComprobante("El archivo supera los 5 MB. Elegí otro.", origen);
     }
 
     byte[] contenido;
     try {
       contenido = imagen.getBytes();
     } catch (IOException e) {
-      return vistaCargaComprobante("No se pudo leer el archivo. Elegí otra imagen.");
+      return vistaCargaComprobante("No se pudo leer el archivo. Elegí otra imagen.", origen);
     }
 
     String tipoArchivo = detectarTipoArchivo(contenido);
     if (tipoArchivo == null) {
-      return vistaCargaComprobante("El archivo debe ser " + FORMATOS_ACEPTADOS + " de hasta 5 MB.");
+      return vistaCargaComprobante(
+        "El archivo debe ser " + FORMATOS_ACEPTADOS + " de hasta 5 MB.",
+        origen
+      );
     }
 
     try {
       List<Categoria> categorias = categoriaRepositorio.obtenerTodas();
       List<String> nombresCategorias = categorias.stream().map(Categoria::getNombre).toList();
       DatosComprobante datos = lectorComprobante.leer(contenido, tipoArchivo, nombresCategorias);
-      return vistaRevision(ConfirmacionComprobante.de(datos, categorias), null);
+      return vistaRevision(ConfirmacionComprobante.de(datos, categorias), null, origen);
     } catch (ComprobanteNoLegible | LectorComprobanteNoDisponible e) {
-      return vistaCargaComprobante(e.getMessage());
+      return vistaCargaComprobante(e.getMessage(), origen);
     }
   }
 
@@ -116,12 +124,13 @@ public class ControladorComprobante {
       return new ModelAndView(REDIRECT_LOGIN);
     }
 
+    OrigenDelRegistro origen = origen(request);
     List<Gasto> gastos;
     try {
       gastos = gastosElegidos(confirmacion);
       gastoServicio.registrarGastos(gastos, usuario);
     } catch (GastoInvalidoExeption e) {
-      return vistaRevision(confirmacion, e.getMessage());
+      return vistaRevision(confirmacion, e.getMessage(), origen);
     }
 
     // Sin alerta de repetición: los gastos de un mismo comprobante se dispararían entre sí
@@ -129,7 +138,22 @@ public class ControladorComprobante {
     if (alertaPresupuesto != null) {
       redirectAttributes.addFlashAttribute("alertaPresupuesto", alertaPresupuesto);
     }
-    return new ModelAndView("redirect:/mostrar-gastos");
+    if (origen == null) {
+      return new ModelAndView("redirect:/mostrar-gastos");
+    }
+    // Desde el registro rápido: de vuelta a la vista donde se abrió, con el aviso de lo guardado
+    redirectAttributes.addFlashAttribute("avisoRegistro", avisoDeGuardado(gastos.size()));
+    return new ModelAndView(origen.redireccion(null, null));
+  }
+
+  private static String avisoDeGuardado(int cantidad) {
+    return cantidad == 1
+      ? "Guardaste 1 gasto del comprobante"
+      : "Guardaste " + cantidad + " gastos del comprobante";
+  }
+
+  private static OrigenDelRegistro origen(HttpServletRequest request) {
+    return OrigenDelRegistro.de(request.getParameter(OrigenDelRegistro.PARAMETRO));
   }
 
   // Los tildados, cada uno con una categoría existente
@@ -154,8 +178,9 @@ public class ControladorComprobante {
     return gastos;
   }
 
-  private ModelAndView vistaCargaComprobante(String error) {
+  private ModelAndView vistaCargaComprobante(String error, OrigenDelRegistro origen) {
     Map<String, Object> model = new ModelMap();
+    agregarOrigen(model, origen);
     model.put(CLAVE_TITULO, "Desde comprobante");
     model.put(CLAVE_SECCION, "registrar");
     model.put(CLAVE_URL_CANCELAR, "/registrar-gasto");
@@ -165,8 +190,13 @@ public class ControladorComprobante {
     return new ModelAndView("cargar-comprobante", model);
   }
 
-  private ModelAndView vistaRevision(ConfirmacionComprobante confirmacion, String error) {
+  private ModelAndView vistaRevision(
+    ConfirmacionComprobante confirmacion,
+    String error,
+    OrigenDelRegistro origen
+  ) {
     Map<String, Object> model = new ModelMap();
+    agregarOrigen(model, origen);
     model.put(CLAVE_TITULO, "Revisar comprobante");
     model.put(CLAVE_SECCION, "registrar");
     model.put(CLAVE_URL_CANCELAR, RUTA_COMPROBANTE);
@@ -178,6 +208,13 @@ public class ControladorComprobante {
       model.put(CLAVE_ERROR, error);
     }
     return new ModelAndView("revisar-comprobante", model);
+  }
+
+  // Las vistas lo reenvían en un campo oculto para que la confirmación sepa a dónde volver
+  private static void agregarOrigen(Map<String, Object> model, OrigenDelRegistro origen) {
+    if (origen != null) {
+      model.put(OrigenDelRegistro.PARAMETRO, origen.getValor());
+    }
   }
 
   // Se mira la firma del archivo, no la extensión ni el content-type que manda el navegador

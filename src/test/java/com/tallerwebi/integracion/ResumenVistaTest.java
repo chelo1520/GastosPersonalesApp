@@ -270,7 +270,10 @@ public class ResumenVistaTest {
       .andExpect(content().string(containsString(">Café y snacks</option>")))
       .andExpect(content().string(containsString("value=\"" + LocalDate.now() + "\"")))
       .andExpect(content().string(containsString("Guardar y cargar otro")))
-      .andExpect(content().string(containsString("data-abrir=\"false\"")));
+      .andExpect(content().string(containsString("data-abrir=\"false\"")))
+      .andExpect(content().string(containsString("id=\"form-comprobante-rapido\"")))
+      // Registrar ya no está en el menú: se entra desde "+ Registrar gasto"
+      .andExpect(content().string(not(containsString(">Registrar</a>"))));
   }
 
   @Test
@@ -287,7 +290,7 @@ public class ResumenVistaTest {
     mockMvc
       .perform(get("/home").sessionAttr("USUARIO", usuario).flashAttrs(guardado.getFlashMap()))
       .andExpect(status().isOk())
-      .andExpect(content().string(containsString("id=\"aviso-gasto-guardado\"")))
+      .andExpect(content().string(containsString("id=\"aviso-registro\"")))
       .andExpect(content().string(containsString("data-abrir=\"false\"")))
       .andExpect(content().string(containsString("Café con leche</span>")));
   }
@@ -307,7 +310,7 @@ public class ResumenVistaTest {
       .perform(get("/home").sessionAttr("USUARIO", usuario).flashAttrs(guardado.getFlashMap()))
       .andExpect(content().string(containsString("data-abrir=\"true\"")))
       .andExpect(content().string(containsString("selected=\"selected\">Café y snacks</option>")))
-      .andExpect(content().string(containsString("id=\"aviso-gasto-guardado\"")));
+      .andExpect(content().string(containsString("id=\"aviso-registro\"")));
   }
 
   @Test
@@ -327,7 +330,7 @@ public class ResumenVistaTest {
       .andExpect(content().string(containsString("El importe debe ser mayor a cero")))
       .andExpect(content().string(containsString("value=\"Café con leche\"")))
       .andExpect(content().string(containsString("value=\"0.00\"")))
-      .andExpect(content().string(not(containsString("id=\"aviso-gasto-guardado\""))));
+      .andExpect(content().string(not(containsString("id=\"aviso-registro\""))));
     List<Gasto> gastos = sessionFactory
       .getCurrentSession()
       .createQuery("from Gasto g where g.usuario = :usuario", Gasto.class)

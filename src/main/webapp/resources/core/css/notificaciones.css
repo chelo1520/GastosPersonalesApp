@@ -1,0 +1,121 @@
+/* Notificaciones emergentes (rediseño v2): alertas de gastos hormiga del resumen y avisos del registro
+   rápido. Abajo a la derecha, para no tapar las acciones; notificaciones.js las cierra a los 6 segundos. */
+.app-notificaciones {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1080;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(380px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.app-notificacion {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 14px 14px 16px;
+  border-radius: 14px;
+  background: #17302c;
+  color: #fff;
+  font-size: 15px;
+  line-height: 1.4;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  pointer-events: auto;
+  animation: app-notificacion-entra 0.3s ease-out;
+}
+
+.app-notificacion.is-saliendo {
+  opacity: 0;
+  transform: translateX(16px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.app-notificacion-punto {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: #e8833a;
+}
+
+.app-notificacion.is-roja .app-notificacion-punto {
+  background: #f0766b;
+}
+
+.app-notificacion-texto {
+  flex: 1;
+}
+
+.app-notificacion-cerrar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #b9d6cf;
+  cursor: pointer;
+}
+
+.app-notificacion-cerrar:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.app-notificacion-cerrar svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+@keyframes app-notificacion-entra {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Notificaciones del registro rápido: "Gasto guardado" con punto verde; la de repetición trae su botón */
+.app-notificacion.is-ok .app-notificacion-punto {
+  background: #7fc4b8;
+}
+
+.app-notificacion .app-hormiga-form {
+  margin-top: 8px;
+}
+
+.app-notificacion .app-hormiga-boton {
+  border-color: rgba(127, 196, 184, 0.5);
+  color: #7fc4b8;
+}
+
+.app-notificacion .app-hormiga-boton:hover {
+  border-color: #7fc4b8;
+  background: rgba(127, 196, 184, 0.12);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-notificacion {
+    animation: none;
+  }
+
+  .app-notificacion.is-saliendo {
+    transition: none;
+  }
+}
