@@ -391,9 +391,9 @@ public class ResumenVistaTest {
       .andExpect(content().string(not(containsString("id=\"saludo\""))));
   }
 
-  // Menú de la cuenta (rediseño v2): Perfil y Salir juntos bajo el nombre de la persona
+  // Menú de la cuenta (rediseño v2): Perfil y Salir juntos bajo el nombre de la persona (sin apellido)
   @Test
-  public void elMenuDeLaCuentaMuestraElNombreCompletoConPerfilYSalir() throws Exception {
+  public void elMenuDeLaCuentaMuestraSoloElNombreConPerfilYSalir() throws Exception {
     Usuario usuario = new Usuario();
     usuario.setEmail("ana@unlam.edu.ar");
     usuario.setNombre("Ana");
@@ -403,8 +403,9 @@ public class ResumenVistaTest {
     mockMvc
       .perform(get("/home").sessionAttr("USUARIO", usuario))
       .andExpect(content().string(containsString("id=\"menu-cuenta\"")))
-      .andExpect(content().string(containsString(">AS</span>")))
-      .andExpect(content().string(containsString(">Ana Sosa</span>")))
+      .andExpect(content().string(containsString(">A</span>")))
+      .andExpect(content().string(containsString(">Ana</span>")))
+      .andExpect(content().string(not(containsString("Ana Sosa"))))
       .andExpect(content().string(containsString(">ana@unlam.edu.ar</small>")))
       .andExpect(content().string(containsString("id=\"menu-cuenta-perfil\"")))
       .andExpect(content().string(containsString("action=\"/logout\"")));
