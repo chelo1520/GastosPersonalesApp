@@ -95,11 +95,6 @@
   100% { transform: translate(6vw, 10vh); }
 }
 
-@keyframes login-pista {
-  0%, 100% { opacity: 0.55; transform: translateY(0); }
-  50% { opacity: 1; transform: translateY(-4px); }
-}
-
 /* Logo de arriba a la izquierda: aparece con el formulario */
 .login-marca {
   position: absolute;
@@ -129,8 +124,9 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: 16%;
-  bottom: 30%;
+  /* 10 % más grande que el diseño original (16 % a 70 %), con el mismo centro */
+  top: 13.3%;
+  bottom: 27.3%;
   opacity: 0;
   transform: scale(0.55) translateY(40px);
   transition: opacity 1s ease, transform 1.4s cubic-bezier(0.2, 1.3, 0.4, 1);
@@ -140,8 +136,8 @@
   position: absolute;
   left: 50%;
   top: 43%;
-  width: 200px;
-  height: 200px;
+  width: 220px;
+  height: 220px;
   transform: translate(-50%, -50%);
   opacity: 0.9;
 }
@@ -221,13 +217,6 @@
   background: rgba(255, 255, 255, 0.16);
   border-color: rgba(255, 255, 255, 0.4);
   outline: none;
-}
-
-.login-intro-pista {
-  margin: 0;
-  font-size: 13px;
-  color: rgba(185, 214, 207, 0.7);
-  animation: login-pista 2.4s ease-in-out infinite;
 }
 
 /* Panel crema con el formulario: entra desde la derecha con un pequeño retraso */
@@ -476,11 +465,6 @@
     font-size: 48px;
   }
 
-  /* En el celular no hay teclado a mano: queda solo el botón */
-  .login-intro-pista {
-    display: none;
-  }
-
   .login-globo {
     font-size: 14px;
     padding: 10px 14px;
@@ -536,8 +520,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .login-mancha,
-  .login-intro-pista {
+  .login-mancha {
     animation: none;
   }
 }
