@@ -84,31 +84,145 @@ a:hover {
   pointer-events: none;
 }
 
+/* Menú de la cuenta (rediseño v2): iniciales + nombre; despliega Mi perfil y Salir */
 .app-cuenta {
-  display: flex;
-  align-items: center;
-  gap: 4px;
   font-size: 14px;
 }
 
-.app-cuenta a {
-  padding: 6px 10px;
-  border-radius: 8px;
+.app-cuenta-boton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 260px;
+  padding: 5px 10px 5px 5px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
   color: var(--app-texto-nav);
+  font: inherit;
+  cursor: pointer;
 }
 
-.app-cuenta a:hover {
-  color: #fff;
-}
-
-.app-cuenta a[aria-current="page"] {
+.app-cuenta-boton:hover,
+.app-cuenta-boton[aria-expanded="true"],
+.app-cuenta-boton.is-activo {
   background: var(--app-oscuro-activo);
   color: #fff;
+}
+
+.app-cuenta-boton:focus-visible {
+  outline: 2px solid #7fc4b8;
+  outline-offset: 2px;
+}
+
+.app-cuenta-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #7fc4b8;
+  color: #17302c;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.app-cuenta-nombre {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-cuenta-flecha {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.2s;
+}
+
+.app-cuenta-boton[aria-expanded="true"] .app-cuenta-flecha {
+  transform: rotate(180deg);
+}
+
+.app-cuenta-menu {
+  min-width: 240px;
+  margin-top: 8px !important;
+  padding: 6px;
+  border: 1px solid #e7e3da;
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(23, 48, 44, 0.18);
+}
+
+.app-cuenta-encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px 8px;
+}
+
+.app-cuenta-encabezado strong {
+  color: var(--app-texto);
+  font-size: 15px;
+}
+
+.app-cuenta-encabezado small {
+  overflow: hidden;
+  color: var(--app-texto-suave);
+  text-overflow: ellipsis;
+}
+
+.app-cuenta-menu .dropdown-divider {
+  margin: 6px 0;
+  border-color: #f0ede6;
+}
+
+.app-cuenta-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  color: var(--app-texto);
+  font-size: 15px;
+}
+
+.app-cuenta-item:hover,
+.app-cuenta-item:focus {
+  background: #eef4f2;
+  color: var(--app-verde);
+}
+
+.app-cuenta-item[aria-current="page"] {
   font-weight: 600;
 }
 
+.app-cuenta-item svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .app-cuenta-salir {
-  display: inline;
+  margin: 0;
+}
+
+.app-cuenta-salir .app-cuenta-item:hover,
+.app-cuenta-salir .app-cuenta-item:focus {
+  background: #fde8e8;
+  color: #b91c1c;
 }
 
 /* Tabla anual de presupuestos del perfil */
@@ -197,25 +311,6 @@ a:hover {
   min-height: 1.2em;
 }
 
-.app-cuenta-salir button {
-  padding: 6px 10px;
-  border: 0;
-  border-radius: 8px;
-  background: none;
-  color: var(--app-texto-nav);
-  font: inherit;
-  cursor: pointer;
-}
-
-.app-cuenta-salir button:hover {
-  color: #fff;
-}
-
-.app-cuenta > * + *::before {
-  content: "·";
-  margin-right: 10px;
-  opacity: 0.5;
-}
 
 /* Header mobile */
 
