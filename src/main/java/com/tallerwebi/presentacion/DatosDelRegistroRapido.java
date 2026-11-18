@@ -14,10 +14,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
  */
 @ControllerAdvice(
   assignableTypes = {
-    ControladorResumen.class,
-    ControladorGasto.class,
-    ControladorPresupuesto.class,
-    ControladorSimulacion.class,
+    ControladorResumen.class, ControladorGasto.class, ControladorPresupuesto.class,
   }
 )
 public class DatosDelRegistroRapido {

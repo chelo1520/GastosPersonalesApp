@@ -15,7 +15,7 @@ public class OrigenDelRegistroTest {
     assertEquals(OrigenDelRegistro.RESUMEN, OrigenDelRegistro.de("resumen"));
     assertEquals(OrigenDelRegistro.MIS_GASTOS, OrigenDelRegistro.de("mis-gastos"));
     assertEquals(OrigenDelRegistro.PRESUPUESTOS, OrigenDelRegistro.de("presupuestos"));
-    assertEquals(OrigenDelRegistro.SIMULACION, OrigenDelRegistro.de("simulacion"));
+    assertNull(OrigenDelRegistro.de("simulacion"));
     assertNull(OrigenDelRegistro.de("https://otro-sitio.com"));
     assertNull(OrigenDelRegistro.de(null));
   }
@@ -31,11 +31,7 @@ public class OrigenDelRegistroTest {
   }
 
   @Test
-  public void laSimulacionVuelveSinMesPorqueRecuerdaSusMesesEnLaSesion() {
-    assertEquals(
-      "redirect:/simulacion",
-      OrigenDelRegistro.SIMULACION.redireccion(YearMonth.of(2026, 10), NOVIEMBRE)
-    );
+  public void presupuestosVuelveAlMesQueSeMiraba() {
     assertEquals(
       "redirect:/presupuestos?mes=2026-10",
       OrigenDelRegistro.PRESUPUESTOS.redireccion(YearMonth.of(2026, 10), NOVIEMBRE)

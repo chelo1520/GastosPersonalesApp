@@ -8,7 +8,7 @@
     Registrar, pero sin salir de la vista. Guarda y vuelve con el aviso "Gasto guardado";
     "Guardar y cargar otro" lo reabre con la misma fecha y categoría; con error se reabre con lo cargado.
     Abajo, la carga desde un comprobante: sube el archivo y pasa a la pantalla de revisión.
-      volver: vista a la que se vuelve ("resumen", "mis-gastos", "presupuestos" o "simulacion")
+      volver: vista a la que se vuelve ("resumen", "mis-gastos" o "presupuestos")
       mes: el mes que se mira (yyyy-MM), para volver a él; null vuelve al actual
     Modelo: categoriasRegistro, fechaHoy, fechaMinimaRegistro, fechaMaximaRegistro (DatosDelRegistroRapido)
             y, en flash, registroRapido (lo cargado) y errorRegistro
@@ -101,9 +101,9 @@
 
   <!--
     Lo que llega una sola vez después de guardar, en las vistas que no tienen sus propios avisos
-    (Presupuestos y Simulación): "Gasto guardado" y la alerta de repetición como notificaciones
+    (Presupuestos): "Gasto guardado" y la alerta de repetición como notificaciones
     (notificaciones.css y notificaciones.js), y el pop-up de presupuesto (lo abre registro_rapido.js).
-      volverHormiga: a dónde vuelve "Marcar categoría como hormiga" ("/presupuestos" o "/simulacion")
+      volverHormiga: a dónde vuelve "Marcar categoría como hormiga" (ej. "/presupuestos")
   -->
   <th:block th:fragment="avisos(volverHormiga)">
     <div class="app-notificaciones" th:if="${avisoRegistro != null or alertaRepeticion != null}">

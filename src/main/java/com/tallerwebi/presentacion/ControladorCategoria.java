@@ -23,8 +23,7 @@ public class ControladorCategoria {
   private static final List<String> PANTALLAS_DE_VUELTA = List.of(
     "/home",
     "/mostrar-gastos",
-    "/presupuestos",
-    "/simulacion"
+    "/presupuestos"
   );
   // El resumen de un mes puntual (check "¿Es hormiga?" de la tabla): se vuelve al mismo mes
   private static final Pattern RESUMEN_DE_UN_MES = Pattern.compile("/home\\?mes=\\d{4}-\\d{2}");
