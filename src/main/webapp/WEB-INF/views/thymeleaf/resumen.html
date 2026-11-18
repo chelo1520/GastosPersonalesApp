@@ -318,7 +318,7 @@
       </div>
     </div>
 
-    <div th:replace="~{fragments/registro-rapido :: modal('resumen')}"></div>
+    <div th:replace="~{fragments/registro-rapido :: modal('resumen', ${mesMostrado})}"></div>
 
     <!-- Pop-up de presupuesto: llega una sola vez, con el gasto que hace cruzar el 80 % o el 100 % del mes -->
     <div class="modal fade" id="modal-alerta-presupuesto" tabindex="-1"

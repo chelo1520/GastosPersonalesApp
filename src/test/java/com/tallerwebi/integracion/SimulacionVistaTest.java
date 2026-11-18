@@ -477,4 +477,18 @@ public class SimulacionVistaTest {
   private String nombre(YearMonth mes) {
     return com.tallerwebi.dominio.NombreDeMes.de(mes);
   }
+
+  // Registro rápido (rediseño v2): el botón abre el modal; se vuelve a la simulación sin mes
+  @Test
+  void ofreceElRegistroRapidoQueVuelveALaSimulacion() throws Exception {
+    MockHttpSession sesion = new MockHttpSession();
+    sesion.setAttribute("USUARIO", usuario);
+
+    mockMvc
+      .perform(get("/simulacion").session(sesion))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("data-bs-target=\"#modal-registro\"")))
+      .andExpect(content().string(containsString("name=\"volver\" value=\"simulacion\"")))
+      .andExpect(content().string(not(containsString("name=\"mes\""))));
+  }
 }

@@ -8,19 +8,20 @@
     Registrar, pero sin salir de la vista. Guarda y vuelve con el aviso "Gasto guardado";
     "Guardar y cargar otro" lo reabre con la misma fecha y categoría; con error se reabre con lo cargado.
     Abajo, la carga desde un comprobante: sube el archivo y pasa a la pantalla de revisión.
-      volver: vista a la que se vuelve ("resumen" o "mis-gastos")
-    Modelo: categoriasRegistro, fechaHoy, fechaMinima, fechaMaxima, mesMostrado
+      volver: vista a la que se vuelve ("resumen", "mis-gastos", "presupuestos" o "simulacion")
+      mes: el mes que se mira (yyyy-MM), para volver a él; null vuelve al actual
+    Modelo: categoriasRegistro, fechaHoy, fechaMinimaRegistro, fechaMaximaRegistro (DatosDelRegistroRapido)
             y, en flash, registroRapido (lo cargado) y errorRegistro
     Necesita css/registro-rapido.css y js/registro_rapido.js.
   -->
-  <div th:fragment="modal(volver)" th:remove="tag">
+  <div th:fragment="modal(volver, mes)" th:remove="tag">
     <div class="modal fade app-registro" id="modal-registro" tabindex="-1" aria-labelledby="registro-titulo" aria-hidden="true"
          th:attr="data-abrir=${registroRapido != null}">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content app-registro-contenido">
           <form th:action="@{/registrar-gasto}" method="post" id="form-registro" class="app-registro-form">
             <input type="hidden" name="volver" th:value="${volver}">
-            <input type="hidden" name="mes" th:value="${mesMostrado}">
+            <input type="hidden" name="mes" th:if="${mes != null}" th:value="${mes}">
 
             <div class="app-registro-cabecera">
               <h2 class="app-registro-titulo" id="registro-titulo">Registrar gasto</h2>
@@ -59,7 +60,7 @@
               </div>
               <div class="app-registro-campo">
                 <label for="registro-fecha">Fecha</label>
-                <input id="registro-fecha" name="fecha" type="date" required th:min="${fechaMinima}" th:max="${fechaMaxima}"
+                <input id="registro-fecha" name="fecha" type="date" required th:min="${fechaMinimaRegistro}" th:max="${fechaMaximaRegistro}"
                        th:value="${registroRapido?.fecha ?: fechaHoy}">
               </div>
             </div>
@@ -97,6 +98,56 @@
       </div>
     </div>
   </div>
+
+  <!--
+    Lo que llega una sola vez después de guardar, en las vistas que no tienen sus propios avisos
+    (Presupuestos y Simulación): "Gasto guardado" y la alerta de repetición como notificaciones
+    (notificaciones.css y notificaciones.js), y el pop-up de presupuesto (lo abre registro_rapido.js).
+      volverHormiga: a dónde vuelve "Marcar categoría como hormiga" ("/presupuestos" o "/simulacion")
+  -->
+  <th:block th:fragment="avisos(volverHormiga)">
+    <div class="app-notificaciones" th:if="${avisoRegistro != null or alertaRepeticion != null}">
+      <div class="app-notificacion is-ok" role="status" id="aviso-registro" th:if="${avisoRegistro != null}">
+        <span class="app-notificacion-punto" aria-hidden="true"></span>
+        <span class="app-notificacion-texto" th:text="${avisoRegistro}">Gasto guardado: “Café”</span>
+        <button type="button" class="app-notificacion-cerrar" aria-label="Cerrar aviso">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
+      <div class="app-notificacion is-amarilla" role="status" id="aviso-repeticion" th:if="${alertaRepeticion != null}">
+        <span class="app-notificacion-punto" aria-hidden="true"></span>
+        <span class="app-notificacion-texto">
+          <span th:text="${alertaRepeticion.mensaje}">Es tu 4.º gasto en Café y snacks esta semana ($10.000)</span>
+          <form th:replace="~{fragments/hormiga :: boton(${alertaRepeticion.categoriaId}, null, false, ${volverHormiga})}"></form>
+        </span>
+        <button type="button" class="app-notificacion-cerrar" aria-label="Cerrar aviso">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="modal fade" id="modal-alerta-presupuesto" tabindex="-1"
+         aria-labelledby="modal-alerta-presupuesto-titulo" aria-hidden="true"
+         th:if="${alertaPresupuesto != null}">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title h5 fw-bold" id="modal-alerta-presupuesto-titulo">Ojo con tu presupuesto</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <div class="app-alerta mb-0"
+                 th:classappend="${alertaPresupuesto.nivel.name() == 'ROJA'} ? 'is-roja' : 'is-amarilla'">
+              <span th:text="${alertaPresupuesto.mensaje}">Con este gasto llegaste al 85% del presupuesto del mes</span>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </th:block>
 
 </body>
 
