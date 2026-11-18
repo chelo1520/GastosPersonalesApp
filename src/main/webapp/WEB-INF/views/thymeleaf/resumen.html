@@ -48,13 +48,34 @@
       <div class="app-resumen-acciones">
         <!-- El asistente analiza los últimos meses (3, 6 o 12) contra inflación y dólar: no es "mi mes" -->
         <a class="btn app-resumen-analizar" th:href="@{/asistente}" id="analizar-gastos">Analizar mis gastos</a>
-        <a class="btn btn-primary app-registrar-link app-resumen-registrar" th:href="@{/registrar-gasto}">+ Registrar gasto</a>
+        <!-- Abre el registro rápido (modal de abajo); sin JavaScript sigue siendo el link a la pantalla -->
+        <a class="btn btn-primary app-registrar-link app-resumen-registrar" th:href="@{/registrar-gasto}" id="abrir-registro"
+           data-bs-toggle="modal" data-bs-target="#modal-registro">+ Registrar gasto</a>
       </div>
     </div>
 
     <!-- Alertas de gastos hormiga como notificación emergente: aparecen cuando el servidor las calcula
          (igual que antes el banner) y se van solas (notificaciones.js). El detalle está en la tarjeta de abajo. -->
-    <div class="app-notificaciones" th:unless="${#lists.isEmpty(alertas)}">
+    <div class="app-notificaciones"
+         th:unless="${#lists.isEmpty(alertas) and gastoGuardado == null and alertaRepeticion == null}">
+      <!-- Después del registro rápido: confirma lo guardado y, si corresponde, avisa la repetición -->
+      <div class="app-notificacion is-ok" role="status" id="aviso-gasto-guardado" th:if="${gastoGuardado != null}">
+        <span class="app-notificacion-punto" aria-hidden="true"></span>
+        <span class="app-notificacion-texto" th:text="'Gasto guardado: “' + ${gastoGuardado} + '”'">Gasto guardado: “Café”</span>
+        <button type="button" class="app-notificacion-cerrar" aria-label="Cerrar aviso">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
+      <div class="app-notificacion is-amarilla" role="status" id="aviso-repeticion" th:if="${alertaRepeticion != null}">
+        <span class="app-notificacion-punto" aria-hidden="true"></span>
+        <span class="app-notificacion-texto">
+          <span th:text="${alertaRepeticion.mensaje}">Es tu 4.º gasto en Café y snacks esta semana ($10.000)</span>
+          <form th:replace="~{fragments/hormiga :: boton(${alertaRepeticion.categoriaId}, null, false, '/home')}"></form>
+        </span>
+        <button type="button" class="app-notificacion-cerrar" aria-label="Cerrar aviso">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
       <div class="app-notificacion" role="status" th:each="alerta : ${alertas}"
            th:classappend="${alerta.nivel.name() == 'ROJA'} ? 'is-roja' : 'is-amarilla'">
         <span class="app-notificacion-punto" aria-hidden="true"></span>
@@ -295,6 +316,95 @@
       </div>
     </div>
 
+    <!-- Registro rápido (rediseño v2): el mismo formulario y las mismas validaciones que la pantalla
+         Registrar, pero sin salir del resumen. Guarda y vuelve acá con el aviso "Gasto guardado";
+         "Guardar y cargar otro" lo reabre con la misma fecha y categoría. Con error se reabre con lo cargado. -->
+    <div class="modal fade app-registro" id="modal-registro" tabindex="-1" aria-labelledby="registro-titulo" aria-hidden="true"
+         th:attr="data-abrir=${registroRapido != null}">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content app-registro-contenido">
+          <form th:action="@{/registrar-gasto}" method="post" id="form-registro" class="app-registro-form">
+            <input type="hidden" name="volver" value="resumen">
+            <input type="hidden" name="mes" th:value="${mesMostrado}">
+
+            <div class="app-registro-cabecera">
+              <h2 class="app-registro-titulo" id="registro-titulo">Registrar gasto</h2>
+              <button type="button" class="app-registro-cerrar" data-bs-dismiss="modal" aria-label="Cerrar">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </button>
+            </div>
+
+            <div class="app-registro-error" role="alert" id="registro-error"
+                 th:if="${errorRegistro != null}" th:text="${errorRegistro}">El importe debe ser mayor a cero</div>
+
+            <div class="app-registro-campo">
+              <label for="registro-importe">Importe</label>
+              <div class="app-registro-importe">
+                <span aria-hidden="true">$</span>
+                <input id="registro-importe" name="importe" type="number" step="0.01" min="0.01" inputmode="decimal"
+                       placeholder="0" required
+                       th:value="${registroRapido?.importe != null} ? ${#numbers.formatDecimal(registroRapido.importe, 1, 'NONE', 2, 'POINT')}">
+              </div>
+            </div>
+
+            <div class="app-registro-campo">
+              <label for="registro-descripcion">Descripción</label>
+              <input id="registro-descripcion" name="descripcion" type="text" maxlength="255" required
+                     placeholder="Ej.: Compra semanal en el súper" th:value="${registroRapido?.descripcion}">
+            </div>
+
+            <div class="app-registro-fila">
+              <div class="app-registro-campo">
+                <label for="registro-categoria">Categoría</label>
+                <select id="registro-categoria" name="categoria.id" required>
+                  <option value="">Seleccioná una categoría</option>
+                  <option th:each="categoria : ${categoriasRegistro}" th:value="${categoria.id}" th:text="${categoria.nombre}"
+                          th:selected="${registroRapido?.categoria?.id == categoria.id}">Alimentación</option>
+                </select>
+              </div>
+              <div class="app-registro-campo">
+                <label for="registro-fecha">Fecha</label>
+                <input id="registro-fecha" name="fecha" type="date" required th:min="${fechaMinima}" th:max="${fechaMaxima}"
+                       th:value="${registroRapido?.fecha ?: fechaHoy}">
+              </div>
+            </div>
+
+            <a class="app-registro-comprobante" th:href="@{/registrar-gasto/comprobante}">¿Tenés el comprobante? Cargalo desde una foto o PDF</a>
+
+            <!-- Guardar va primero en el HTML para que Enter guarde; el CSS los muestra al revés -->
+            <div class="app-registro-acciones">
+              <button type="submit" class="btn btn-primary" id="registro-guardar">Guardar</button>
+              <button type="submit" class="btn app-registro-otro" name="otro" value="true" id="registro-otro">Guardar y cargar otro</button>
+              <button type="button" class="btn app-registro-cancelar" data-bs-dismiss="modal">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pop-up de presupuesto: llega una sola vez, con el gasto que hace cruzar el 80 % o el 100 % del mes -->
+    <div class="modal fade" id="modal-alerta-presupuesto" tabindex="-1"
+         aria-labelledby="modal-alerta-presupuesto-titulo" aria-hidden="true"
+         th:if="${alertaPresupuesto != null}">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title h5 fw-bold" id="modal-alerta-presupuesto-titulo">Ojo con tu presupuesto</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <div class="app-alerta mb-0"
+                 th:classappend="${alertaPresupuesto.nivel.name() == 'ROJA'} ? 'is-roja' : 'is-amarilla'">
+              <span th:text="${alertaPresupuesto.mensaje}">Con este gasto llegaste al 85% del presupuesto del mes ($467.500 de $550.000)</span>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Últimos movimientos: los 5 más recientes, con acceso a Mis gastos (rediseño v2) -->
     <section class="app-resumen-card app-resumen-movimientos" aria-labelledby="titulo-movimientos" id="ultimos-movimientos">
       <div class="app-resumen-movimientos-cabecera">
@@ -347,6 +457,7 @@
   <script type="module" th:src="@{/js/analisis.js}"></script>
   <script type="module" th:src="@{/js/notificaciones.js}"></script>
   <script th:replace="~{fragments/layout :: scripts}"></script>
+  <script type="module" th:src="@{/js/registro_rapido.js}"></script>
 </body>
 
 </html>
