@@ -169,7 +169,10 @@ public class ControladorGastoTest {
     ModelAndView resultado = controladorGasto.registrarGasto(gasto, request, redirectAttributes);
 
     assertEquals("redirect:/home", resultado.getViewName());
-    assertEquals("Supermercado", redirectAttributes.getFlashAttributes().get("gastoGuardado"));
+    assertEquals(
+      "Gasto guardado: “Supermercado”",
+      redirectAttributes.getFlashAttributes().get("avisoRegistro")
+    );
     assertNull(redirectAttributes.getFlashAttributes().get("registroRapido"));
     verify(gastoServicio).registrarGasto(gasto, usuario);
   }
@@ -237,7 +240,7 @@ public class ControladorGastoTest {
       redirectAttributes.getFlashAttributes().get("errorRegistro")
     );
     assertEquals(gasto, redirectAttributes.getFlashAttributes().get("registroRapido"));
-    assertNull(redirectAttributes.getFlashAttributes().get("gastoGuardado"));
+    assertNull(redirectAttributes.getFlashAttributes().get("avisoRegistro"));
   }
 
   @Test
@@ -252,6 +255,45 @@ public class ControladorGastoTest {
       redirectAttributes.getFlashAttributes().get("errorRegistro")
     );
     verify(gastoServicio, never()).registrarGasto(any(), any());
+  }
+
+  @Test
+  public void alRegistrarDesdeMisGastosDebeIrAlMesDelGastoConElAviso() {
+    when(request.getParameter("volver")).thenReturn("mis-gastos");
+    gasto.setFecha(LocalDate.of(2026, 8, 30));
+
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request, redirectAttributes);
+
+    assertEquals("redirect:/mostrar-gastos?mes=2026-08", resultado.getViewName());
+    assertEquals(
+      "Gasto guardado: “Supermercado”",
+      redirectAttributes.getFlashAttributes().get("avisoRegistro")
+    );
+  }
+
+  @Test
+  public void conUnErrorDesdeMisGastosDebeVolverAlMesQueSeMirabaYReabrirElRegistro() {
+    when(request.getParameter("volver")).thenReturn("mis-gastos");
+    when(request.getParameter("mes")).thenReturn("2026-07");
+    doThrow(new GastoInvalidoExeption("El importe debe ser mayor a cero"))
+      .when(gastoServicio)
+      .registrarGasto(gasto, usuario);
+
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request, redirectAttributes);
+
+    assertEquals("redirect:/mostrar-gastos?mes=2026-07", resultado.getViewName());
+    assertEquals(gasto, redirectAttributes.getFlashAttributes().get("registroRapido"));
+  }
+
+  @Test
+  public void misGastosDebeTenerLoQueNecesitaElRegistroRapido() {
+    when(gastoServicio.obtenerFechaMinimaPermitida()).thenReturn(LocalDate.of(2025, 9, 1));
+
+    ModelAndView resultado = controladorGasto.mostrarGastos(request);
+
+    assertEquals(List.of(categoria), resultado.getModel().get("categoriasRegistro"));
+    assertEquals(LocalDate.of(2026, 9, 28), resultado.getModel().get("fechaHoy"));
+    assertEquals(LocalDate.of(2025, 9, 1), resultado.getModel().get("fechaMinima"));
   }
 
   @Test

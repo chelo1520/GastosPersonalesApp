@@ -215,6 +215,83 @@ public class ControladorComprobanteTest {
     verify(gastoServicio).alertaDePresupuesto(guardados.getValue(), usuario);
   }
 
+  // Desde el registro rápido (modal del resumen o de Mis gastos)
+
+  @Test
+  public void alConfirmarDesdeElResumenDebeVolverAlResumenConElAvisoDeLosGastosGuardados() {
+    when(request.getParameter("volver")).thenReturn("resumen");
+    ConfirmacionComprobante confirmacion = confirmacionCon(
+      propuesto(6300.0, "Supermercado", 1L, true),
+      propuesto(8000.0, "Peluquería", 1L, true)
+    );
+
+    ModelAndView resultado = controladorComprobante.confirmarComprobante(
+      confirmacion,
+      request,
+      redirectAttributes
+    );
+
+    assertEquals("redirect:/home", resultado.getViewName());
+    assertEquals(
+      "Guardaste 2 gastos del comprobante",
+      redirectAttributes.getFlashAttributes().get("avisoRegistro")
+    );
+  }
+
+  @Test
+  public void alConfirmarUnSoloGastoDesdeMisGastosDebeVolverAMisGastosConElAviso() {
+    when(request.getParameter("volver")).thenReturn("mis-gastos");
+    ConfirmacionComprobante confirmacion = confirmacionCon(
+      propuesto(6300.0, "Supermercado", 1L, true)
+    );
+
+    ModelAndView resultado = controladorComprobante.confirmarComprobante(
+      confirmacion,
+      request,
+      redirectAttributes
+    );
+
+    assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
+    assertEquals(
+      "Guardaste 1 gasto del comprobante",
+      redirectAttributes.getFlashAttributes().get("avisoRegistro")
+    );
+  }
+
+  @Test
+  public void sinOrigenAlConfirmarDebeIrAMisGastosSinAvisoComoAntes() {
+    controladorComprobante.confirmarComprobante(
+      confirmacionCon(propuesto(6300.0, "Supermercado", 1L, true)),
+      request,
+      redirectAttributes
+    );
+
+    assertNull(redirectAttributes.getFlashAttributes().get("avisoRegistro"));
+  }
+
+  @Test
+  public void laRevisionDebeRecordarDesdeDondeSeSubioElComprobante() {
+    when(request.getParameter("volver")).thenReturn("resumen");
+    byte[] png = new byte[] { (byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
+    MockMultipartFile imagen = new MockMultipartFile("imagen", "ticket.png", "image/png", png);
+    when(lectorComprobante.leer(png, "image/png", List.of("Alimentación")))
+      .thenReturn(comprobante(gastoLeido(6300.0, "Leche, pan", "Alimentación")));
+
+    ModelAndView resultado = controladorComprobante.procesarComprobante(imagen, request);
+
+    assertEquals("revisar-comprobante", resultado.getViewName());
+    assertEquals("resumen", resultado.getModel().get("volver"));
+  }
+
+  @Test
+  public void unOrigenDesconocidoNoDebeLlegarALaRevision() {
+    when(request.getParameter("volver")).thenReturn("https://otro-sitio.com");
+
+    ModelAndView resultado = controladorComprobante.mostrarCargaComprobante(request);
+
+    assertNull(resultado.getModel().get("volver"));
+  }
+
   @Test
   public void debeVolverALaRevisionSiNoHayNingunGastoTildado() {
     ConfirmacionComprobante confirmacion = confirmacionCon(

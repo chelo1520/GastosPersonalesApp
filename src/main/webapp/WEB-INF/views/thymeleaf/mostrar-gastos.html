@@ -9,6 +9,8 @@
   <header th:replace="~{fragments/layout :: header-mobile('Mis gastos')}"></header>
 
   <link rel="stylesheet" th:href="@{/css/mis-gastos.css}">
+  <link rel="stylesheet" th:href="@{/css/notificaciones.css}">
+  <link rel="stylesheet" th:href="@{/css/registro-rapido.css}">
 
   <!-- Mis gastos, rediseño v2 (diseno/v2 del coord): mapa de calor del mes, lista agrupada por día y
        panel lateral con total y categorías. Los filtros (día, categoría, texto, orden) los aplica
@@ -31,7 +33,9 @@
       <div class="app-mg-acciones">
         <input type="search" class="app-mg-buscar" id="buscar-gasto" placeholder="Buscar gasto…"
                aria-label="Buscar gasto por descripción o categoría" th:disabled="${mesDeGastos.vacio}">
-        <a class="btn btn-primary app-registrar-link" th:href="@{/registrar-gasto}">+ Registrar gasto</a>
+        <!-- Abre el registro rápido; sin JavaScript sigue siendo el link a la pantalla -->
+        <a class="btn btn-primary app-registrar-link" th:href="@{/registrar-gasto}" id="abrir-registro"
+           data-bs-toggle="modal" data-bs-target="#modal-registro">+ Registrar gasto</a>
       </div>
     </div>
 
@@ -155,6 +159,19 @@
     </a>
   </nav>
 
+  <div th:replace="~{fragments/registro-rapido :: modal('mis-gastos')}"></div>
+
+  <!-- Aviso del registro rápido ("Gasto guardado" o los gastos de un comprobante): se va solo -->
+  <div class="app-notificaciones" th:if="${avisoRegistro != null}">
+    <div class="app-notificacion is-ok" role="status" id="aviso-registro">
+      <span class="app-notificacion-punto" aria-hidden="true"></span>
+      <span class="app-notificacion-texto" th:text="${avisoRegistro}">Gasto guardado: “Café”</span>
+      <button type="button" class="app-notificacion-cerrar" aria-label="Cerrar aviso">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+      </button>
+    </div>
+  </div>
+
   <!-- Pop-up de presupuesto: llega una sola vez, con el gasto que hace cruzar el 80 % o el 100 % del mes -->
   <div class="modal fade" id="modal-alerta-presupuesto" tabindex="-1"
        aria-labelledby="modal-alerta-presupuesto-titulo" aria-hidden="true"
@@ -187,9 +204,9 @@
 
   <script th:replace="~{fragments/layout :: scripts}"></script>
   <script type="module" th:src="@{/js/mis_gastos.js}"></script>
-  <script th:if="${alertaPresupuesto != null}">
-    new bootstrap.Modal(document.getElementById("modal-alerta-presupuesto")).show();
-  </script>
+  <script type="module" th:src="@{/js/notificaciones.js}"></script>
+  <!-- También muestra el pop-up de presupuesto, antes de reabrir el registro si corresponde -->
+  <script type="module" th:src="@{/js/registro_rapido.js}"></script>
 </body>
 
 </html>
