@@ -7,6 +7,8 @@
 
   <link rel="stylesheet" th:href="@{/css/resumen.css}" />
   <link rel="stylesheet" th:href="@{/css/presupuestos.css}" />
+  <link rel="stylesheet" th:href="@{/css/notificaciones.css}" />
+  <link rel="stylesheet" th:href="@{/css/registro-rapido.css}" />
 
   <header th:replace="~{fragments/layout :: navbar('presupuestos')}"></header>
   <header th:replace="~{fragments/layout :: header-mobile('Presupuestos')}"></header>
@@ -29,6 +31,9 @@
           </svg>
         </a>
       </div>
+      <!-- Registro rápido (rediseño v2); sin JavaScript es el link a la pantalla -->
+      <a class="btn btn-primary app-registrar-link" th:href="@{/registrar-gasto}" id="abrir-registro"
+         data-bs-toggle="modal" data-bs-target="#modal-registro">+ Registrar gasto</a>
     </div>
 
     <!-- El pozo del mes (se define en el perfil) y cuánto queda por repartir entre categorías -->
@@ -229,8 +234,13 @@
     </div>
   </div>
 
+  <div th:replace="~{fragments/registro-rapido :: modal('presupuestos', ${mes})}"></div>
+  <th:block th:replace="~{fragments/registro-rapido :: avisos('/presupuestos')}"></th:block>
+
   <script th:src="@{/js/presupuestos.js}" charset="utf-8"></script>
   <script th:replace="~{fragments/layout :: scripts}"></script>
+  <script type="module" th:src="@{/js/notificaciones.js}"></script>
+  <script type="module" th:src="@{/js/registro_rapido.js}"></script>
 </body>
 
 </html>

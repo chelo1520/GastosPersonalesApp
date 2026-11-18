@@ -286,17 +286,6 @@ public class ControladorGastoTest {
   }
 
   @Test
-  public void misGastosDebeTenerLoQueNecesitaElRegistroRapido() {
-    when(gastoServicio.obtenerFechaMinimaPermitida()).thenReturn(LocalDate.of(2025, 9, 1));
-
-    ModelAndView resultado = controladorGasto.mostrarGastos(request);
-
-    assertEquals(List.of(categoria), resultado.getModel().get("categoriasRegistro"));
-    assertEquals(LocalDate.of(2026, 9, 28), resultado.getModel().get("fechaHoy"));
-    assertEquals(LocalDate.of(2025, 9, 1), resultado.getModel().get("fechaMinima"));
-  }
-
-  @Test
   public void conUnVolverDesconocidoDebeComportarseComoLaPantallaRegistrar() {
     when(request.getParameter("volver")).thenReturn("https://otro-sitio.com");
 

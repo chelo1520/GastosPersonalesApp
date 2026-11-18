@@ -2,7 +2,6 @@ package com.tallerwebi.presentacion;
 
 import com.tallerwebi.dominio.NombreDeMes;
 import com.tallerwebi.dominio.Usuario;
-import com.tallerwebi.dominio.categoria.ServicioCategoria;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
@@ -39,23 +38,15 @@ public class ControladorResumen {
   private ServicioResumen servicioResumen;
   private ServicioPresupuesto servicioPresupuesto;
   private GastoServicio gastoServicio;
-  private ServicioCategoria servicioCategoria;
   private Clock reloj;
 
   @Autowired
   public ControladorResumen(
     ServicioResumen servicioResumen,
     ServicioPresupuesto servicioPresupuesto,
-    GastoServicio gastoServicio,
-    ServicioCategoria servicioCategoria
+    GastoServicio gastoServicio
   ) {
-    this(
-      servicioResumen,
-      servicioPresupuesto,
-      gastoServicio,
-      servicioCategoria,
-      Clock.systemDefaultZone()
-    );
+    this(servicioResumen, servicioPresupuesto, gastoServicio, Clock.systemDefaultZone());
   }
 
   // Permite fijar "hoy" en los tests
@@ -63,13 +54,11 @@ public class ControladorResumen {
     ServicioResumen servicioResumen,
     ServicioPresupuesto servicioPresupuesto,
     GastoServicio gastoServicio,
-    ServicioCategoria servicioCategoria,
     Clock reloj
   ) {
     this.servicioResumen = servicioResumen;
     this.servicioPresupuesto = servicioPresupuesto;
     this.gastoServicio = gastoServicio;
-    this.servicioCategoria = servicioCategoria;
     this.reloj = reloj;
   }
 
@@ -134,16 +123,7 @@ public class ControladorResumen {
       "porcentajeMensualUsado",
       presupuestoMensual > 0 ? (resumen.getGastado() * 100) / presupuestoMensual : 0.0
     );
-    agregarRegistroRapido(model);
     return new ModelAndView("resumen", model);
-  }
-
-  // Modal "Registrar gasto" (rediseño v2): las mismas categorías y límites de fecha que la pantalla
-  private void agregarRegistroRapido(Map<String, Object> model) {
-    model.put("categoriasRegistro", servicioCategoria.obtenerTodas());
-    model.put("fechaHoy", LocalDate.now(reloj));
-    model.put("fechaMinima", gastoServicio.obtenerFechaMinimaPermitida());
-    model.put("fechaMaxima", gastoServicio.obtenerFechaMaximaPermitida());
   }
 
   // Los 6 meses que terminan en el mes que se está mirando

@@ -338,4 +338,29 @@ public class PresupuestosVistaTest {
       .perform(get("/home").param("mes", mes).sessionAttr("USUARIO", usuario))
       .andExpect(content().string(containsString("500")));
   }
+
+  // Registro rápido (rediseño v2): el botón abre el modal y al guardar se vuelve a este mes
+  @Test
+  public void debeOfrecerElRegistroRapidoQueVuelveAlMesDePresupuestos() throws Exception {
+    mockMvc
+      .perform(get("/presupuestos").param("mes", "2026-10").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("data-bs-target=\"#modal-registro\"")))
+      .andExpect(content().string(containsString("name=\"volver\" value=\"presupuestos\"")))
+      .andExpect(content().string(containsString("name=\"mes\" value=\"2026-10\"")))
+      .andExpect(content().string(containsString(">Alimentación</option>")));
+
+    mockMvc
+      .perform(
+        post("/registrar-gasto")
+          .sessionAttr("USUARIO", usuario)
+          .param("volver", "presupuestos")
+          .param("mes", "2026-10")
+          .param("importe", "1500")
+          .param("descripcion", "Verdulería")
+          .param("categoria.id", alimentacion.getId().toString())
+          .param("fecha", LocalDate.now().toString())
+      )
+      .andExpect(redirectedUrl("/presupuestos?mes=2026-10"));
+  }
 }

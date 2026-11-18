@@ -83,11 +83,6 @@ public class ControladorGasto {
     model.put("mesMostrado", mes.toString());
     model.put("mesAnterior", mes.minusMonths(1).toString());
     model.put("mesSiguiente", mes.plusMonths(1).toString());
-    // Modal "Registrar gasto" (registro rápido): las mismas categorías y fechas que la pantalla
-    model.put("categoriasRegistro", categoriaRepositorio.obtenerTodas());
-    model.put("fechaHoy", LocalDate.now(reloj));
-    model.put("fechaMinima", gastoServicio.obtenerFechaMinimaPermitida());
-    model.put("fechaMaxima", gastoServicio.obtenerFechaMaximaPermitida());
 
     return new ModelAndView("mostrar-gastos", model);
   }

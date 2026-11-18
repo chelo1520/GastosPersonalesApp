@@ -92,12 +92,9 @@ public class ControladorGuia {
         return "/perfil";
       case 2:
         return "/presupuestos";
-      case 3:
-        return "/registrar-gasto";
       case SIMULACION:
         return "/simulacion";
-      case ASISTENTE:
-        return "/asistente";
+      // Registrar (paso 3) y el análisis (paso 7) se abren desde botones del resumen (rediseño v2)
       default:
         return "/home";
     }

@@ -8,7 +8,6 @@ import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.categoria.Categoria;
-import com.tallerwebi.dominio.categoria.ServicioCategoria;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
 import com.tallerwebi.dominio.presupuesto.ServicioPresupuesto;
@@ -52,13 +51,7 @@ public class ControladorResumenTest {
     servicioPresupuesto = mock(ServicioPresupuesto.class);
     gastoServicio = mock(GastoServicio.class);
     controladorResumen =
-      new ControladorResumen(
-        servicioResumen,
-        servicioPresupuesto,
-        gastoServicio,
-        mock(ServicioCategoria.class),
-        HOY
-      );
+      new ControladorResumen(servicioResumen, servicioPresupuesto, gastoServicio, HOY);
 
     usuario = mock(Usuario.class);
     request = mock(HttpServletRequest.class);

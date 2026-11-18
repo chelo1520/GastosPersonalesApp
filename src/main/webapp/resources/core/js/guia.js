@@ -21,14 +21,17 @@ document.addEventListener("DOMContentLoaded", () => {
       url: guia.dataset.presupuestos,
       foco: "tr:not([hidden]) .app-presupuesto-lapiz",
     },
+    // Rediseño v2: se destaca el botón que abre el registro rápido (está en varias vistas). La pantalla
+    // Registrar y la revisión del comprobante siguen valiendo para no sacar a nadie de ahí
     3: {
-      destino: "#guia-destino-gasto, #guia-destino-comprobante, #guia-destino-lista",
+      destino: "#abrir-registro, #guia-destino-gasto, #guia-destino-comprobante",
       url: guia.dataset.registrar,
       foco: "#importe",
     },
     4: { destino: "#guia-destino-resumen", url: guia.dataset.resumen },
     6: { destino: "#guia-destino-simulacion", url: guia.dataset.simulacion },
-    7: { destino: "#guia-destino-asistente", url: guia.dataset.asistente },
+    // El análisis se abre con "Analizar mis gastos" del resumen; en la vista del análisis también vale
+    7: { destino: "#analizar-gastos, #guia-destino-asistente", url: guia.dataset.asistente },
   };
   const paso = pasos[guia.dataset.paso];
   if (!paso) {

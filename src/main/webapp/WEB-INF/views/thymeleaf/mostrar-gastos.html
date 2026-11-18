@@ -159,7 +159,7 @@
     </a>
   </nav>
 
-  <div th:replace="~{fragments/registro-rapido :: modal('mis-gastos')}"></div>
+  <div th:replace="~{fragments/registro-rapido :: modal('mis-gastos', ${mesMostrado})}"></div>
 
   <!-- Aviso del registro rápido ("Gasto guardado" o los gastos de un comprobante): se va solo -->
   <div class="app-notificaciones" th:if="${avisoRegistro != null}">

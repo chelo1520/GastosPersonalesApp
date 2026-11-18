@@ -22,6 +22,11 @@
   margin-bottom: .5rem;
 }
 
+/* "+ Registrar gasto" (registro rápido) a la derecha del título, como en las demás vistas */
+.app-sim-registrar {
+  margin-left: auto;
+}
+
 .app-sim-badge {
   border: 1.5px solid var(--sim-purple);
   color: var(--sim-purple);
