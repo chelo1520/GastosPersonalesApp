@@ -79,7 +79,9 @@ public class VistaPerfilE2E {
   }
 
   private void cuandoNavegaAlPerfilDesdeElNavbar() {
-    page.locator(".app-cuenta a", new Page.LocatorOptions().setHasText("Perfil")).click();
+    // Perfil está dentro del menú de la cuenta (rediseño v2): primero se despliega
+    page.locator("#menu-cuenta").click();
+    page.locator("#menu-cuenta-perfil").click();
     page.waitForURL("**/perfil**");
     vistaPerfil = new VistaPerfil(page);
   }

@@ -390,4 +390,36 @@ public class ResumenVistaTest {
       .andExpect(status().isOk())
       .andExpect(content().string(not(containsString("id=\"saludo\""))));
   }
+
+  // Menú de la cuenta (rediseño v2): Perfil y Salir juntos bajo el nombre de la persona
+  @Test
+  public void elMenuDeLaCuentaMuestraElNombreCompletoConPerfilYSalir() throws Exception {
+    Usuario usuario = new Usuario();
+    usuario.setEmail("ana@unlam.edu.ar");
+    usuario.setNombre("Ana");
+    usuario.setApellido("Sosa");
+    persistir(usuario);
+
+    mockMvc
+      .perform(get("/home").sessionAttr("USUARIO", usuario))
+      .andExpect(content().string(containsString("id=\"menu-cuenta\"")))
+      .andExpect(content().string(containsString(">AS</span>")))
+      .andExpect(content().string(containsString(">Ana Sosa</span>")))
+      .andExpect(content().string(containsString(">ana@unlam.edu.ar</small>")))
+      .andExpect(content().string(containsString("id=\"menu-cuenta-perfil\"")))
+      .andExpect(content().string(containsString("action=\"/logout\"")));
+  }
+
+  @Test
+  public void sinNombreElMenuDeLaCuentaMuestraElEmail() throws Exception {
+    Usuario usuario = new Usuario();
+    usuario.setEmail("sin-nombre@unlam.edu.ar");
+    persistir(usuario);
+
+    mockMvc
+      .perform(get("/home").sessionAttr("USUARIO", usuario))
+      .andExpect(content().string(containsString(">sin-nombre@unlam.edu.ar</span>")))
+      .andExpect(content().string(containsString(">S</span>")))
+      .andExpect(content().string(not(containsString("<small>sin-nombre@unlam.edu.ar</small>"))));
+  }
 }
