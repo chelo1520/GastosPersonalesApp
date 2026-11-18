@@ -6,8 +6,6 @@
 <body>
 
 <link rel="stylesheet" th:href="@{/css/simulacion.css}" />
-<link rel="stylesheet" th:href="@{/css/notificaciones.css}" />
-<link rel="stylesheet" th:href="@{/css/registro-rapido.css}" />
 
 <header th:replace="~{fragments/layout :: navbar('simulacion')}"></header>
 <header th:replace="~{fragments/layout :: header-mobile('Simulación')}"></header>
@@ -16,9 +14,6 @@
   <div th:replace="~{fragments/guia :: recorrido}"></div>
     <div class="app-sim-titulo" id="guia-destino-simulacion">
         <h1 class="h3 fw-bold mb-0">Simulación · <span th:text="${mesSimuladoNombre}">Noviembre 2026</span></h1>
-        <!-- Registro rápido (rediseño v2); sin JavaScript es el link a la pantalla -->
-        <a class="btn btn-primary app-registrar-link app-sim-registrar" th:href="@{/registrar-gasto}" id="abrir-registro"
-           data-bs-toggle="modal" data-bs-target="#modal-registro">+ Registrar gasto</a>
     </div>
 
     <form id="sim-periodos" class="app-sim-periodos" method="get" th:action="@{/simulacion}" th:data-mes-actual="${mesActual}">
@@ -161,13 +156,8 @@
     </div>
 </main>
 
-<div th:replace="~{fragments/registro-rapido :: modal('simulacion', null)}"></div>
-<th:block th:replace="~{fragments/registro-rapido :: avisos('/simulacion')}"></th:block>
-
 <script th:src="@{/js/simulacion.js}" charset="utf-8"></script>
 <script th:replace="~{fragments/layout :: scripts}"></script>
-<script type="module" th:src="@{/js/notificaciones.js}"></script>
-<script type="module" th:src="@{/js/registro_rapido.js}"></script>
 </body>
 
 </html>

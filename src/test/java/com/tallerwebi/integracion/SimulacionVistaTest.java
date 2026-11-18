@@ -478,17 +478,16 @@ public class SimulacionVistaTest {
     return com.tallerwebi.dominio.NombreDeMes.de(mes);
   }
 
-  // Registro rápido (rediseño v2): el botón abre el modal; se vuelve a la simulación sin mes
+  // Rediseño v2: la simulación no tiene "+ Registrar gasto" (se decidió que agregaba ruido)
   @Test
-  void ofreceElRegistroRapidoQueVuelveALaSimulacion() throws Exception {
+  void noOfreceElRegistroRapido() throws Exception {
     MockHttpSession sesion = new MockHttpSession();
     sesion.setAttribute("USUARIO", usuario);
 
     mockMvc
       .perform(get("/simulacion").session(sesion))
       .andExpect(status().isOk())
-      .andExpect(content().string(containsString("data-bs-target=\"#modal-registro\"")))
-      .andExpect(content().string(containsString("name=\"volver\" value=\"simulacion\"")))
-      .andExpect(content().string(not(containsString("name=\"mes\""))));
+      .andExpect(content().string(not(containsString("id=\"modal-registro\""))))
+      .andExpect(content().string(not(containsString("+ Registrar gasto"))));
   }
 }
