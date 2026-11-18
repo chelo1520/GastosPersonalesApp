@@ -40,7 +40,8 @@ function actualizarMascota() {
   }
 }
 
-// Cada cambio de "pulse" hace saltar a la mascota: al entrar, al pasar al formulario, con cada tecla y al enviar
+// Cada cambio de "pulse" hace saltar a la mascota: al entrar, al pasar al formulario, con un error y al enviar.
+// Con cada tecla no: al escribir rápido parecía que la mascota saltaba sin parar
 function saltar() {
   pulso += 1;
   if (mascotaNode) {
@@ -93,7 +94,6 @@ window.addEventListener("keydown", (evento) => {
 function tecla() {
   estado.email = inputEmailNode.value;
   limpiarError();
-  saltar();
   actualizarMascota();
 }
 
