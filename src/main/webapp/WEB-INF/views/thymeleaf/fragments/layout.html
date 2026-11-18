@@ -43,19 +43,19 @@
       <a th:href="@{/simulacion}" th:aria-current="${activo == 'simulacion'} ? 'page'">Simulación</a>
     </nav>
 
-    <!-- Menú de la cuenta (rediseño v2): Perfil y Salir juntos, bajo el nombre de la persona (o su email
-         si no cargó nombre). Es un dropdown de Bootstrap; Salir sigue yendo por POST con confirmación -->
+    <!-- Menú de la cuenta (rediseño v2): Perfil y Salir juntos, bajo el nombre de la persona, sin apellido
+         (o su email si no cargó nombre). Es un dropdown de Bootstrap; Salir sigue yendo por POST con confirmación -->
     <div class="app-cuenta ms-auto dropdown" th:if="${session.USUARIO != null}"
          th:with="cuenta=${T(com.tallerwebi.presentacion.CuentaDelMenu).de(session.USUARIO)}">
       <button type="button" class="app-cuenta-boton" id="menu-cuenta" data-bs-toggle="dropdown"
               aria-expanded="false" th:classappend="${activo == 'perfil'} ? 'is-activo'">
-        <span class="app-cuenta-avatar" aria-hidden="true" th:text="${cuenta.iniciales}">AP</span>
-        <span class="app-cuenta-nombre" th:text="${cuenta.nombre}">Ana Pérez</span>
+        <span class="app-cuenta-avatar" aria-hidden="true" th:text="${cuenta.inicial}">A</span>
+        <span class="app-cuenta-nombre" th:text="${cuenta.nombre}">Ana</span>
         <svg class="app-cuenta-flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
       </button>
       <div class="dropdown-menu dropdown-menu-end app-cuenta-menu" aria-labelledby="menu-cuenta">
         <div class="app-cuenta-encabezado">
-          <strong th:text="${cuenta.nombre}">Ana Pérez</strong>
+          <strong th:text="${cuenta.nombre}">Ana</strong>
           <small th:if="${cuenta.nombre != cuenta.email}" th:text="${cuenta.email}">ana@unlam.edu.ar</small>
         </div>
         <a class="dropdown-item app-cuenta-item" th:href="@{/perfil}" id="menu-cuenta-perfil"

@@ -4,8 +4,9 @@ import com.tallerwebi.dominio.Usuario;
 import java.util.Locale;
 
 /**
- * Lo que muestra el menú de la cuenta del navbar (rediseño v2): "Nombre Apellido" con sus iniciales
- * en un círculo. Nombre y apellido son opcionales en el perfil: sin ellos se usa el email.
+ * Lo que muestra el menú de la cuenta del navbar (rediseño v2): el nombre de la persona con su inicial
+ * en un círculo (sin apellido, para simplificar). El nombre es opcional en el perfil: sin él se usa
+ * el email.
  */
 public final class CuentaDelMenu {
 
@@ -13,31 +14,27 @@ public final class CuentaDelMenu {
 
   private final String nombre;
   private final String email;
-  private final String iniciales;
+  private final String inicial;
 
-  private CuentaDelMenu(String nombre, String email, String iniciales) {
+  private CuentaDelMenu(String nombre, String email, String inicial) {
     this.nombre = nombre;
     this.email = email;
-    this.iniciales = iniciales;
+    this.inicial = inicial;
   }
 
   // La usa el navbar con el usuario de la sesión: T(...CuentaDelMenu).de(session.USUARIO)
   public static CuentaDelMenu de(Usuario usuario) {
     String email = usuario.getEmail() == null ? "" : usuario.getEmail();
     String nombre = textoOVacio(usuario.getNombre());
-    String apellido = textoOVacio(usuario.getApellido());
-    String completo = (nombre + " " + apellido).trim();
-    if (completo.isEmpty()) {
-      return new CuentaDelMenu(email, email, inicial(email));
-    }
-    return new CuentaDelMenu(completo, email, inicial(nombre) + inicial(apellido));
+    String visible = nombre.isEmpty() ? email : nombre;
+    return new CuentaDelMenu(visible, email, primeraLetra(visible));
   }
 
   private static String textoOVacio(String texto) {
     return texto == null ? "" : texto.trim();
   }
 
-  private static String inicial(String texto) {
+  private static String primeraLetra(String texto) {
     if (texto.isEmpty()) {
       return "";
     }
@@ -52,7 +49,7 @@ public final class CuentaDelMenu {
     return email;
   }
 
-  public String getIniciales() {
-    return iniciales.isEmpty() ? SIN_DATOS : iniciales;
+  public String getInicial() {
+    return inicial.isEmpty() ? SIN_DATOS : inicial;
   }
 }

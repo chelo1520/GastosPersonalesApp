@@ -8,28 +8,28 @@ import org.junit.jupiter.api.Test;
 public class CuentaDelMenuTest {
 
   @Test
-  public void conNombreYApellidoMuestraElNombreCompletoYSusIniciales() {
-    CuentaDelMenu cuenta = CuentaDelMenu.de(usuario("Ana", " Pérez ", "ana@unlam.edu.ar"));
+  public void conNombreYApellidoMuestraSoloElNombreYSuInicial() {
+    CuentaDelMenu cuenta = CuentaDelMenu.de(usuario(" Ana ", "Pérez", "ana@unlam.edu.ar"));
 
-    assertEquals("Ana Pérez", cuenta.getNombre());
-    assertEquals("AP", cuenta.getIniciales());
+    assertEquals("Ana", cuenta.getNombre());
+    assertEquals("A", cuenta.getInicial());
     assertEquals("ana@unlam.edu.ar", cuenta.getEmail());
   }
 
   @Test
-  public void soloConNombreUsaUnaInicial() {
+  public void soloConNombreTambienMuestraElNombre() {
     CuentaDelMenu cuenta = CuentaDelMenu.de(usuario("Luis", null, "luis@unlam.edu.ar"));
 
     assertEquals("Luis", cuenta.getNombre());
-    assertEquals("L", cuenta.getIniciales());
+    assertEquals("L", cuenta.getInicial());
   }
 
   @Test
-  public void sinNombreNiApellidoUsaElEmail() {
-    CuentaDelMenu cuenta = CuentaDelMenu.de(usuario("  ", "", "test@unlam.edu.ar"));
+  public void sinNombreUsaElEmailAunqueTengaApellido() {
+    CuentaDelMenu cuenta = CuentaDelMenu.de(usuario("  ", "Pérez", "test@unlam.edu.ar"));
 
     assertEquals("test@unlam.edu.ar", cuenta.getNombre());
-    assertEquals("T", cuenta.getIniciales());
+    assertEquals("T", cuenta.getInicial());
   }
 
   @Test
@@ -37,7 +37,7 @@ public class CuentaDelMenuTest {
     CuentaDelMenu cuenta = CuentaDelMenu.de(usuario(null, null, null));
 
     assertEquals("", cuenta.getNombre());
-    assertEquals("?", cuenta.getIniciales());
+    assertEquals("?", cuenta.getInicial());
   }
 
   private Usuario usuario(String nombre, String apellido, String email) {
