@@ -138,6 +138,11 @@
   border-top: 1px solid #f0ede6;
 }
 
+/* El motivo por el que no se pudo usar el comprobante, arriba de la zona para subir otro */
+.app-registro-comprobante .app-registro-error {
+  flex-basis: 100%;
+}
+
 .app-registro-subir {
   display: flex;
   flex: 1;

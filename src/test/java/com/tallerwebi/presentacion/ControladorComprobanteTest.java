@@ -101,7 +101,11 @@ public class ControladorComprobanteTest {
       new byte[] { 1, 2, 3, 4 }
     );
 
-    ModelAndView resultado = controladorComprobante.procesarComprobante(imagen, request);
+    ModelAndView resultado = controladorComprobante.procesarComprobante(
+      imagen,
+      request,
+      redirectAttributes
+    );
 
     assertEquals("cargar-comprobante", resultado.getViewName());
     assertEquals(
@@ -123,7 +127,11 @@ public class ControladorComprobanteTest {
     when(lectorComprobante.leer(pdf, "application/pdf", List.of("Alimentación")))
       .thenReturn(datosDeEjemplo());
 
-    ModelAndView resultado = controladorComprobante.procesarComprobante(archivo, request);
+    ModelAndView resultado = controladorComprobante.procesarComprobante(
+      archivo,
+      request,
+      redirectAttributes
+    );
 
     assertEquals("revisar-comprobante", resultado.getViewName());
   }
@@ -138,7 +146,11 @@ public class ControladorComprobanteTest {
       contenido
     );
 
-    ModelAndView resultado = controladorComprobante.procesarComprobante(imagen, request);
+    ModelAndView resultado = controladorComprobante.procesarComprobante(
+      imagen,
+      request,
+      redirectAttributes
+    );
 
     assertEquals("cargar-comprobante", resultado.getViewName());
     assertEquals("El archivo supera los 5 MB. Elegí otro.", resultado.getModel().get("error"));
@@ -163,7 +175,11 @@ public class ControladorComprobanteTest {
         )
       );
 
-    ModelAndView resultado = controladorComprobante.procesarComprobante(imagen, request);
+    ModelAndView resultado = controladorComprobante.procesarComprobante(
+      imagen,
+      request,
+      redirectAttributes
+    );
 
     assertEquals("revisar-comprobante", resultado.getViewName());
     ConfirmacionComprobante confirmacion = confirmacionDe(resultado);
@@ -190,7 +206,7 @@ public class ControladorComprobanteTest {
       );
 
     ConfirmacionComprobante confirmacion = confirmacionDe(
-      controladorComprobante.procesarComprobante(imagen, request)
+      controladorComprobante.procesarComprobante(imagen, request, redirectAttributes)
     );
 
     assertEquals(2, confirmacion.getGastos().size());
@@ -290,7 +306,11 @@ public class ControladorComprobanteTest {
     when(lectorComprobante.leer(png, "image/png", List.of("Alimentación")))
       .thenReturn(comprobante(gastoLeido(6300.0, "Leche, pan", "Alimentación")));
 
-    ModelAndView resultado = controladorComprobante.procesarComprobante(imagen, request);
+    ModelAndView resultado = controladorComprobante.procesarComprobante(
+      imagen,
+      request,
+      redirectAttributes
+    );
 
     assertEquals("revisar-comprobante", resultado.getViewName());
     assertEquals("resumen", resultado.getModel().get("volver"));
@@ -372,7 +392,11 @@ public class ControladorComprobanteTest {
     when(lectorComprobante.leer(jpg, "image/jpeg", List.of("Alimentación")))
       .thenReturn(comprobante(gastoLeido(12500.0, null, "Categoría inventada")));
 
-    ModelAndView resultado = controladorComprobante.procesarComprobante(imagen, request);
+    ModelAndView resultado = controladorComprobante.procesarComprobante(
+      imagen,
+      request,
+      redirectAttributes
+    );
 
     GastoPropuesto propuesto = confirmacionDe(resultado).getGastos().get(0);
     assertNull(propuesto.getCategoriaId());
@@ -386,7 +410,11 @@ public class ControladorComprobanteTest {
     when(lectorComprobante.leer(png, "image/png", List.of("Alimentación")))
       .thenThrow(new ComprobanteNoLegible());
 
-    ModelAndView resultado = controladorComprobante.procesarComprobante(imagen, request);
+    ModelAndView resultado = controladorComprobante.procesarComprobante(
+      imagen,
+      request,
+      redirectAttributes
+    );
 
     assertEquals("cargar-comprobante", resultado.getViewName());
     assertTrue(((String) resultado.getModel().get("error")).contains("cargá el gasto a mano"));
@@ -399,7 +427,11 @@ public class ControladorComprobanteTest {
     when(lectorComprobante.leer(png, "image/png", List.of("Alimentación")))
       .thenThrow(new LectorComprobanteNoDisponible());
 
-    ModelAndView resultado = controladorComprobante.procesarComprobante(imagen, request);
+    ModelAndView resultado = controladorComprobante.procesarComprobante(
+      imagen,
+      request,
+      redirectAttributes
+    );
 
     assertEquals("cargar-comprobante", resultado.getViewName());
     assertTrue(((String) resultado.getModel().get("error")).contains("cargar el gasto a mano"));
@@ -414,7 +446,11 @@ public class ControladorComprobanteTest {
     when(lectorComprobante.leer(png, "image/png", List.of("Alimentación")))
       .thenReturn(datosDeEjemplo());
 
-    ModelAndView resultado = controladorComprobante.procesarComprobante(imagen, request);
+    ModelAndView resultado = controladorComprobante.procesarComprobante(
+      imagen,
+      request,
+      redirectAttributes
+    );
 
     ArgumentCaptor<ArchivoComprobante> archivo = ArgumentCaptor.forClass(ArchivoComprobante.class);
     verify(session).setAttribute(eq("comprobantePendiente"), archivo.capture());
@@ -430,7 +466,11 @@ public class ControladorComprobanteTest {
       .when(servicioComprobante)
       .verificarQueNoEsteCargado(any(), eq(usuario));
 
-    ModelAndView resultado = controladorComprobante.procesarComprobante(imagen, request);
+    ModelAndView resultado = controladorComprobante.procesarComprobante(
+      imagen,
+      request,
+      redirectAttributes
+    );
 
     assertEquals("cargar-comprobante", resultado.getViewName());
     assertTrue(
@@ -493,6 +533,52 @@ public class ControladorComprobanteTest {
     assertEquals("cargar-comprobante", resultado.getViewName());
     assertTrue(((String) resultado.getModel().get("error")).contains("(1 gasto)"));
     verify(session).removeAttribute("comprobantePendiente");
+  }
+
+  @Test
+  public void desdeElModalUnComprobanteRepetidoDebeVolverAlModalConElMotivo() {
+    when(request.getParameter("volver")).thenReturn("resumen");
+    byte[] png = new byte[] { (byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
+    MockMultipartFile imagen = new MockMultipartFile("imagen", "ticket.png", "image/png", png);
+    doThrow(new ComprobanteYaCargado(LocalDate.of(2026, 11, 12), 1))
+      .when(servicioComprobante)
+      .verificarQueNoEsteCargado(any(), eq(usuario));
+
+    ModelAndView resultado = controladorComprobante.procesarComprobante(
+      imagen,
+      request,
+      redirectAttributes
+    );
+
+    assertEquals("redirect:/home", resultado.getViewName());
+    assertTrue(
+      ((String) redirectAttributes.getFlashAttributes().get("errorComprobante")).startsWith(
+          "Este comprobante ya lo cargaste el 12/11/2026 (1 gasto)."
+        )
+    );
+  }
+
+  @Test
+  public void desdeElModalUnArchivoInvalidoDebeVolverAlModalDeMisGastos() {
+    when(request.getParameter("volver")).thenReturn("mis-gastos");
+    MockMultipartFile gif = new MockMultipartFile(
+      "imagen",
+      "comprobante.gif",
+      "image/gif",
+      new byte[] { 1, 2, 3, 4 }
+    );
+
+    ModelAndView resultado = controladorComprobante.procesarComprobante(
+      gif,
+      request,
+      redirectAttributes
+    );
+
+    assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
+    assertEquals(
+      "El archivo debe ser JPG, PNG o PDF de hasta 5 MB.",
+      redirectAttributes.getFlashAttributes().get("errorComprobante")
+    );
   }
 
   // Ver el archivo

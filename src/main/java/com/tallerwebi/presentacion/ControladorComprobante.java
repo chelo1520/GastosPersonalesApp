@@ -82,7 +82,8 @@ public class ControladorComprobante {
   @RequestMapping(path = RUTA_COMPROBANTE, method = RequestMethod.POST)
   public ModelAndView procesarComprobante(
     @RequestParam(value = "imagen", required = false) MultipartFile imagen,
-    HttpServletRequest request
+    HttpServletRequest request,
+    RedirectAttributes redirectAttributes
   ) {
     Usuario usuario = SesionUsuario.obtener(request);
     if (usuario == null) {
@@ -91,27 +92,33 @@ public class ControladorComprobante {
     // Si se subió desde el modal de registro rápido, la revisión vuelve después a esa vista
     OrigenDelRegistro origen = origen(request);
     if (imagen == null || imagen.isEmpty()) {
-      return vistaCargaComprobante(
+      return errorDeCarga(
         "Elegí un archivo " + FORMATOS_ACEPTADOS + " para continuar.",
-        origen
+        origen,
+        redirectAttributes
       );
     }
     if (imagen.getSize() > MAX_IMAGEN_BYTES) {
-      return vistaCargaComprobante("El archivo supera los 5 MB. Elegí otro.", origen);
+      return errorDeCarga("El archivo supera los 5 MB. Elegí otro.", origen, redirectAttributes);
     }
 
     byte[] contenido;
     try {
       contenido = imagen.getBytes();
     } catch (IOException e) {
-      return vistaCargaComprobante("No se pudo leer el archivo. Elegí otra imagen.", origen);
+      return errorDeCarga(
+        "No se pudo leer el archivo. Elegí otra imagen.",
+        origen,
+        redirectAttributes
+      );
     }
 
     String tipoArchivo = detectarTipoArchivo(contenido);
     if (tipoArchivo == null) {
-      return vistaCargaComprobante(
+      return errorDeCarga(
         "El archivo debe ser " + FORMATOS_ACEPTADOS + " de hasta 5 MB.",
-        origen
+        origen,
+        redirectAttributes
       );
     }
 
@@ -127,7 +134,7 @@ public class ControladorComprobante {
       request.getSession().setAttribute(CLAVE_ARCHIVO_PENDIENTE, archivo);
       return vistaRevision(confirmacion, null, origen);
     } catch (ComprobanteYaCargado | ComprobanteNoLegible | LectorComprobanteNoDisponible e) {
-      return vistaCargaComprobante(e.getMessage(), origen);
+      return errorDeCarga(e.getMessage(), origen, redirectAttributes);
     }
   }
 
@@ -157,7 +164,7 @@ public class ControladorComprobante {
       return vistaRevision(confirmacion, e.getMessage(), origen);
     } catch (ComprobanteYaCargado e) {
       olvidarArchivoPendiente(request);
-      return vistaCargaComprobante(e.getMessage(), origen);
+      return errorDeCarga(e.getMessage(), origen, redirectAttributes);
     }
     olvidarArchivoPendiente(request);
 
@@ -249,6 +256,20 @@ public class ControladorComprobante {
       throw new GastoInvalidoExeption("Elegí al menos un gasto para guardar.");
     }
     return gastos;
+  }
+
+  // Desde el modal de registro rápido el error se muestra en el mismo modal, de vuelta en la vista
+  // donde se abrió; sin origen, en la pantalla de carga de siempre
+  private ModelAndView errorDeCarga(
+    String error,
+    OrigenDelRegistro origen,
+    RedirectAttributes redirectAttributes
+  ) {
+    if (origen == null) {
+      return vistaCargaComprobante(error, null);
+    }
+    redirectAttributes.addFlashAttribute("errorComprobante", error);
+    return new ModelAndView(origen.redireccion(null, null));
   }
 
   private ModelAndView vistaCargaComprobante(String error, OrigenDelRegistro origen) {

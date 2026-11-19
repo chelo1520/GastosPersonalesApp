@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.comprobante.ArchivoComprobante;
+import com.tallerwebi.dominio.comprobante.Comprobante;
 import com.tallerwebi.dominio.comprobante.ConfianzaComprobante;
 import com.tallerwebi.dominio.comprobante.DatosComprobante;
 import com.tallerwebi.dominio.comprobante.GastoDelComprobante;
@@ -237,6 +238,43 @@ public class ComprobanteVistaTest {
       .perform(multipart("/registrar-gasto/comprobante").file(imagen).session(sesion))
       .andExpect(status().isOk())
       .andExpect(content().string(containsString("Este comprobante ya lo cargaste el")));
+  }
+
+  @Test
+  public void desdeElModalDelResumenUnComprobanteRepetidoReabreElModalConElMotivo()
+    throws Exception {
+    byte[] png = new byte[] { (byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x43 };
+    Comprobante anterior = new Comprobante(
+      usuario,
+      ArchivoComprobante.de(png, "image/png").huella(),
+      "image/png",
+      java.time.LocalDateTime.of(2026, 11, 12, 9, 0)
+    );
+    sessionFactory.getCurrentSession().persist(anterior);
+    Gasto gasto = new Gasto(6300.0, LocalDate.now(), "Supermercado");
+    gasto.setUsuario(usuario);
+    gasto.setCategoria(categoria);
+    gasto.setComprobante(anterior);
+    sessionFactory.getCurrentSession().persist(gasto);
+    MockMultipartFile imagen = new MockMultipartFile("imagen", "ticket.png", "image/png", png);
+
+    var flash = mockMvc
+      .perform(
+        multipart("/registrar-gasto/comprobante")
+          .file(imagen)
+          .param("volver", "resumen")
+          .sessionAttr("USUARIO", usuario)
+      )
+      .andExpect(redirectedUrl("/home"))
+      .andReturn()
+      .getFlashMap();
+
+    mockMvc
+      .perform(get("/home").sessionAttr("USUARIO", usuario).flashAttrs(flash))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("data-abrir=\"true\"")))
+      .andExpect(content().string(containsString("id=\"registro-error-comprobante\"")))
+      .andExpect(content().string(containsString("ya lo cargaste el 12/11/2026 (1 gasto)")));
   }
 
   private GastoDelComprobante gastoLeido(Double importe, String detalle, String categoria) {
