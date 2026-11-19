@@ -4,14 +4,18 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.categoria.CategoriaRepositorio;
+import com.tallerwebi.dominio.comprobante.ArchivoComprobante;
 import com.tallerwebi.dominio.comprobante.ComprobanteNoLegible;
+import com.tallerwebi.dominio.comprobante.ComprobanteYaCargado;
 import com.tallerwebi.dominio.comprobante.DatosComprobante;
 import com.tallerwebi.dominio.comprobante.LectorComprobante;
 import com.tallerwebi.dominio.comprobante.LectorComprobanteNoDisponible;
+import com.tallerwebi.dominio.comprobante.ServicioComprobante;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,20 +47,25 @@ public class ControladorComprobante {
   private static final byte[] FIRMA_PDF = { 0x25, 0x50, 0x44, 0x46 };
   private static final String FORMATOS_ACEPTADOS = "JPG, PNG o PDF";
   private static final long MAX_IMAGEN_BYTES = 5L * 1024 * 1024;
+  // El archivo leído espera en la sesión hasta que se confirma la revisión
+  static final String CLAVE_ARCHIVO_PENDIENTE = "comprobantePendiente";
 
   private final GastoServicio gastoServicio;
   private final CategoriaRepositorio categoriaRepositorio;
   private final LectorComprobante lectorComprobante;
+  private final ServicioComprobante servicioComprobante;
 
   @Autowired
   public ControladorComprobante(
     GastoServicio gastoServicio,
     CategoriaRepositorio categoriaRepositorio,
-    LectorComprobante lectorComprobante
+    LectorComprobante lectorComprobante,
+    ServicioComprobante servicioComprobante
   ) {
     this.gastoServicio = gastoServicio;
     this.categoriaRepositorio = categoriaRepositorio;
     this.lectorComprobante = lectorComprobante;
+    this.servicioComprobante = servicioComprobante;
   }
 
   @RequestMapping(path = RUTA_COMPROBANTE, method = RequestMethod.GET)
@@ -72,7 +81,8 @@ public class ControladorComprobante {
     @RequestParam(value = "imagen", required = false) MultipartFile imagen,
     HttpServletRequest request
   ) {
-    if (SesionUsuario.obtener(request) == null) {
+    Usuario usuario = SesionUsuario.obtener(request);
+    if (usuario == null) {
       return new ModelAndView(REDIRECT_LOGIN);
     }
     // Si se subió desde el modal de registro rápido, la revisión vuelve después a esa vista
@@ -102,12 +112,18 @@ public class ControladorComprobante {
       );
     }
 
+    // Antes de leerlo: si ya se cargó, ni se manda a Claude
+    ArchivoComprobante archivo = ArchivoComprobante.de(contenido, tipoArchivo);
     try {
+      servicioComprobante.verificarQueNoEsteCargado(archivo, usuario);
       List<Categoria> categorias = categoriaRepositorio.obtenerTodas();
       List<String> nombresCategorias = categorias.stream().map(Categoria::getNombre).toList();
       DatosComprobante datos = lectorComprobante.leer(contenido, tipoArchivo, nombresCategorias);
-      return vistaRevision(ConfirmacionComprobante.de(datos, categorias), null, origen);
-    } catch (ComprobanteNoLegible | LectorComprobanteNoDisponible e) {
+      ConfirmacionComprobante confirmacion = ConfirmacionComprobante.de(datos, categorias);
+      confirmacion.setHuella(archivo.huella());
+      request.getSession().setAttribute(CLAVE_ARCHIVO_PENDIENTE, archivo);
+      return vistaRevision(confirmacion, null, origen);
+    } catch (ComprobanteYaCargado | ComprobanteNoLegible | LectorComprobanteNoDisponible e) {
       return vistaCargaComprobante(e.getMessage(), origen);
     }
   }
@@ -126,12 +142,21 @@ public class ControladorComprobante {
 
     OrigenDelRegistro origen = origen(request);
     List<Gasto> gastos;
+    ArchivoComprobante archivo = archivoPendiente(request, confirmacion.getHuella());
     try {
       gastos = gastosElegidos(confirmacion);
-      gastoServicio.registrarGastos(gastos, usuario);
+      if (archivo == null) {
+        gastoServicio.registrarGastos(gastos, usuario);
+      } else {
+        servicioComprobante.registrarGastos(gastos, archivo, usuario);
+      }
     } catch (GastoInvalidoExeption e) {
       return vistaRevision(confirmacion, e.getMessage(), origen);
+    } catch (ComprobanteYaCargado e) {
+      olvidarArchivoPendiente(request);
+      return vistaCargaComprobante(e.getMessage(), origen);
     }
+    olvidarArchivoPendiente(request);
 
     // Sin alerta de repetición: los gastos de un mismo comprobante se dispararían entre sí
     Alerta alertaPresupuesto = gastoServicio.alertaDePresupuesto(gastos, usuario);
@@ -150,6 +175,27 @@ public class ControladorComprobante {
     return cantidad == 1
       ? "Guardaste 1 gasto del comprobante"
       : "Guardaste " + cantidad + " gastos del comprobante";
+  }
+
+  // El archivo que se leyó para esta revisión. Null si la sesión ya no lo tiene o si es de otra
+  // revisión (por ejemplo, se subió otro comprobante en otra pestaña): los gastos se guardan sin él
+  private static ArchivoComprobante archivoPendiente(HttpServletRequest request, String huella) {
+    HttpSession sesion = request.getSession(false);
+    if (sesion == null || huella == null) {
+      return null;
+    }
+    Object pendiente = sesion.getAttribute(CLAVE_ARCHIVO_PENDIENTE);
+    if (pendiente instanceof ArchivoComprobante archivo && huella.equals(archivo.huella())) {
+      return archivo;
+    }
+    return null;
+  }
+
+  private static void olvidarArchivoPendiente(HttpServletRequest request) {
+    HttpSession sesion = request.getSession(false);
+    if (sesion != null) {
+      sesion.removeAttribute(CLAVE_ARCHIVO_PENDIENTE);
+    }
   }
 
   private static OrigenDelRegistro origen(HttpServletRequest request) {

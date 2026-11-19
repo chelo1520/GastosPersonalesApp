@@ -74,6 +74,8 @@ public class RepositorioUsuarioImpl implements RepositorioUsuario {
     // Primero lo que apunta al usuario, para no romper las claves foráneas
     for (String entidad : List.of(
       "Gasto",
+      // Después de los gastos, que lo referencian
+      "Comprobante",
       "Presupuesto",
       "PresupuestoTotal",
       "SimulacionGuardada",

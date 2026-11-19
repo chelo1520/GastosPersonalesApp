@@ -3,6 +3,7 @@ package com.tallerwebi.integracion;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -13,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.categoria.Categoria;
+import com.tallerwebi.dominio.comprobante.ArchivoComprobante;
 import com.tallerwebi.dominio.comprobante.ConfianzaComprobante;
 import com.tallerwebi.dominio.comprobante.DatosComprobante;
 import com.tallerwebi.dominio.comprobante.GastoDelComprobante;
@@ -27,6 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
@@ -187,6 +190,53 @@ public class ComprobanteVistaTest {
     assertEquals(1, guardados.size());
     assertEquals(6300.0, guardados.get(0).getImporte());
     assertEquals("Alimentación", guardados.get(0).getCategoria().getNombre());
+  }
+
+  @Test
+  public void elMismoComprobanteNoSePuedeCargarDosVeces() throws Exception {
+    byte[] png = new byte[] { (byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x42 };
+    when(lectorComprobante.leer(png, "image/png", List.of("Alimentación")))
+      .thenReturn(
+        new DatosComprobante(
+          "Compra",
+          "ticket",
+          6300.0,
+          List.of(gastoLeido(6300.0, "Leche, pan", "Alimentación"))
+        )
+      );
+    MockMultipartFile imagen = new MockMultipartFile("imagen", "ticket.png", "image/png", png);
+    MockHttpSession sesion = new MockHttpSession();
+    sesion.setAttribute("USUARIO", usuario);
+    String huella = ArchivoComprobante.de(png, "image/png").huella();
+
+    mockMvc
+      .perform(multipart("/registrar-gasto/comprobante").file(imagen).session(sesion))
+      .andExpect(content().string(containsString("value=\"" + huella + "\"")));
+    mockMvc
+      .perform(
+        post("/registrar-gasto/comprobante/confirmar")
+          .session(sesion)
+          .param("huella", huella)
+          .param("gastos[0].incluir", "true")
+          .param("gastos[0].importe", "6300")
+          .param("gastos[0].fecha", LocalDate.now().toString())
+          .param("gastos[0].descripcion", "Supermercado")
+          .param("gastos[0].categoriaId", categoria.getId().toString())
+      )
+      .andExpect(redirectedUrl("/mostrar-gastos"));
+
+    Gasto guardado = sessionFactory
+      .getCurrentSession()
+      .createQuery("from Gasto g where g.usuario = :usuario", Gasto.class)
+      .setParameter("usuario", usuario)
+      .getSingleResult();
+    assertNotNull(guardado.getComprobante());
+    assertEquals(huella, guardado.getComprobante().getHuella());
+
+    mockMvc
+      .perform(multipart("/registrar-gasto/comprobante").file(imagen).session(sesion))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("Este comprobante ya lo cargaste el")));
   }
 
   private GastoDelComprobante gastoLeido(Double importe, String detalle, String categoria) {

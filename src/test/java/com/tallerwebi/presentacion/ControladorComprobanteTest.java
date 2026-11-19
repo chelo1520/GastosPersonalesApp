@@ -6,12 +6,15 @@ import static org.mockito.Mockito.*;
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.categoria.CategoriaRepositorio;
+import com.tallerwebi.dominio.comprobante.ArchivoComprobante;
 import com.tallerwebi.dominio.comprobante.ComprobanteNoLegible;
+import com.tallerwebi.dominio.comprobante.ComprobanteYaCargado;
 import com.tallerwebi.dominio.comprobante.ConfianzaComprobante;
 import com.tallerwebi.dominio.comprobante.DatosComprobante;
 import com.tallerwebi.dominio.comprobante.GastoDelComprobante;
 import com.tallerwebi.dominio.comprobante.LectorComprobante;
 import com.tallerwebi.dominio.comprobante.LectorComprobanteNoDisponible;
+import com.tallerwebi.dominio.comprobante.ServicioComprobante;
 import com.tallerwebi.dominio.excepcion.GastoInvalidoExeption;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.gasto.GastoServicio;
@@ -31,6 +34,7 @@ public class ControladorComprobanteTest {
 
   private GastoServicio gastoServicio;
   private LectorComprobante lectorComprobante;
+  private ServicioComprobante servicioComprobante;
   private ControladorComprobante controladorComprobante;
 
   private Usuario usuario;
@@ -44,8 +48,14 @@ public class ControladorComprobanteTest {
     gastoServicio = mock(GastoServicio.class);
     CategoriaRepositorio categoriaRepositorio = mock(CategoriaRepositorio.class);
     lectorComprobante = mock(LectorComprobante.class);
+    servicioComprobante = mock(ServicioComprobante.class);
     controladorComprobante =
-      new ControladorComprobante(gastoServicio, categoriaRepositorio, lectorComprobante);
+      new ControladorComprobante(
+        gastoServicio,
+        categoriaRepositorio,
+        lectorComprobante,
+        servicioComprobante
+      );
 
     categoria = new Categoria();
     categoria.setId(1L);
@@ -58,6 +68,7 @@ public class ControladorComprobanteTest {
     session = mock(HttpSession.class);
     redirectAttributes = new RedirectAttributesModelMap();
     when(request.getSession(false)).thenReturn(session);
+    when(request.getSession()).thenReturn(session);
     when(session.getAttribute("USUARIO")).thenReturn(usuario);
   }
 
@@ -390,6 +401,96 @@ public class ControladorComprobanteTest {
 
     assertEquals("cargar-comprobante", resultado.getViewName());
     assertTrue(((String) resultado.getModel().get("error")).contains("cargar el gasto a mano"));
+  }
+
+  // El archivo del comprobante (R2 y repetidos)
+
+  @Test
+  public void alLeerElComprobanteDebeDejarElArchivoEnLaSesionYSuHuellaEnLaRevision() {
+    byte[] png = new byte[] { (byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
+    MockMultipartFile imagen = new MockMultipartFile("imagen", "ticket.png", "image/png", png);
+    when(lectorComprobante.leer(png, "image/png", List.of("Alimentación")))
+      .thenReturn(datosDeEjemplo());
+
+    ModelAndView resultado = controladorComprobante.procesarComprobante(imagen, request);
+
+    ArgumentCaptor<ArchivoComprobante> archivo = ArgumentCaptor.forClass(ArchivoComprobante.class);
+    verify(session).setAttribute(eq("comprobantePendiente"), archivo.capture());
+    assertEquals("image/png", archivo.getValue().tipo());
+    assertEquals(archivo.getValue().huella(), confirmacionDe(resultado).getHuella());
+  }
+
+  @Test
+  public void unComprobanteYaCargadoNoDebeMandarseALeer() {
+    byte[] png = new byte[] { (byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
+    MockMultipartFile imagen = new MockMultipartFile("imagen", "ticket.png", "image/png", png);
+    doThrow(new ComprobanteYaCargado(LocalDate.of(2026, 11, 12), 3))
+      .when(servicioComprobante)
+      .verificarQueNoEsteCargado(any(), eq(usuario));
+
+    ModelAndView resultado = controladorComprobante.procesarComprobante(imagen, request);
+
+    assertEquals("cargar-comprobante", resultado.getViewName());
+    assertTrue(
+      ((String) resultado.getModel().get("error")).startsWith(
+          "Este comprobante ya lo cargaste el 12/11/2026 (3 gastos)."
+        )
+    );
+    verifyNoInteractions(lectorComprobante);
+  }
+
+  @Test
+  public void alConfirmarDebeGuardarLosGastosConElArchivoQueSeLeyo() {
+    ArchivoComprobante archivo = ArchivoComprobante.de(new byte[] { 1, 2, 3 }, "image/png");
+    when(session.getAttribute("comprobantePendiente")).thenReturn(archivo);
+    ConfirmacionComprobante confirmacion = confirmacionCon(
+      propuesto(6300.0, "Supermercado", 1L, true)
+    );
+    confirmacion.setHuella(archivo.huella());
+
+    controladorComprobante.confirmarComprobante(confirmacion, request, redirectAttributes);
+
+    verify(servicioComprobante).registrarGastos(anyList(), eq(archivo), eq(usuario));
+    verify(gastoServicio, never()).registrarGastos(anyList(), any());
+    verify(session).removeAttribute("comprobantePendiente");
+  }
+
+  @Test
+  public void siElArchivoDeLaSesionEsDeOtraRevisionDebeGuardarLosGastosSinArchivo() {
+    ArchivoComprobante otro = ArchivoComprobante.de(new byte[] { 9, 9 }, "image/png");
+    when(session.getAttribute("comprobantePendiente")).thenReturn(otro);
+    ConfirmacionComprobante confirmacion = confirmacionCon(
+      propuesto(6300.0, "Supermercado", 1L, true)
+    );
+    confirmacion.setHuella("huella-de-otro-archivo");
+
+    controladorComprobante.confirmarComprobante(confirmacion, request, redirectAttributes);
+
+    verify(gastoServicio).registrarGastos(anyList(), eq(usuario));
+    verifyNoInteractions(servicioComprobante);
+  }
+
+  @Test
+  public void siElComprobanteSeCargoMientrasSeRevisabaDebeAvisarYNoGuardar() {
+    ArchivoComprobante archivo = ArchivoComprobante.de(new byte[] { 1, 2, 3 }, "image/png");
+    when(session.getAttribute("comprobantePendiente")).thenReturn(archivo);
+    doThrow(new ComprobanteYaCargado(LocalDate.of(2026, 11, 12), 1))
+      .when(servicioComprobante)
+      .registrarGastos(anyList(), eq(archivo), eq(usuario));
+    ConfirmacionComprobante confirmacion = confirmacionCon(
+      propuesto(6300.0, "Supermercado", 1L, true)
+    );
+    confirmacion.setHuella(archivo.huella());
+
+    ModelAndView resultado = controladorComprobante.confirmarComprobante(
+      confirmacion,
+      request,
+      redirectAttributes
+    );
+
+    assertEquals("cargar-comprobante", resultado.getViewName());
+    assertTrue(((String) resultado.getModel().get("error")).contains("(1 gasto)"));
+    verify(session).removeAttribute("comprobantePendiente");
   }
 
   private DatosComprobante datosDeEjemplo() {
