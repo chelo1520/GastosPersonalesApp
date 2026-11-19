@@ -39,6 +39,8 @@
       <!-- Con error del servidor se muestran todos los gastos abiertos, como antes del rediseño -->
       <form th:action="@{/registrar-gasto/comprobante/confirmar}" th:object="${confirmacion}" method="post" id="form-comprobante"
             th:attr="data-abrir-todo=${error != null}">
+        <!-- Desde el registro rápido: al confirmar se vuelve al resumen o a Mis gastos -->
+        <input type="hidden" name="volver" th:if="${volver != null}" th:value="${volver}">
         <input type="hidden" th:field="*{tipoOperacion}">
         <input type="hidden" th:field="*{tipoComprobante}">
         <input type="hidden" th:field="*{total}">
@@ -136,7 +138,8 @@
         </fieldset>
 
         <div class="d-grid d-md-flex justify-content-md-end gap-2 mt-4">
-          <a th:href="@{/registrar-gasto/comprobante}" class="btn btn-outline-secondary">Sacar otra foto</a>
+          <a th:href="${volver != null} ? @{/registrar-gasto/comprobante(volver=${volver})} : @{/registrar-gasto/comprobante}"
+             class="btn btn-outline-secondary">Sacar otra foto</a>
           <button type="submit" class="btn btn-primary" id="btn-confirmar">Confirmar y guardar</button>
         </div>
       </form>

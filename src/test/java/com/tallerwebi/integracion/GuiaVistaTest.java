@@ -153,12 +153,12 @@ public class GuiaVistaTest {
           .param("monto", "500")
       )
       .andExpect(redirectedUrl("/presupuestos?mes=" + mes));
+    // Rediseño v2: el paso 3 está en el resumen y destaca "+ Registrar gasto" (registro rápido)
+    mockMvc.perform(post("/guia/continuar").session(sesion)).andExpect(redirectedUrl("/home"));
     mockMvc
-      .perform(post("/guia/continuar").session(sesion))
-      .andExpect(redirectedUrl("/registrar-gasto"));
-    mockMvc
-      .perform(get("/registrar-gasto").session(sesion))
-      .andExpect(content().string(containsString("Registrá un gasto")));
+      .perform(get("/home").session(sesion))
+      .andExpect(content().string(containsString("Registrá un gasto")))
+      .andExpect(content().string(containsString("id=\"abrir-registro\"")));
     mockMvc
       .perform(
         post("/registrar-gasto")
@@ -179,7 +179,7 @@ public class GuiaVistaTest {
     mockMvc
       .perform(post("/guia/continuar").session(sesion))
       .andExpect(redirectedUrl("/simulacion"));
-    mockMvc.perform(post("/guia/continuar").session(sesion)).andExpect(redirectedUrl("/asistente"));
+    mockMvc.perform(post("/guia/continuar").session(sesion)).andExpect(redirectedUrl("/home"));
     mockMvc.perform(post("/guia/continuar").session(sesion)).andExpect(redirectedUrl("/home"));
     mockMvc
       .perform(get("/home").session(sesion))
@@ -192,9 +192,7 @@ public class GuiaVistaTest {
     mockMvc
       .perform(post("/guia/continuar").session(sesion))
       .andExpect(redirectedUrl("/presupuestos"));
-    mockMvc
-      .perform(post("/guia/continuar").session(sesion))
-      .andExpect(redirectedUrl("/registrar-gasto"));
+    mockMvc.perform(post("/guia/continuar").session(sesion)).andExpect(redirectedUrl("/home"));
     mockMvc.perform(post("/guia/continuar").session(sesion)).andExpect(redirectedUrl("/home"));
     mockMvc
       .perform(get("/home").session(sesion))
@@ -214,26 +212,32 @@ public class GuiaVistaTest {
       .andExpect(content().string(containsString("Paso 5 de 6")))
       .andExpect(content().string(containsString("Explorá la simulación")))
       .andExpect(content().string(containsString("id=\"guia-destino-simulacion\"")));
-    mockMvc.perform(post("/guia/continuar").session(sesion)).andExpect(redirectedUrl("/asistente"));
+    mockMvc.perform(post("/guia/continuar").session(sesion)).andExpect(redirectedUrl("/home"));
     sessionFactory.getCurrentSession().flush();
     sessionFactory.getCurrentSession().clear();
     org.junit.jupiter.api.Assertions.assertEquals(
       7,
       sessionFactory.getCurrentSession().find(Usuario.class, usuario.getId()).getGuiaPaso()
     );
+    // El paso 6 destaca "Analizar mis gastos" del resumen; en la vista del análisis también se ve
+    mockMvc
+      .perform(get("/home").session(sesion))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("Paso 6 de 6")))
+      .andExpect(content().string(containsString("Analizá tus gastos")))
+      .andExpect(content().string(containsString("id=\"analizar-gastos\"")))
+      .andExpect(content().string(containsString("Finalizar")));
     mockMvc
       .perform(get("/asistente").session(sesion))
       .andExpect(status().isOk())
-      .andExpect(content().string(containsString("Paso 6 de 6")))
-      .andExpect(content().string(containsString("Conocé el asistente")))
-      .andExpect(content().string(containsString("id=\"guia-destino-asistente\"")))
-      .andExpect(content().string(containsString("Finalizar")));
+      .andExpect(content().string(containsString("Analizá tus gastos")))
+      .andExpect(content().string(containsString("id=\"guia-destino-asistente\"")));
     mockMvc.perform(post("/guia/anterior").session(sesion)).andExpect(redirectedUrl("/simulacion"));
     mockMvc.perform(post("/guia/anterior").session(sesion)).andExpect(redirectedUrl("/home"));
     mockMvc
       .perform(post("/guia/continuar").session(sesion))
       .andExpect(redirectedUrl("/simulacion"));
-    mockMvc.perform(post("/guia/continuar").session(sesion)).andExpect(redirectedUrl("/asistente"));
+    mockMvc.perform(post("/guia/continuar").session(sesion)).andExpect(redirectedUrl("/home"));
     mockMvc.perform(post("/guia/continuar").session(sesion)).andExpect(redirectedUrl("/home"));
     mockMvc
       .perform(get("/home").session(sesion))

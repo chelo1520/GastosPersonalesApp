@@ -39,6 +39,7 @@ public class ControladorGasto {
   private static final String CLAVE_URL_CANCELAR = "urlCancelar";
   private static final String CLAVE_SECCION = "seccion";
   private static final String PARAMETRO_MES = "mes";
+  private static final String PARAMETRO_CARGAR_OTRO = "otro";
   private final GastoServicio gastoServicio;
   private final CategoriaRepositorio categoriaRepositorio;
   private final Clock reloj;
@@ -128,17 +129,26 @@ public class ControladorGasto {
       return new ModelAndView(REDIRECT_LOGIN);
     }
 
+    // Registro rápido: el modal del resumen o de Mis gastos dice a dónde volver
+    OrigenDelRegistro origen = OrigenDelRegistro.de(
+      request.getParameter(OrigenDelRegistro.PARAMETRO)
+    );
+    String error;
     try {
-      String errorCategoria = asignarCategoriaExistente(gasto);
-      if (errorCategoria != null) {
-        return vistaRegistrarGasto(gasto, errorCategoria);
+      error = asignarCategoriaExistente(gasto);
+      if (error == null) {
+        gastoServicio.registrarGasto(gasto, usuario);
       }
-      gastoServicio.registrarGasto(gasto, usuario);
     } catch (GastoInvalidoExeption e) {
-      return vistaRegistrarGasto(gasto, e.getMessage());
+      error = e.getMessage();
+    }
+    if (error != null) {
+      return origen == null
+        ? vistaRegistrarGasto(gasto, error)
+        : volverConError(origen, gasto, error, request, redirectAttributes);
     }
 
-    // Se muestra una sola vez, en la lista, después de guardar
+    // Se muestra una sola vez, en la vista a la que se vuelve, después de guardar
     Alerta alerta = gastoServicio.alertaDeRepeticion(gasto, usuario);
     if (alerta != null) {
       redirectAttributes.addFlashAttribute("alertaRepeticion", alerta);
@@ -149,7 +159,49 @@ public class ControladorGasto {
       redirectAttributes.addFlashAttribute("alertaPresupuesto", alertaPresupuesto);
     }
 
-    return volverAlMes(YearMonth.from(gasto.getFecha()));
+    if (origen == null) {
+      return volverAlMes(YearMonth.from(gasto.getFecha()));
+    }
+    return volverAlOrigen(origen, gasto, request, redirectAttributes);
+  }
+
+  // Registro rápido: aviso "Gasto guardado" y, con "Guardar y cargar otro", el modal se reabre con
+  // la misma fecha y categoría. El resumen sigue en el mes que se miraba; Mis gastos va al mes del
+  // gasto, como la pantalla Registrar, para ver dónde quedó
+  private ModelAndView volverAlOrigen(
+    OrigenDelRegistro origen,
+    Gasto guardado,
+    HttpServletRequest request,
+    RedirectAttributes redirectAttributes
+  ) {
+    redirectAttributes.addFlashAttribute(
+      "avisoRegistro",
+      "Gasto guardado: “" + guardado.getDescripcion() + "”"
+    );
+    if (request.getParameter(PARAMETRO_CARGAR_OTRO) != null) {
+      Gasto siguiente = new Gasto();
+      siguiente.setFecha(guardado.getFecha());
+      siguiente.setCategoria(guardado.getCategoria());
+      redirectAttributes.addFlashAttribute("registroRapido", siguiente);
+    }
+    YearMonth mes = origen == OrigenDelRegistro.MIS_GASTOS
+      ? YearMonth.from(guardado.getFecha())
+      : elegirMes(request.getParameter(PARAMETRO_MES));
+    return new ModelAndView(origen.redireccion(mes, YearMonth.now(reloj)));
+  }
+
+  // Con error se reabre el modal con lo que se había cargado y el mismo mensaje que da la pantalla
+  private ModelAndView volverConError(
+    OrigenDelRegistro origen,
+    Gasto gasto,
+    String error,
+    HttpServletRequest request,
+    RedirectAttributes redirectAttributes
+  ) {
+    redirectAttributes.addFlashAttribute("registroRapido", gasto);
+    redirectAttributes.addFlashAttribute("errorRegistro", error);
+    YearMonth mes = elegirMes(request.getParameter(PARAMETRO_MES));
+    return new ModelAndView(origen.redireccion(mes, YearMonth.now(reloj)));
   }
 
   @RequestMapping(path = "/modificar-gasto/{id}", method = RequestMethod.GET)

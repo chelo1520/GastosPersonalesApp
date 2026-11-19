@@ -160,6 +160,140 @@ public class ControladorGastoTest {
     assertEquals(alerta, redirectAttributes.getFlashAttributes().get("alertaPresupuesto"));
   }
 
+  // Registro rápido desde el modal del resumen (rediseño v2)
+
+  @Test
+  public void alRegistrarDesdeElResumenDebeVolverAlResumenConElAvisoDeGastoGuardado() {
+    when(request.getParameter("volver")).thenReturn("resumen");
+
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request, redirectAttributes);
+
+    assertEquals("redirect:/home", resultado.getViewName());
+    assertEquals(
+      "Gasto guardado: “Supermercado”",
+      redirectAttributes.getFlashAttributes().get("avisoRegistro")
+    );
+    assertNull(redirectAttributes.getFlashAttributes().get("registroRapido"));
+    verify(gastoServicio).registrarGasto(gasto, usuario);
+  }
+
+  @Test
+  public void alRegistrarDesdeElResumenDeOtroMesDebeVolverAEseMesDelResumen() {
+    when(request.getParameter("volver")).thenReturn("resumen");
+    when(request.getParameter("mes")).thenReturn("2026-08");
+
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request, redirectAttributes);
+
+    assertEquals("redirect:/home?mes=2026-08", resultado.getViewName());
+  }
+
+  @Test
+  public void conGuardarYCargarOtroDebeReabrirElRegistroConLaMismaFechaYCategoria() {
+    when(request.getParameter("volver")).thenReturn("resumen");
+    when(request.getParameter("otro")).thenReturn("true");
+
+    controladorGasto.registrarGasto(gasto, request, redirectAttributes);
+
+    Gasto siguiente = (Gasto) redirectAttributes.getFlashAttributes().get("registroRapido");
+    assertEquals(LocalDate.of(2026, 9, 26), siguiente.getFecha());
+    assertEquals(categoria, siguiente.getCategoria());
+    assertNull(siguiente.getImporte());
+    assertNull(siguiente.getDescripcion());
+  }
+
+  @Test
+  public void alRegistrarDesdeElResumenDebeMandarLasMismasAlertasQueDesdeLaPantalla() {
+    Alerta repeticion = new Alerta(
+      Alerta.Tipo.REPETICION,
+      Alerta.Nivel.AMARILLA,
+      "Es tu 4.º gasto en Café y snacks esta semana ($10.000)",
+      1L
+    );
+    Alerta presupuesto = new Alerta(
+      Alerta.Tipo.PRESUPUESTO,
+      Alerta.Nivel.ROJA,
+      "Con este gasto llegaste al 100% del presupuesto del mes ($550.000 de $550.000)",
+      null
+    );
+    when(request.getParameter("volver")).thenReturn("resumen");
+    when(gastoServicio.alertaDeRepeticion(gasto, usuario)).thenReturn(repeticion);
+    when(gastoServicio.alertaDePresupuesto(gasto, usuario)).thenReturn(presupuesto);
+
+    controladorGasto.registrarGasto(gasto, request, redirectAttributes);
+
+    assertEquals(repeticion, redirectAttributes.getFlashAttributes().get("alertaRepeticion"));
+    assertEquals(presupuesto, redirectAttributes.getFlashAttributes().get("alertaPresupuesto"));
+  }
+
+  @Test
+  public void conUnErrorDesdeElResumenDebeReabrirElRegistroConLoCargadoYElMensaje() {
+    when(request.getParameter("volver")).thenReturn("resumen");
+    doThrow(new GastoInvalidoExeption("El importe debe ser mayor a cero"))
+      .when(gastoServicio)
+      .registrarGasto(gasto, usuario);
+
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request, redirectAttributes);
+
+    assertEquals("redirect:/home", resultado.getViewName());
+    assertEquals(
+      "El importe debe ser mayor a cero",
+      redirectAttributes.getFlashAttributes().get("errorRegistro")
+    );
+    assertEquals(gasto, redirectAttributes.getFlashAttributes().get("registroRapido"));
+    assertNull(redirectAttributes.getFlashAttributes().get("avisoRegistro"));
+  }
+
+  @Test
+  public void sinCategoriaDesdeElResumenDebeReabrirElRegistroSinGuardar() {
+    when(request.getParameter("volver")).thenReturn("resumen");
+    gasto.setCategoria(null);
+
+    controladorGasto.registrarGasto(gasto, request, redirectAttributes);
+
+    assertEquals(
+      "Seleccioná una categoría",
+      redirectAttributes.getFlashAttributes().get("errorRegistro")
+    );
+    verify(gastoServicio, never()).registrarGasto(any(), any());
+  }
+
+  @Test
+  public void alRegistrarDesdeMisGastosDebeIrAlMesDelGastoConElAviso() {
+    when(request.getParameter("volver")).thenReturn("mis-gastos");
+    gasto.setFecha(LocalDate.of(2026, 8, 30));
+
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request, redirectAttributes);
+
+    assertEquals("redirect:/mostrar-gastos?mes=2026-08", resultado.getViewName());
+    assertEquals(
+      "Gasto guardado: “Supermercado”",
+      redirectAttributes.getFlashAttributes().get("avisoRegistro")
+    );
+  }
+
+  @Test
+  public void conUnErrorDesdeMisGastosDebeVolverAlMesQueSeMirabaYReabrirElRegistro() {
+    when(request.getParameter("volver")).thenReturn("mis-gastos");
+    when(request.getParameter("mes")).thenReturn("2026-07");
+    doThrow(new GastoInvalidoExeption("El importe debe ser mayor a cero"))
+      .when(gastoServicio)
+      .registrarGasto(gasto, usuario);
+
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request, redirectAttributes);
+
+    assertEquals("redirect:/mostrar-gastos?mes=2026-07", resultado.getViewName());
+    assertEquals(gasto, redirectAttributes.getFlashAttributes().get("registroRapido"));
+  }
+
+  @Test
+  public void conUnVolverDesconocidoDebeComportarseComoLaPantallaRegistrar() {
+    when(request.getParameter("volver")).thenReturn("https://otro-sitio.com");
+
+    ModelAndView resultado = controladorGasto.registrarGasto(gasto, request, redirectAttributes);
+
+    assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
+  }
+
   @Test
   public void noDebeMandarAlertaCuandoElGastoRegistradoNoLaDispara() {
     controladorGasto.registrarGasto(gasto, request, redirectAttributes);

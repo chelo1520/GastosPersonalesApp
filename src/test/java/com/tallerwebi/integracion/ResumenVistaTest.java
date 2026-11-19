@@ -2,7 +2,9 @@ package com.tallerwebi.integracion;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -16,6 +18,7 @@ import com.tallerwebi.integracion.config.HibernateTestConfig;
 import com.tallerwebi.integracion.config.SpringWebTestConfig;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +29,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
@@ -245,6 +250,111 @@ public class ResumenVistaTest {
       .andExpect(redirectedUrl("/login"));
   }
 
+  // Registro rápido (rediseño v2): modal en el resumen que usa el mismo POST que la pantalla Registrar
+
+  @Test
+  public void debeOfrecerElRegistroRapidoConLasCategoriasYLaFechaDeHoy() throws Exception {
+    Usuario usuario = new Usuario();
+    Categoria cafe = categoria("Café y snacks");
+    persistir(usuario, cafe);
+
+    mockMvc
+      .perform(get("/home").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("data-bs-target=\"#modal-registro\"")))
+      .andExpect(content().string(containsString("id=\"form-registro\"")))
+      .andExpect(
+        content()
+          .string(containsString("<input type=\"hidden\" name=\"volver\" value=\"resumen\">"))
+      )
+      .andExpect(content().string(containsString(">Café y snacks</option>")))
+      .andExpect(content().string(containsString("value=\"" + LocalDate.now() + "\"")))
+      .andExpect(content().string(containsString("Guardar y cargar otro")))
+      .andExpect(content().string(containsString("data-abrir=\"false\"")))
+      .andExpect(content().string(containsString("id=\"form-comprobante-rapido\"")))
+      // Registrar ya no está en el menú: se entra desde "+ Registrar gasto"
+      .andExpect(content().string(not(containsString(">Registrar</a>"))));
+  }
+
+  @Test
+  public void alGuardarDesdeElResumenDebeVolverAlResumenConElGastoYElAviso() throws Exception {
+    Usuario usuario = new Usuario();
+    Categoria cafe = categoria("Café y snacks");
+    persistir(usuario, cafe);
+
+    MvcResult guardado = mockMvc
+      .perform(registroRapido(usuario, cafe, "2500", "Café con leche"))
+      .andExpect(redirectedUrl("/home"))
+      .andReturn();
+
+    mockMvc
+      .perform(get("/home").sessionAttr("USUARIO", usuario).flashAttrs(guardado.getFlashMap()))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("id=\"aviso-registro\"")))
+      .andExpect(content().string(containsString("data-abrir=\"false\"")))
+      .andExpect(content().string(containsString("Café con leche</span>")));
+  }
+
+  @Test
+  public void conGuardarYCargarOtroDebeReabrirElModalConLaMismaCategoria() throws Exception {
+    Usuario usuario = new Usuario();
+    Categoria cafe = categoria("Café y snacks");
+    persistir(usuario, cafe);
+
+    MvcResult guardado = mockMvc
+      .perform(registroRapido(usuario, cafe, "2500", "Café con leche").param("otro", "true"))
+      .andExpect(redirectedUrl("/home"))
+      .andReturn();
+
+    mockMvc
+      .perform(get("/home").sessionAttr("USUARIO", usuario).flashAttrs(guardado.getFlashMap()))
+      .andExpect(content().string(containsString("data-abrir=\"true\"")))
+      .andExpect(content().string(containsString("selected=\"selected\">Café y snacks</option>")))
+      .andExpect(content().string(containsString("id=\"aviso-registro\"")));
+  }
+
+  @Test
+  public void conImporteCeroDebeReabrirElModalConElErrorYLoCargado() throws Exception {
+    Usuario usuario = new Usuario();
+    Categoria cafe = categoria("Café y snacks");
+    persistir(usuario, cafe);
+
+    MvcResult rechazado = mockMvc
+      .perform(registroRapido(usuario, cafe, "0", "Café con leche"))
+      .andExpect(redirectedUrl("/home"))
+      .andReturn();
+
+    mockMvc
+      .perform(get("/home").sessionAttr("USUARIO", usuario).flashAttrs(rechazado.getFlashMap()))
+      .andExpect(content().string(containsString("data-abrir=\"true\"")))
+      .andExpect(content().string(containsString("El importe debe ser mayor a cero")))
+      .andExpect(content().string(containsString("value=\"Café con leche\"")))
+      .andExpect(content().string(containsString("value=\"0.00\"")))
+      .andExpect(content().string(not(containsString("id=\"aviso-registro\""))));
+    List<Gasto> gastos = sessionFactory
+      .getCurrentSession()
+      .createQuery("from Gasto g where g.usuario = :usuario", Gasto.class)
+      .setParameter("usuario", usuario)
+      .getResultList();
+    assertTrue(gastos.isEmpty());
+  }
+
+  private MockHttpServletRequestBuilder registroRapido(
+    Usuario usuario,
+    Categoria categoria,
+    String importe,
+    String descripcion
+  ) {
+    return post("/registrar-gasto")
+      .sessionAttr("USUARIO", usuario)
+      .param("volver", "resumen")
+      .param("mes", YearMonth.now().toString())
+      .param("importe", importe)
+      .param("descripcion", descripcion)
+      .param("categoria.id", categoria.getId().toString())
+      .param("fecha", LocalDate.now().toString());
+  }
+
   private void persistir(Object... entidades) {
     for (Object entidad : entidades) {
       sessionFactory.getCurrentSession().persist(entidad);
@@ -279,5 +389,38 @@ public class ResumenVistaTest {
       .perform(get("/home").sessionAttr("USUARIO", sinNombre))
       .andExpect(status().isOk())
       .andExpect(content().string(not(containsString("id=\"saludo\""))));
+  }
+
+  // Menú de la cuenta (rediseño v2): botón con iniciales y nombre; desplegado, nombre y apellido
+  @Test
+  public void elMenuDeLaCuentaMuestraElNombreYAlDesplegarNombreYApellido() throws Exception {
+    Usuario usuario = new Usuario();
+    usuario.setEmail("ana@unlam.edu.ar");
+    usuario.setNombre("Ana");
+    usuario.setApellido("Sosa");
+    persistir(usuario);
+
+    mockMvc
+      .perform(get("/home").sessionAttr("USUARIO", usuario))
+      .andExpect(content().string(containsString("id=\"menu-cuenta\"")))
+      .andExpect(content().string(containsString(">AS</span>")))
+      .andExpect(content().string(containsString("<span class=\"app-cuenta-nombre\">Ana</span>")))
+      .andExpect(content().string(containsString("<strong>Ana Sosa</strong>")))
+      .andExpect(content().string(containsString(">ana@unlam.edu.ar</small>")))
+      .andExpect(content().string(containsString("id=\"menu-cuenta-perfil\"")))
+      .andExpect(content().string(containsString("action=\"/logout\"")));
+  }
+
+  @Test
+  public void sinNombreElMenuDeLaCuentaMuestraElEmail() throws Exception {
+    Usuario usuario = new Usuario();
+    usuario.setEmail("sin-nombre@unlam.edu.ar");
+    persistir(usuario);
+
+    mockMvc
+      .perform(get("/home").sessionAttr("USUARIO", usuario))
+      .andExpect(content().string(containsString(">sin-nombre@unlam.edu.ar</span>")))
+      .andExpect(content().string(containsString(">S</span>")))
+      .andExpect(content().string(not(containsString("<small>sin-nombre@unlam.edu.ar</small>"))));
   }
 }

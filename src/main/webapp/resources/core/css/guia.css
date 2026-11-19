@@ -33,6 +33,18 @@
   background: #fff;
 }
 
+/* Botones destacados (rediseño v2: "+ Registrar gasto" y "Analizar mis gastos"): conservan su color
+   y se marcan con un anillo, en vez del fondo blanco de las tarjetas */
+.app-guia-activa .app-registrar-link.app-guia-destacado {
+  background: var(--app-verde);
+  box-shadow: 0 0 0 4px #fff, 0 0 0 7px #7fc4b8;
+}
+
+.app-guia-activa .app-resumen-analizar.app-guia-destacado {
+  background: #eef4f2;
+  box-shadow: 0 0 0 4px #fff, 0 0 0 7px #7fc4b8;
+}
+
 .app-guia-activa .app-guia {
   position: fixed;
   z-index: 1042;
@@ -80,4 +92,11 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+
+/* Con la guía abierta (panel abajo a la derecha), las notificaciones emergentes van a la izquierda
+   para no tapar "Anterior" y "Continuar" */
+.app-guia-activa .app-notificaciones {
+  right: auto;
+  left: 24px;
 }

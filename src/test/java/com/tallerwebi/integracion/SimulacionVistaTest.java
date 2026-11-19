@@ -477,4 +477,17 @@ public class SimulacionVistaTest {
   private String nombre(YearMonth mes) {
     return com.tallerwebi.dominio.NombreDeMes.de(mes);
   }
+
+  // Rediseño v2: la simulación no tiene "+ Registrar gasto" (se decidió que agregaba ruido)
+  @Test
+  void noOfreceElRegistroRapido() throws Exception {
+    MockHttpSession sesion = new MockHttpSession();
+    sesion.setAttribute("USUARIO", usuario);
+
+    mockMvc
+      .perform(get("/simulacion").session(sesion))
+      .andExpect(status().isOk())
+      .andExpect(content().string(not(containsString("id=\"modal-registro\""))))
+      .andExpect(content().string(not(containsString("+ Registrar gasto"))));
+  }
 }

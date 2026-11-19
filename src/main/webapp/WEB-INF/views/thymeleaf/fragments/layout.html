@@ -25,9 +25,11 @@
 
 <body>
 
-  <!-- Navbar desktop: activo = resumen | registrar | mis-gastos | presupuestos | simulacion | perfil.
+  <!-- Navbar desktop: activo = resumen | registrar (sin ítem) | mis-gastos | presupuestos | simulacion | perfil.
        El asistente ya no está en el menú: se abre desde "Analizar mis gastos" en el resumen (rediseño v2).
-       Perfil y Salir van juntos a la derecha: son de la cuenta, no secciones de la app. -->
+       Registrar tampoco: se carga desde "+ Registrar gasto" del resumen y de Mis gastos (registro rápido);
+       la pantalla /registrar-gasto sigue para la guía, el celular y sin JavaScript.
+       Perfil y Salir van en el menú de la cuenta, a la derecha: son de la cuenta, no secciones de la app. -->
   <header th:fragment="navbar(activo)" class="app-navbar d-none d-md-flex">
     <a class="app-brand" th:href="@{/home}">
       <img th:src="@{/img/isotipo-sobre-oscuro.svg}" width="28" height="28" alt="">
@@ -36,21 +38,43 @@
 
     <nav class="app-nav">
       <a th:href="@{/home}" th:aria-current="${activo == 'resumen'} ? 'page'">Resumen</a>
-      <a th:href="@{/registrar-gasto}" th:aria-current="${activo == 'registrar'} ? 'page'">Registrar</a>
       <a th:href="@{/mostrar-gastos}" th:aria-current="${activo == 'mis-gastos'} ? 'page'">Mis gastos</a>
       <a th:href="@{/presupuestos}" th:aria-current="${activo == 'presupuestos'} ? 'page'">Presupuestos</a>
       <a th:href="@{/simulacion}" th:aria-current="${activo == 'simulacion'} ? 'page'">Simulación</a>
     </nav>
 
-    <div class="app-cuenta ms-auto">
-      <a th:href="@{/perfil}" th:aria-current="${activo == 'perfil'} ? 'page'">Perfil</a>
-      <!-- Salir cierra la sesión en el servidor: va por POST, no es un link al login -->
-      <form th:action="@{/logout}" method="post" class="app-cuenta-salir"
-            data-confirmar-titulo="¿Cerrar sesión?"
-            data-confirmar-texto="Vas a salir de Gastitos. Para volver a entrar vas a tener que ingresar tu email y contraseña."
-            data-confirmar-boton="Salir">
-        <button type="submit">Salir</button>
-      </form>
+    <!-- Menú de la cuenta (rediseño v2): Perfil y Salir juntos. El botón muestra las iniciales y solo el
+         nombre; al desplegar, nombre y apellido con el email (sin nombre cargado, el email). Es un dropdown de Bootstrap; Salir sigue yendo por POST con confirmación -->
+    <div class="app-cuenta ms-auto dropdown" th:if="${session.USUARIO != null}"
+         th:with="cuenta=${T(com.tallerwebi.presentacion.CuentaDelMenu).de(session.USUARIO)}">
+      <button type="button" class="app-cuenta-boton" id="menu-cuenta" data-bs-toggle="dropdown"
+              aria-expanded="false" th:classappend="${activo == 'perfil'} ? 'is-activo'">
+        <span class="app-cuenta-avatar" aria-hidden="true" th:text="${cuenta.iniciales}">AP</span>
+        <span class="app-cuenta-nombre" th:text="${cuenta.nombre}">Ana</span>
+        <svg class="app-cuenta-flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+      </button>
+      <div class="dropdown-menu dropdown-menu-end app-cuenta-menu" aria-labelledby="menu-cuenta">
+        <div class="app-cuenta-encabezado">
+          <strong th:text="${cuenta.nombreCompleto}">Ana Pérez</strong>
+          <small th:if="${cuenta.nombreCompleto != cuenta.email}" th:text="${cuenta.email}">ana@unlam.edu.ar</small>
+        </div>
+        <a class="dropdown-item app-cuenta-item" th:href="@{/perfil}" id="menu-cuenta-perfil"
+           th:aria-current="${activo == 'perfil'} ? 'page'">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.6-3.5 3.1-5.5 7-5.5s6.4 2 7 5.5"></path></svg>
+          Mi perfil
+        </a>
+        <hr class="dropdown-divider">
+        <!-- Salir cierra la sesión en el servidor: va por POST, no es un link al login -->
+        <form th:action="@{/logout}" method="post" class="app-cuenta-salir"
+              data-confirmar-titulo="¿Cerrar sesión?"
+              data-confirmar-texto="Vas a salir de Gastitos. Para volver a entrar vas a tener que ingresar tu email y contraseña."
+              data-confirmar-boton="Salir">
+          <button type="submit" class="dropdown-item app-cuenta-item" id="menu-cuenta-salir">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4"></path></svg>
+            Salir
+          </button>
+        </form>
+      </div>
     </div>
   </header>
 

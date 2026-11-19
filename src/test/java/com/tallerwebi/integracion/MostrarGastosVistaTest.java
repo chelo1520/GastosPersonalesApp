@@ -437,4 +437,57 @@ public class MostrarGastosVistaTest {
       .andExpect(content().string(containsString("value=\"2026-09-15\"")))
       .andExpect(content().string(containsString("href=\"/mostrar-gastos\"")));
   }
+
+  // Registro rápido (rediseño v2): el mismo modal que el resumen, que vuelve a Mis gastos
+
+  @Test
+  public void debeOfrecerElRegistroRapidoConLaCargaDesdeComprobante() throws Exception {
+    Usuario usuario = new Usuario();
+    sessionFactory.getCurrentSession().persist(usuario);
+    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+    mockMvc
+      .perform(get("/mostrar-gastos").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("data-bs-target=\"#modal-registro\"")))
+      .andExpect(
+        content()
+          .string(containsString("<input type=\"hidden\" name=\"volver\" value=\"mis-gastos\">"))
+      )
+      .andExpect(content().string(containsString("id=\"form-comprobante-rapido\"")))
+      .andExpect(content().string(containsString("enctype=\"multipart/form-data\"")))
+      .andExpect(content().string(not(containsString("id=\"aviso-registro\""))));
+  }
+
+  @Test
+  public void alGuardarDesdeMisGastosDebeVolverConElAviso() throws Exception {
+    Usuario usuario = new Usuario();
+    Categoria categoria = new Categoria();
+    categoria.setNombre("Kiosco");
+    categoria.setDescripcion("Categoría de prueba");
+    sessionFactory.getCurrentSession().persist(usuario);
+    sessionFactory.getCurrentSession().persist(categoria);
+    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+    MvcResult guardado = mockMvc
+      .perform(
+        post("/registrar-gasto")
+          .sessionAttr("USUARIO", usuario)
+          .param("volver", "mis-gastos")
+          .param("importe", "1800")
+          .param("descripcion", "Alfajor")
+          .param("categoria.id", categoria.getId().toString())
+          .param("fecha", LocalDate.now().toString())
+      )
+      .andExpect(view().name("redirect:/mostrar-gastos"))
+      .andExpect(flash().attribute("avisoRegistro", "Gasto guardado: “Alfajor”"))
+      .andReturn();
+
+    mockMvc
+      .perform(
+        get("/mostrar-gastos").sessionAttr("USUARIO", usuario).flashAttrs(guardado.getFlashMap())
+      )
+      .andExpect(content().string(containsString("id=\"aviso-registro\"")))
+      .andExpect(content().string(containsString("data-descripcion=\"Alfajor\"")));
+  }
 }
