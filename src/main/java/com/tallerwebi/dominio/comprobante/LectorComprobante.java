@@ -2,7 +2,7 @@ package com.tallerwebi.dominio.comprobante;
 
 import java.util.List;
 
-/** Extrae datos de un comprobante (imagen JPG/PNG o PDF) sin persistir el archivo. */
+/** Extrae datos de un comprobante (imagen JPG/PNG o PDF). Guardar el archivo no es tarea suya. */
 @FunctionalInterface
 public interface LectorComprobante {
   String TIPO_PDF = "application/pdf";

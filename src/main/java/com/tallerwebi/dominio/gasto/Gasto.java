@@ -2,6 +2,7 @@ package com.tallerwebi.dominio.gasto;
 
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.categoria.Categoria;
+import com.tallerwebi.dominio.comprobante.Comprobante;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -35,6 +36,11 @@ public class Gasto {
   @ManyToOne
   @JoinColumn(name = "categoria_id")
   private Categoria categoria;
+
+  // De qué comprobante se cargó, o null si se cargó a mano
+  @ManyToOne
+  @JoinColumn(name = "comprobante_id")
+  private Comprobante comprobante;
 
   public Gasto() {}
 
@@ -86,5 +92,13 @@ public class Gasto {
 
   public Usuario getUsuario() {
     return usuario;
+  }
+
+  public Comprobante getComprobante() {
+    return comprobante;
+  }
+
+  public void setComprobante(Comprobante comprobante) {
+    this.comprobante = comprobante;
   }
 }

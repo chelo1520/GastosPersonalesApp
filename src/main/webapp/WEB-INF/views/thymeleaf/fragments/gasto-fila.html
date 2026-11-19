@@ -14,6 +14,12 @@
     <strong class="app-mg-fila-importe">$ <span
         th:text="${#numbers.formatDecimal(fila.importe, 1, 'POINT', 2, 'COMMA')}">2.500,00</span></strong>
     <span class="app-mg-fila-acciones">
+      <!-- Solo si se cargó desde un comprobante y su archivo quedó en R2: se abre en otra pestaña -->
+      <a th:if="${fila.comprobanteId != null}" class="app-mg-icono app-gasto-comprobante"
+         th:href="@{/comprobantes/{id}(id=${fila.comprobanteId})}" target="_blank" rel="noopener"
+         th:attr="aria-label='Ver el comprobante de ' + ${fila.descripcion}" title="Ver comprobante">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14l-2.5-1.5L14 21l-2-1.5L10 21l-2.5-1.5L5 21V4a1 1 0 0 1 1-1zM9 9h6M9 13h6"></path></svg>
+      </a>
       <a class="app-mg-icono app-gasto-editar" th:href="@{/modificar-gasto/{id}(id=${fila.id})}"
          th:attr="aria-label='Editar ' + ${fila.descripcion}" title="Editar">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"></path></svg>

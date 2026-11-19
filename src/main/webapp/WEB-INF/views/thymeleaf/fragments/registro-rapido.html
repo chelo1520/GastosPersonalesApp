@@ -16,7 +16,7 @@
   -->
   <div th:fragment="modal(volver, mes)" th:remove="tag">
     <div class="modal fade app-registro" id="modal-registro" tabindex="-1" aria-labelledby="registro-titulo" aria-hidden="true"
-         th:attr="data-abrir=${registroRapido != null}">
+         th:attr="data-abrir=${registroRapido != null or errorComprobante != null}">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content app-registro-contenido">
           <form th:action="@{/registrar-gasto}" method="post" id="form-registro" class="app-registro-form">
@@ -79,6 +79,9 @@
           <form th:action="@{/registrar-gasto/comprobante}" method="post" enctype="multipart/form-data"
                 class="app-registro-comprobante" id="form-comprobante-rapido">
             <input type="hidden" name="volver" th:value="${volver}">
+            <!-- El comprobante no se pudo usar (repetido, ilegible, muy pesado...): se reabre el modal con el motivo -->
+            <div class="app-registro-error" role="alert" id="registro-error-comprobante"
+                 th:if="${errorComprobante != null}" th:text="${errorComprobante}">Este comprobante ya lo cargaste</div>
             <label class="app-registro-subir" for="registro-archivo">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"></path></svg>
               <span>

@@ -43,6 +43,12 @@ services:
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       APP_URL: ${APP_URL:-http://localhost:8080/gastitos}
+      # Comprobantes en Cloudflare R2 (bucket privado). Sin estas variables los gastos del
+      # comprobante se guardan igual, sin el archivo
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_BUCKET: ${R2_BUCKET:-}
 
 volumes:
   mysql_data:
