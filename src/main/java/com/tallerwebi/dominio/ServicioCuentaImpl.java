@@ -1,8 +1,10 @@
 package com.tallerwebi.dominio;
 
+import com.tallerwebi.dominio.comprobante.ServicioComprobante;
 import com.tallerwebi.dominio.excepcion.ContrasenaIncorrecta;
 import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
 import jakarta.transaction.Transactional;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -11,10 +13,15 @@ import org.springframework.stereotype.Service;
 public class ServicioCuentaImpl implements ServicioCuenta {
 
   private final RepositorioUsuario repositorioUsuario;
+  private final ServicioComprobante servicioComprobante;
 
   @Autowired
-  public ServicioCuentaImpl(RepositorioUsuario repositorioUsuario) {
+  public ServicioCuentaImpl(
+    RepositorioUsuario repositorioUsuario,
+    ServicioComprobante servicioComprobante
+  ) {
     this.repositorioUsuario = repositorioUsuario;
+    this.servicioComprobante = servicioComprobante;
   }
 
   @Override
@@ -30,7 +37,12 @@ public class ServicioCuentaImpl implements ServicioCuenta {
 
   @Override
   public void eliminarCuenta(Usuario usuario, String password) {
-    repositorioUsuario.eliminar(verificar(usuario, password));
+    Usuario guardado = verificar(usuario, password);
+    // Las claves se leen antes de borrar los registros; los archivos se borran después, así un
+    // error al eliminar la cuenta no deja comprobantes sin su archivo
+    List<String> archivos = servicioComprobante.archivosDe(guardado);
+    repositorioUsuario.eliminar(guardado);
+    servicioComprobante.eliminarArchivos(archivos);
   }
 
   // Se compara contra la base y no contra la sesión, que puede estar desactualizada

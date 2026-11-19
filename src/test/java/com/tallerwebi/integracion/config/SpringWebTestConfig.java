@@ -1,5 +1,6 @@
 package com.tallerwebi.integracion.config;
 
+import com.tallerwebi.dominio.comprobante.AlmacenComprobantes;
 import com.tallerwebi.dominio.comprobante.LectorComprobante;
 import com.tallerwebi.dominio.indicadores.ClienteIndicadores;
 import com.tallerwebi.dominio.indicadores.CotizacionDolar;
@@ -80,6 +81,13 @@ public class SpringWebTestConfig implements WebMvcConfigurer {
   @Primary
   public LectorComprobante lectorComprobanteDePrueba() {
     return Mockito.mock(LectorComprobante.class);
+  }
+
+  // Los tests nunca suben archivos a R2, aunque la máquina tenga las variables configuradas
+  @Bean
+  @Primary
+  public AlmacenComprobantes almacenComprobantesDePrueba() {
+    return Mockito.mock(AlmacenComprobantes.class);
   }
 
   // Los tests nunca mandan mails de verdad; el de recuperación lee el link de acá

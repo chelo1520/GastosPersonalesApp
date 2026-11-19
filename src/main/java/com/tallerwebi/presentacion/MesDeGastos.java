@@ -1,5 +1,6 @@
 package com.tallerwebi.presentacion;
 
+import com.tallerwebi.dominio.comprobante.Comprobante;
 import com.tallerwebi.dominio.gasto.Gasto;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -284,6 +285,12 @@ public class MesDeGastos {
 
     public String getColor() {
       return ColoresDeCategoria.de(gasto.getCategoria() == null ? null : getCategoria());
+    }
+
+    // El comprobante del que se cargó, si su archivo quedó guardado; null si no hay qué mostrar
+    public Long getComprobanteId() {
+      Comprobante comprobante = gasto.getComprobante();
+      return comprobante == null || comprobante.getClave() == null ? null : comprobante.getId();
     }
   }
 

@@ -14,6 +14,8 @@ public class ConfirmacionComprobante {
   private String tipoOperacion;
   private String tipoComprobante;
   private Double total;
+  // Huella del archivo leído: la confirmación lo busca en la sesión para guardarlo con los gastos
+  private String huella;
   private List<GastoPropuesto> gastos = new ArrayList<>();
 
   public ConfirmacionComprobante() {}
@@ -51,6 +53,14 @@ public class ConfirmacionComprobante {
 
   public void setTotal(Double total) {
     this.total = total;
+  }
+
+  public String getHuella() {
+    return huella;
+  }
+
+  public void setHuella(String huella) {
+    this.huella = huella;
   }
 
   public List<GastoPropuesto> getGastos() {
