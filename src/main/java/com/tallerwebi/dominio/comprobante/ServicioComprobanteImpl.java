@@ -70,6 +70,40 @@ public class ServicioComprobanteImpl implements ServicioComprobante {
     subir(comprobante, archivo, usuario);
   }
 
+  @Override
+  public String urlDelArchivo(Long idComprobante, Usuario usuario) {
+    Comprobante comprobante = idComprobante == null
+      ? null
+      : repositorioComprobante.buscarPorId(idComprobante, usuario);
+    if (comprobante == null || comprobante.getClave() == null || !almacen.disponible()) {
+      throw new ComprobanteNoEncontrado();
+    }
+    try {
+      return almacen.urlTemporal(comprobante.getClave());
+    } catch (AlmacenNoDisponible e) {
+      throw new ComprobanteNoEncontrado(e);
+    }
+  }
+
+  @Override
+  public List<String> archivosDe(Usuario usuario) {
+    return repositorioComprobante.clavesDe(usuario);
+  }
+
+  @Override
+  public void eliminarArchivos(List<String> claves) {
+    if (!almacen.disponible()) {
+      return;
+    }
+    for (String clave : claves) {
+      try {
+        almacen.eliminar(clave);
+      } catch (AlmacenNoDisponible e) {
+        LOG.log(Level.WARNING, "No se pudo borrar un comprobante del almacén", e);
+      }
+    }
+  }
+
   // El mismo registro si ya existía (sus gastos se borraron), o uno nuevo
   private Comprobante comprobanteDe(ArchivoComprobante archivo, Usuario usuario) {
     LocalDateTime ahora = LocalDateTime.now(reloj);

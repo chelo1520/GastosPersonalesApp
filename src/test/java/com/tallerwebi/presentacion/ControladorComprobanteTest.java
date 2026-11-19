@@ -7,6 +7,7 @@ import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.categoria.CategoriaRepositorio;
 import com.tallerwebi.dominio.comprobante.ArchivoComprobante;
+import com.tallerwebi.dominio.comprobante.ComprobanteNoEncontrado;
 import com.tallerwebi.dominio.comprobante.ComprobanteNoLegible;
 import com.tallerwebi.dominio.comprobante.ComprobanteYaCargado;
 import com.tallerwebi.dominio.comprobante.ConfianzaComprobante;
@@ -29,6 +30,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
+import org.springframework.web.servlet.view.RedirectView;
 
 public class ControladorComprobanteTest {
 
@@ -491,6 +493,42 @@ public class ControladorComprobanteTest {
     assertEquals("cargar-comprobante", resultado.getViewName());
     assertTrue(((String) resultado.getModel().get("error")).contains("(1 gasto)"));
     verify(session).removeAttribute("comprobantePendiente");
+  }
+
+  // Ver el archivo
+
+  @Test
+  public void verElComprobanteDebeRedirigirAlLinkTemporalSinTocarlo() {
+    String link = "https://cuenta.r2.cloudflarestorage.com/b/x.png?X-Amz-Signature=a%2Bb";
+    when(servicioComprobante.urlDelArchivo(3L, usuario)).thenReturn(link);
+
+    ModelAndView resultado = controladorComprobante.verComprobante(3L, request, redirectAttributes);
+
+    RedirectView vista = (RedirectView) resultado.getView();
+    assertEquals(link, vista.getUrl());
+  }
+
+  @Test
+  public void siElComprobanteNoEstaDisponibleDebeVolverAMisGastosConElAviso() {
+    when(servicioComprobante.urlDelArchivo(3L, usuario)).thenThrow(new ComprobanteNoEncontrado());
+
+    ModelAndView resultado = controladorComprobante.verComprobante(3L, request, redirectAttributes);
+
+    assertEquals("redirect:/mostrar-gastos", resultado.getViewName());
+    assertEquals(
+      "El archivo de este comprobante no está disponible.",
+      redirectAttributes.getFlashAttributes().get("avisoRegistro")
+    );
+  }
+
+  @Test
+  public void sinSesionNoSeVeNingunComprobante() {
+    when(session.getAttribute("USUARIO")).thenReturn(null);
+
+    ModelAndView resultado = controladorComprobante.verComprobante(3L, request, redirectAttributes);
+
+    assertEquals("redirect:/login", resultado.getViewName());
+    verifyNoInteractions(servicioComprobante);
   }
 
   private DatosComprobante datosDeEjemplo() {

@@ -5,6 +5,7 @@ import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.categoria.Categoria;
 import com.tallerwebi.dominio.categoria.CategoriaRepositorio;
 import com.tallerwebi.dominio.comprobante.ArchivoComprobante;
+import com.tallerwebi.dominio.comprobante.ComprobanteNoEncontrado;
 import com.tallerwebi.dominio.comprobante.ComprobanteNoLegible;
 import com.tallerwebi.dominio.comprobante.ComprobanteYaCargado;
 import com.tallerwebi.dominio.comprobante.DatosComprobante;
@@ -24,12 +25,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.view.RedirectView;
 
 /** Cargar gastos desde un comprobante: subir el archivo, revisar lo que se leyó y confirmar. */
 @Controller
@@ -169,6 +172,30 @@ public class ControladorComprobante {
     // Desde el registro rápido: de vuelta a la vista donde se abrió, con el aviso de lo guardado
     redirectAttributes.addFlashAttribute("avisoRegistro", avisoDeGuardado(gastos.size()));
     return new ModelAndView(origen.redireccion(null, null));
+  }
+
+  // Ver el archivo de un comprobante: se redirige a un link de R2 que vence en 5 minutos. Si no es
+  // del usuario o no tiene archivo, vuelve a Mis gastos con el aviso
+  @RequestMapping(path = "/comprobantes/{id}", method = RequestMethod.GET)
+  public ModelAndView verComprobante(
+    @PathVariable("id") Long id,
+    HttpServletRequest request,
+    RedirectAttributes redirectAttributes
+  ) {
+    Usuario usuario = SesionUsuario.obtener(request);
+    if (usuario == null) {
+      return new ModelAndView(REDIRECT_LOGIN);
+    }
+    try {
+      RedirectView link = new RedirectView(servicioComprobante.urlDelArchivo(id, usuario));
+      // El link ya viene firmado: no se le agrega ni se le cambia nada
+      link.setExpandUriTemplateVariables(false);
+      link.setExposeModelAttributes(false);
+      return new ModelAndView(link);
+    } catch (ComprobanteNoEncontrado e) {
+      redirectAttributes.addFlashAttribute("avisoRegistro", e.getMessage());
+      return new ModelAndView("redirect:/mostrar-gastos");
+    }
   }
 
   private static String avisoDeGuardado(int cantidad) {

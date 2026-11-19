@@ -335,7 +335,8 @@ button.app-mg-dia-casilla:not(:disabled):hover {
   stroke-linejoin: round;
 }
 
-.app-mg-icono.app-gasto-editar:hover {
+.app-mg-icono.app-gasto-editar:hover,
+.app-mg-icono.app-gasto-comprobante:hover {
   border-color: var(--mg-verde);
   background: var(--mg-tinte);
   color: var(--mg-verde);

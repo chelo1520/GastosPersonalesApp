@@ -4,26 +4,35 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.tallerwebi.dominio.Usuario;
 import com.tallerwebi.dominio.alerta.Alerta;
 import com.tallerwebi.dominio.categoria.Categoria;
+import com.tallerwebi.dominio.comprobante.AlmacenComprobantes;
+import com.tallerwebi.dominio.comprobante.Comprobante;
 import com.tallerwebi.dominio.gasto.Gasto;
 import com.tallerwebi.dominio.presupuesto.Presupuesto;
 import com.tallerwebi.integracion.config.HibernateTestConfig;
 import com.tallerwebi.integracion.config.SpringWebTestConfig;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import org.hibernate.SessionFactory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
@@ -47,6 +56,93 @@ public class MostrarGastosVistaTest {
 
   @Autowired
   private SessionFactory sessionFactory;
+
+  @Autowired
+  private AlmacenComprobantes almacenComprobantes;
+
+  // El almacén de prueba es uno solo para todos los tests: que no le queden respuestas armadas
+  @AfterEach
+  public void olvidarElAlmacen() {
+    Mockito.reset(almacenComprobantes);
+  }
+
+  @Test
+  public void soloLosGastosConArchivoDeComprobanteOfrecenVerlo() throws Exception {
+    Usuario usuario = new Usuario();
+    sessionFactory.getCurrentSession().persist(usuario);
+    Comprobante conArchivo = comprobante(usuario, "a", "comprobantes/1/a.png");
+    Comprobante sinArchivo = comprobante(usuario, "b", null);
+    gastoDe(usuario, "Supermercado", conArchivo);
+    gastoDe(usuario, "Verdulería", sinArchivo);
+    gastoDe(usuario, "Kiosco", null);
+
+    String html = MockMvcBuilders
+      .webAppContextSetup(webApplicationContext)
+      .build()
+      .perform(get("/mostrar-gastos").param("mes", "2026-09").sessionAttr("USUARIO", usuario))
+      .andExpect(status().isOk())
+      .andReturn()
+      .getResponse()
+      .getContentAsString();
+
+    assertTrue(html.contains("/comprobantes/" + conArchivo.getId() + "\""));
+    assertTrue(html.contains("Ver el comprobante de Supermercado"));
+    assertFalse(html.contains("/comprobantes/" + sinArchivo.getId() + "\""));
+    assertFalse(html.contains("Ver el comprobante de Kiosco"));
+  }
+
+  @Test
+  public void verElComprobanteRedirigeAlLinkTemporalDeR2() throws Exception {
+    Usuario usuario = new Usuario();
+    sessionFactory.getCurrentSession().persist(usuario);
+    Comprobante comprobante = comprobante(usuario, "a", "comprobantes/1/a.png");
+    String link =
+      "https://cuenta.r2.cloudflarestorage.com/b/comprobantes/1/a.png?X-Amz-Signature=abc";
+    when(almacenComprobantes.disponible()).thenReturn(true);
+    when(almacenComprobantes.urlTemporal("comprobantes/1/a.png")).thenReturn(link);
+
+    MockMvcBuilders
+      .webAppContextSetup(webApplicationContext)
+      .build()
+      .perform(get("/comprobantes/" + comprobante.getId()).sessionAttr("USUARIO", usuario))
+      .andExpect(redirectedUrl(link));
+  }
+
+  @Test
+  public void elComprobanteDeOtroUsuarioNoSeMuestra() throws Exception {
+    Usuario duenio = new Usuario();
+    Usuario otro = new Usuario();
+    sessionFactory.getCurrentSession().persist(duenio);
+    sessionFactory.getCurrentSession().persist(otro);
+    Comprobante comprobante = comprobante(duenio, "a", "comprobantes/1/a.png");
+    when(almacenComprobantes.disponible()).thenReturn(true);
+
+    MockMvcBuilders
+      .webAppContextSetup(webApplicationContext)
+      .build()
+      .perform(get("/comprobantes/" + comprobante.getId()).sessionAttr("USUARIO", otro))
+      .andExpect(redirectedUrl("/mostrar-gastos"));
+    Mockito.verify(almacenComprobantes, Mockito.never()).urlTemporal(Mockito.any());
+  }
+
+  private Comprobante comprobante(Usuario usuario, String letra, String clave) {
+    Comprobante comprobante = new Comprobante(
+      usuario,
+      letra.repeat(64),
+      "image/png",
+      LocalDateTime.of(2026, 9, 30, 10, 0)
+    );
+    comprobante.setClave(clave);
+    sessionFactory.getCurrentSession().persist(comprobante);
+    return comprobante;
+  }
+
+  private void gastoDe(Usuario usuario, String descripcion, Comprobante comprobante) {
+    Gasto gasto = new Gasto(1800.0, LocalDate.of(2026, 9, 30), descripcion);
+    gasto.setUsuario(usuario);
+    gasto.setComprobante(comprobante);
+    sessionFactory.getCurrentSession().persist(gasto);
+  }
 
   @Test
   public void debeRenderizarLosGastosDelUsuarioEnLaVista() throws Exception {

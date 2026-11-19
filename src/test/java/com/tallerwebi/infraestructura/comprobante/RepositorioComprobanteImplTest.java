@@ -12,6 +12,7 @@ import com.tallerwebi.infraestructura.RepositorioUsuarioImpl;
 import com.tallerwebi.infraestructura.config.HibernateInfraestructuraTestConfig;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,6 +53,28 @@ public class RepositorioComprobanteImplTest {
 
     assertSame(comprobante, repositorio.buscar(ana, HUELLA));
     assertNull(repositorio.buscar(ana, "b".repeat(64)));
+  }
+
+  @Test
+  public void porIdSoloEncuentraLosComprobantesDelUsuario() {
+    Comprobante comprobante = new Comprobante(ana, HUELLA, "image/png", CARGA);
+    repositorio.guardar(comprobante);
+
+    assertSame(comprobante, repositorio.buscarPorId(comprobante.getId(), ana));
+    assertNull(repositorio.buscarPorId(comprobante.getId(), luis));
+  }
+
+  @Test
+  public void lasClavesDelUsuarioSonLasDeLosArchivosQueSeGuardaron() {
+    Comprobante conArchivo = new Comprobante(ana, HUELLA, "image/png", CARGA);
+    conArchivo.setClave("comprobantes/1/a.png");
+    repositorio.guardar(conArchivo);
+    repositorio.guardar(new Comprobante(ana, "b".repeat(64), "image/png", CARGA));
+    Comprobante deLuis = new Comprobante(luis, HUELLA, "image/png", CARGA);
+    deLuis.setClave("comprobantes/2/a.png");
+    repositorio.guardar(deLuis);
+
+    assertEquals(List.of("comprobantes/1/a.png"), repositorio.clavesDe(ana));
   }
 
   @Test

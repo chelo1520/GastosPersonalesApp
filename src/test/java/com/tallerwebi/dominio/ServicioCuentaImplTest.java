@@ -9,14 +9,17 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.tallerwebi.dominio.comprobante.ServicioComprobante;
 import com.tallerwebi.dominio.excepcion.ContrasenaIncorrecta;
 import com.tallerwebi.dominio.excepcion.ContrasenaInvalida;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class ServicioCuentaImplTest {
 
   private RepositorioUsuario repositorioUsuario;
+  private ServicioComprobante servicioComprobante;
   private ServicioCuentaImpl servicio;
   private Usuario enSesion;
   private Usuario guardado;
@@ -24,7 +27,8 @@ public class ServicioCuentaImplTest {
   @BeforeEach
   public void init() {
     repositorioUsuario = mock(RepositorioUsuario.class);
-    servicio = new ServicioCuentaImpl(repositorioUsuario);
+    servicioComprobante = mock(ServicioComprobante.class);
+    servicio = new ServicioCuentaImpl(repositorioUsuario, servicioComprobante);
 
     enSesion = new Usuario();
     enSesion.setEmail("lour@gastitos.com");
@@ -73,11 +77,25 @@ public class ServicioCuentaImplTest {
   }
 
   @Test
+  public void alEliminarLaCuentaDebeBorrarLosArchivosDeSusComprobantesDespues() {
+    List<String> archivos = List.of("comprobantes/1/a.png", "comprobantes/1/b.pdf");
+    when(servicioComprobante.archivosDe(guardado)).thenReturn(archivos);
+
+    servicio.eliminarCuenta(enSesion, "Actual1!");
+
+    var orden = org.mockito.Mockito.inOrder(servicioComprobante, repositorioUsuario);
+    orden.verify(servicioComprobante).archivosDe(guardado);
+    orden.verify(repositorioUsuario).eliminar(guardado);
+    orden.verify(servicioComprobante).eliminarArchivos(archivos);
+  }
+
+  @Test
   public void noDebeEliminarLaCuentaCuandoLaContrasenaEsIncorrectaOFalta() {
     assertThrows(ContrasenaIncorrecta.class, () -> servicio.eliminarCuenta(enSesion, "Otra123!"));
     assertThrows(ContrasenaIncorrecta.class, () -> servicio.eliminarCuenta(enSesion, null));
 
     verify(repositorioUsuario, never()).eliminar(any());
+    verify(servicioComprobante, never()).eliminarArchivos(any());
   }
 
   @Test

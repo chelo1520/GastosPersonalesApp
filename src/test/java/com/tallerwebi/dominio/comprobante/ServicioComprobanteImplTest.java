@@ -11,6 +11,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.tallerwebi.dominio.Usuario;
@@ -176,6 +177,79 @@ public class ServicioComprobanteImplTest {
     );
 
     verify(gastoServicio, never()).registrarGastos(anyList(), any());
+  }
+
+  // Ver y borrar el archivo
+
+  @Test
+  public void debeDarElLinkTemporalDelArchivoDelComprobante() {
+    Comprobante comprobante = new Comprobante(usuario, archivo.huella(), "image/png", AHORA);
+    comprobante.setClave("comprobantes/7/x.png");
+    when(repositorio.buscarPorId(3L, usuario)).thenReturn(comprobante);
+    when(almacen.disponible()).thenReturn(true);
+    when(almacen.urlTemporal("comprobantes/7/x.png")).thenReturn("https://r2/x.png?firma");
+
+    assertEquals("https://r2/x.png?firma", servicio.urlDelArchivo(3L, usuario));
+  }
+
+  @Test
+  public void noHayLinkSiElComprobanteNoEsDelUsuarioOnoTieneArchivo() {
+    when(almacen.disponible()).thenReturn(true);
+    Comprobante sinArchivo = new Comprobante(usuario, archivo.huella(), "image/png", AHORA);
+    when(repositorio.buscarPorId(4L, usuario)).thenReturn(sinArchivo);
+
+    assertThrows(ComprobanteNoEncontrado.class, () -> servicio.urlDelArchivo(3L, usuario));
+    assertThrows(ComprobanteNoEncontrado.class, () -> servicio.urlDelArchivo(4L, usuario));
+    assertThrows(ComprobanteNoEncontrado.class, () -> servicio.urlDelArchivo(null, usuario));
+    verify(almacen, never()).urlTemporal(any());
+  }
+
+  @Test
+  public void noHayLinkSiElAlmacenNoEstaOFalla() {
+    Comprobante comprobante = new Comprobante(usuario, archivo.huella(), "image/png", AHORA);
+    comprobante.setClave("comprobantes/7/x.png");
+    when(repositorio.buscarPorId(3L, usuario)).thenReturn(comprobante);
+
+    when(almacen.disponible()).thenReturn(false);
+    assertThrows(ComprobanteNoEncontrado.class, () -> servicio.urlDelArchivo(3L, usuario));
+
+    when(almacen.disponible()).thenReturn(true);
+    when(almacen.urlTemporal(any())).thenThrow(new AlmacenNoDisponible("caído"));
+    assertThrows(ComprobanteNoEncontrado.class, () -> servicio.urlDelArchivo(3L, usuario));
+  }
+
+  @Test
+  public void losArchivosDelUsuarioSonLasClavesGuardadas() {
+    when(repositorio.clavesDe(usuario)).thenReturn(List.of("comprobantes/7/x.png"));
+
+    assertEquals(List.of("comprobantes/7/x.png"), servicio.archivosDe(usuario));
+  }
+
+  @Test
+  public void alBorrarArchivosSiUnoFallaDebeSeguirConLosDemas() {
+    when(almacen.disponible()).thenReturn(true);
+    doThrow(new AlmacenNoDisponible("caído")).when(almacen).eliminar("comprobantes/7/a.png");
+
+    servicio.eliminarArchivos(List.of("comprobantes/7/a.png", "comprobantes/7/b.png"));
+
+    verify(almacen).eliminar("comprobantes/7/b.png");
+  }
+
+  @Test
+  public void sinAlmacenNoHayArchivosQueBorrar() {
+    AlmacenComprobantes sinConfigurar = mock(AlmacenComprobantes.class);
+    ZoneId zona = ZoneId.systemDefault();
+    new ServicioComprobanteImpl(
+      repositorio,
+      sinConfigurar,
+      gastoServicio,
+      Clock.fixed(AHORA.atZone(zona).toInstant(), zona)
+    )
+      .eliminarArchivos(List.of("comprobantes/7/a.png"));
+
+    verify(sinConfigurar).disponible();
+    verify(sinConfigurar, never()).eliminar(any());
+    verifyNoInteractions(gastoServicio);
   }
 
   private Gasto gasto(Double importe) {
